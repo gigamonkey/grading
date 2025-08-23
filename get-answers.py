@@ -57,7 +57,7 @@ def load_answers(github, branch, path):
     try:
         result = run(args, encoding='utf-8', capture_output=True, check=True)
         return json.loads(result.stdout)
-    except CalledProcessError as e:
+    except CalledProcessError:
         return None
 
 def save_answers(user_id, assignment_id, answers):

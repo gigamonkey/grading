@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-import fileinput
 import json
 import re
 import sys
-import sqlite3
 
 def load_questions(assignment_id, filename):
     with open(filename) as f:

@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 from markup_quiz import load_questions
-import fileinput
-import json
-import re
 import sys
 import sqlite3
 
