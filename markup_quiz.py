@@ -10,12 +10,14 @@ def load_questions(assignment_id, filename):
 
 
 def normalize(s):
-    return re.sub(r'`', '', s)
+    s = re.sub(r'`', '', s)
+    s = re.sub(r"\\code\{([^}]*)\}", r"\1", s)
+    return s;
 
 
 def extract_questions(assignment_id, input):
 
-    num = 0
+    question_number = 0
     label = None
     question = ""
     kind = None
@@ -42,7 +44,7 @@ def extract_questions(assignment_id, input):
                 if re.search(r'##\.$', line):
                     q = {
                         "assignment_id": assignment_id,
-                        "num": num,
+                        "question_number": question_number,
                         "label": label,
                         "kind": kind,
                         "question": question.strip(),
@@ -53,10 +55,10 @@ def extract_questions(assignment_id, input):
 
                     questions.append(q)
                     label, question, kind = None, "", None
-                    num += 1
+                    question_number += 1
                     continue
                 elif c := line.strip():
-                    if kind == "choices" and not kind_open:
+                    if kind in {"choices", "mchoices"} and not kind_open:
                         choices.append(normalize(c))
                 kind_open = False
 
