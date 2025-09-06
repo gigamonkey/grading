@@ -17,7 +17,7 @@ load_dotenv()
 
 INSERT_ANSWER = """
 INSERT INTO student_answers
-  (user_id, assignment_id, num, answer)
+  (user_id, assignment_id, num, raw_answer)
 VALUES
   (?, ?, ?, ?)
 """

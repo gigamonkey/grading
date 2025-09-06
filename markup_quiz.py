@@ -9,6 +9,10 @@ def load_questions(assignment_id, filename):
         return extract_questions(assignment_id, f)
 
 
+def normalize(s):
+    return re.sub(r'`', '', s)
+
+
 def extract_questions(assignment_id, input):
 
     num = 0
@@ -53,7 +57,7 @@ def extract_questions(assignment_id, input):
                     continue
                 elif c := line.strip():
                     if kind == "choices" and not kind_open:
-                        choices.append(c)
+                        choices.append(normalize(c))
                 kind_open = False
 
             else:
