@@ -1,0 +1,21 @@
+{
+  "name": "grading",
+  "version": "1.0.0",
+  "description": "Grading tools",
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dompurify": "^3.2.6",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "jsdom": "^26.1.0",
+    "marked": "^16.2.1",
+    "nunjucks": "^3.2.4",
+    "pugsql": "^0.0.23"
+  }
+}

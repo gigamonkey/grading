@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+body {
+  width: 40em;
+  margin: 0 auto;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+}
+
+div {
+  border: 1px solid grey;
+  padding: 2em;
+  margin: 1em 0;
+}
+
+select {
+  float: right;
+}

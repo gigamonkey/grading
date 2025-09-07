@@ -1,6 +1,9 @@
 all:
-	sqlite3 db.db < schema.sql
-	uv run markup-to-questions.py 47 ~/hacks/bhs-cs/markup/views/from-markup/c/csa/questions/punctuation.txt
+	echo "Use db.db to rebuild db."
+
+db.db:
+	sqlite3 $@ < schema.sql
+	sqlite3 $@ < load-roster.sql
 
 clean:
 	rm -f db.db*

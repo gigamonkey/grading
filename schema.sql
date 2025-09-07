@@ -55,6 +55,13 @@ CREATE TABLE IF NOT EXISTS fps (
 )
 WITHOUT ROWID;
 
+CREATE TABLE IF NOT EXISTS prompt_response_grades (
+  user_id TEXT,
+  posted INTEGER,
+  grade INTEGER,
+  PRIMARY KEY (user_id, posted)
+);
+
 INSERT OR IGNORE INTO fps
   (minimum, grade)
 VALUES
@@ -63,10 +70,6 @@ VALUES
   (0.45, 2),
   (0.20, 1),
   (0.0, 0);
-
--- Roster of students
-DROP TABLE IF EXISTS roster;
-.import --csv '| cat ../roster.json | mlr --ijson --ocsv cat' roster
 
 -- Compute per question scores for each student. Question score is computed
 -- differently depending on the kind of question. Currently handled are choices,

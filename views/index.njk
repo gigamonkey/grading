@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Grading</title>
+    <link href="/css/prompt-responses.css" media="all" rel="stylesheet" type="text/css">
+    <script src="/js/prompt-responses.js" type="module"></script>
+  </head>
+  <body>
+    <h1>Grading</h1>
+    {% for p in posts %}
+      <div data-user-id='{{ p.user_id }}' data-posted='{{ p.posted }}'>
+        <select>
+          {% for g in [0, 1, 2, 3, 4 ] %}
+            <option {% if g == p.grade %}selected='selected'{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+        {{ p.text | md }}
+      </div>
+    {% endfor %}
+  </body>
+</html>
