@@ -8,40 +8,30 @@ questions.
 
 
 import sys
-import sqlite3
+import pugsql
+import re
 
-NUMS = "SELECT num, question, kind from questions where assignment_id = ?"
 
-ALL_ANSWERS = "SELECT distinct answer from normalized_answers where assignment_id = ? and num = ?"
+def unscored_answers(assignment_id, question_number):
+    return [a['answer'] for a in db.unscored_answers(assignment_id=assignment_id, question_number=question_number)]
 
-UNSCORED_ANSWERS = """
-SELECT answer FROM normalized_answers
-LEFT JOIN scored_answers sa using (assignment_id, num, answer)
-WHERE
-  assignment_id = ? AND
-  num = ? AND
-  sa.assignment_id is NULL
-"""
-
-UPDATE_SCORE = "UPDATE scored_answers SET score = ? where assignment_id = ? and num = ? and answer = ?"
-
-ADD_SCORED_ANSWER = "INSERT INTO scored_answers (assignment_id, num, answer, score) VALUES (?, ?, ?, ?)"
 
 if __name__ == "__main__":
-
-    conn = sqlite3.connect('db.db')
-    cursor = conn.cursor()
-
     assignment_id = sys.argv[1]
 
-    cursor.execute(NUMS, (assignment_id,))
-    for (num, question, kind) in cursor.fetchall():
-        cursor.execute(UNSCORED_ANSWERS, (assignment_id, num))
-        answers = [a for (a,) in cursor.fetchall()]
+    db = pugsql.module("sql")
+    db.connect("sqlite:///db.db")
+
+    questions = db.question_numbers(assignment_id=assignment_id)
+    for q in questions:
+        question_number = q['question_number']
+        question = q['question']
+        kind = q['kind']
+
+        answers = unscored_answers(assignment_id, question_number)
 
         if answers:
-            print(question)
-            print()
+            print(f"Question:\n\n{question}\n")
 
             if kind == "choices":
                 for i, a in enumerate(answers):
@@ -49,17 +39,36 @@ if __name__ == "__main__":
                 print()
                 n = int(input("Correct answer: "))
                 for i, a in enumerate(answers):
-                    score = 1.0 if i == n else 0.0
-                    cursor.execute(ADD_SCORED_ANSWER, (assignment_id, num, a, score))
-                    conn.commit()
+                    db.add_scored_answer(
+                        assignment_id=assignment_id,
+                        question_number=question_number,
+                        answer=a,
+                        score = 1.0 if i == n else 0.0
+                    )
+
+            elif kind == "mchoices":
+                for i, a in enumerate(answers):
+                    print(f"[{i}] {a}")
+                print()
+                correct = set(int(n) for n in re.split(r',\s*', input("Correct answers (comma delimited): ")))
+                for i, a in enumerate(answers):
+                    db.add_scored_answer(
+                        assignment_id=assignment_id,
+                        question_number=question_number,
+                        answer=a,
+                        score = 1.0 if i in correct else -1.0
+                    )
 
             elif kind == "freeanswer":
+                print("Score these answers:")
                 for a in answers:
-                    score = float(input(f"{a}: "))
-                    cursor.execute(ADD_SCORED_ANSWER, (assignment_id, num, a, score))
-                    conn.commit()
+                    score = float(input(f'Answer "{a}" Score: '))
+                    db.add_scored_answer(
+                        assignment_id=assignment_id,
+                        question_number=question_number,
+                        answer=a,
+                        score=score
+                    )
 
             else:
                 print(f"*** Don't know how to score answers for {kind} questions.")
-
-    conn.commit()
