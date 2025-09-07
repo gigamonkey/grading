@@ -58,13 +58,34 @@ def load_answers(github, branch, path):
         return None
 
 
+def normalize(answer):
+    return answer.strip()
+
+
+def save_answer(db, user_id, assignment_id, question_number, answer_number, raw_answer):
+    db.add_student_answer(
+        user_id=user_id,
+        assignment_id=assignment_id,
+        question_number=question_number,
+        answer_number=answer_number,
+        raw_answer=raw_answer
+    )
+    if raw_answer:
+        db.add_normalized_answer(
+            assignment_id=assignment_id,
+            question_number=question_number,
+            raw_answer=raw_answer,
+            answer=normalize(raw_answer)
+        )
+
+
 def save_answers(db, user_id, assignment_id, answers):
     for num, answer in enumerate(answers):
         if isinstance(answer, list):
             for i, a in enumerate(answer):
-                db.add_student_answer(user_id=user_id, assignment_id=assignment_id, question_number=num, answer_number=i, raw_answer=a)
+                save_answer(db, user_id, assignment_id, num, i, a)
         else:
-            db.add_student_answer(user_id=user_id, assignment_id=assignment_id, question_number=num, answer_number=0, raw_answer=answer)
+            save_answer(db, user_id, assignment_id, num, 0, answer)
 
 
 if __name__ == "__main__":
