@@ -13,6 +13,7 @@
     "dompurify": "^3.2.6",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "fast-glob": "^3.3.3",
     "jsdom": "^26.1.0",
     "marked": "^16.2.1",
     "nunjucks": "^3.2.4",

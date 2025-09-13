@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Grading</title>
+    <link href="/css/coding.css" media="all" rel="stylesheet" type="text/css">
+    <link href="/css/prism.css" media="all" rel="stylesheet" type="text/css">
+    <script src="/js/coding.js" type="module"></script>
+    <script src="/js/prism.js" defer></script>
+  </head>
+  <body>
+    <h1>Grading</h1>
+
+    {% for user_id, code in files %}
+      <section data-user-id='{{ p.user_id }}' data-posted='{{ p.posted }}'>
+        <div>
+          <pre><code class="language-java">{{- code -}}</code></pre>
+        </div>
+        <div>
+          {% for label, points in rubric %}
+            <p><label>{{label}} <input type="checkbox"/></label></p>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  </body>
+</html>

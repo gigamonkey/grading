@@ -114,6 +114,64 @@ insert into questions (label, kind, question) values ($label, $kind, $question);
 insert into questions (label, kind, question) values ($label, $kind, $question);
 
 
+-- roster --------------------------------------------------
+
+-- :name roster :all
+select * from roster;
+
+-- :name insertRoster :insert
+insert into roster
+  (period, user_id, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+values
+  ($period, $userId, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+
+-- :name makeRoster :insert
+insert into roster
+  (period, user_id, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+values
+  ($period, $userId, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+
+-- :name makeRosterWithDefaultValues :insert
+insert into roster
+  (period, user_id, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+values
+  ($period, $userId, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+
+
+-- rubric_grades -------------------------------------------
+
+-- :name rubricGrades :all
+select * from rubric_grades;
+
+-- :name insertRubricGrade :insert
+insert into rubric_grades
+  (user_id, assignment_id, rubric_item, score)
+values
+  ($userId, $assignmentId, $rubricItem, $score);
+
+-- :name rubricGrade :get
+select * from rubric_grades
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  rubric_item = $rubricItem;
+
+-- :name updateRubricGrade :run
+update rubric_grades set
+  (score) =
+  ($score)
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  rubric_item = $rubricItem
+
+-- :name makeRubricGrade :insert
+insert into rubric_grades (score) values ($score);
+
+-- :name makeRubricGradeWithDefaultValues :insert
+insert into rubric_grades (score) values ($score);
+
+
 -- scored_answers ------------------------------------------
 
 -- :name scoredAnswers :all

@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs';
+import glob from 'fast-glob';
+import { loadJSON } from './modules/util.js';
 import dotenv from 'dotenv'
 import express from 'express';
 import os from 'node:os';
@@ -15,11 +18,12 @@ const app = express();
 
 dotenv.config({ path: 'local.env' })
 
-const db = new DB('prompts.db')
+const [ dir ] = process.argv.slice(2)
+
+const db = new DB(path.join(dir, "db.db"))
       .addQueries('modules/pugly.sql')
       .addQueries('modules/queries.sql');
 
-const assignmentId = process.argv[2];
 
 const openUrl = (url) => {
   const platform = os.platform();
@@ -56,7 +60,8 @@ const jsonIfOk = r => {
   throw r;
 };
 
-app.get('/', async (req, res) => {
+app.get('/prompt-responses/:assignmentId', async (req, res) => {
+  const { assignmentId } = req.params;
   const { BHS_CS_SERVER, BHS_CS_API_KEY } = process.env;
   const fullpath = `${BHS_CS_SERVER}/api/assignment/${assignmentId}/prompt-responses`
   const posts = await fetch(fullpath, {
@@ -77,14 +82,31 @@ app.get('/', async (req, res) => {
   res.render("index.njk", { posts });
 });
 
-app.put('/:grade', (req, res) => {
+app.put('/prompt-responses/:assignmentId/grade', (req, res) => {
   console.log(req.body);
   db.postPromptResponseGrade(req.body);
 });
 
 
+app.get('/coding', async (req, res) => {
+  const a = loadJSON(path.join(dir, 'assignment.json'));
+  const students = Object.fromEntries(db.studentsForPeriod({period: 5}).map(s => {
+    return [s.github, s.user_id];
+  }));
+  const files = Object.fromEntries(
+    glob.sync(path.join(dir, `*/${a.file}`))
+      .map(p => {
+        const d = path.dirname(path.relative(dir, p));
+        return [ students[d], fs.readFileSync(p, 'utf-8') ];
+      })
+  );
+  res.render("coding.njk", { ...a, files });
+});
+
+
 app.listen(port, function () {
-  const url = `http://localhost:${this.address().port}`;
+  //const url = `http://localhost:${this.address().port}/prompt-responses/${assignmentId}`;
+  const url = `http://localhost:${this.address().port}/coding`;
   console.log(`Opening ${url}`);
   openUrl(url);
 })

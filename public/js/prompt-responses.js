@@ -5,7 +5,7 @@ const setGrade = (e) => {
   const { userId, posted } = select.closest('div').dataset;
   const data = { userId, posted, grade: select.value };
   console.log(data);
-  fetch('/grade', {
+  fetch(window.location.path + '/grade', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

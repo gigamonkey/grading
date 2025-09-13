@@ -5,6 +5,12 @@ CREATE TABLE IF NOT EXISTS graded_assignments (
   PRIMARY KEY (assignment_id)
 );
 
+CREATE TABLE IF NOT EXISTS assignment_weights (
+  assignment_id INTEGER,
+  standard TEXT,
+  weight REAL
+);
+
 -- Questions. Probably extracted from the test in some way.
 CREATE TABLE IF NOT EXISTS questions (
   assignment_id INTEGER,
@@ -61,6 +67,30 @@ CREATE TABLE IF NOT EXISTS prompt_response_grades (
   grade INTEGER,
   PRIMARY KEY (user_id, posted)
 );
+
+CREATE TABLE IF NOT EXISTS rubric_grades (
+  user_id TEXT,
+  assignment_id INTEGER,
+  rubric_item TEXT,
+  score INTEGER, -- 0 or 1
+  PRIMARY KEY (user_id, assignment_id, rubric_item)
+);
+
+CREATE TABLE IF NOT EXISTS roster (
+  period INTEGER,
+  user_id TEXT,
+  email TEXT,
+  github TEXT,
+  name TEXT,
+  pronouns TEXT,
+  google_name TEXT,
+  sortable_name TEXT,
+  last_name TEXT,
+  first_name TEXT,
+  birthdate TEXT,
+  course_id TEXT
+);
+
 
 INSERT OR IGNORE INTO fps
   (minimum, grade)
