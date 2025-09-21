@@ -16,9 +16,9 @@ import { promisify } from 'node:util';
 import { Command } from 'commander';
 import glob from 'fast-glob';
 import { getSha, getTimestamp } from './modules/grading.js';
-import { average, count, loadJSON, mapValues } from './modules/util.js';
+import { average, count, loadJSON, mapValues, values } from './modules/util.js';
 
-const { fromEntries, entries, keys, values, groupBy } = Object;
+const { entries, groupBy } = Object;
 
 const exec = promisify(child_process.exec);
 

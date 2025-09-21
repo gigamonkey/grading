@@ -57,7 +57,9 @@ const copyArgs = (args) => {
   const cloned = structuredClone(noFuncts);
 
   // Put back the function args
-  Object.entries(functs).forEach(([i, f]) => (cloned[i] = f));
+  Object.entries(functs).forEach(([i, f]) => {
+    cloned[i] = f;
+  });
 
   return cloned;
 };
