@@ -2,7 +2,7 @@
 
 """
 Load answers to form based quiz from local github mirrors. Uses server API
-to git information about the assignment and a list of the students who were
+to get information about the assignment and a list of the students who were
 assigned the assignment.
 """
 

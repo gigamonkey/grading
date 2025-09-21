@@ -16,3 +16,8 @@ wheels/
 *.db*
 
 node_modules/
+grades/
+
+itp/
+csa/
+eng/

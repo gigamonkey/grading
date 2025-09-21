@@ -1,5 +1,13 @@
 # Grading scripts
 
+General approach for things stored in Github is to copy the file from the repo
+into a directory under csa/, itp/, or eng/ to take a snapshot. Then grading
+scripts should process those files. Then if a particular student finishes late
+or whatever, we should have a script that grabs just their work from their
+github mirror and puts it into the directory. We should also save the timestamp
+and the SHA of the commit it came from.
+
+
 ## Form based quizzes and tests
 
 Step 1. Load the questions for a given assignment with `markup-to-questions.py`
@@ -19,3 +27,26 @@ the correct choices), and freeanswer (ask for the score for each unique answer).
 
 We could short cicuit step 3 by preloading scores for the answers to MCQ
 questions if we stored those with the questions or in a separate key.
+
+## ItP expressions problem sets
+
+Graded with expressions.js invoked from itp/load-expressions.sql. Need to update
+script as new problem sets are added.
+
+Add mapping from problem-set name to assignment_id in itp/assignment-weights.sql
+and actual assignment_weight there as well.
+
+
+## Javascript unit test assignments
+
+Step 1. Export student code to directory named for the assignment. With `repo
+one-file`.
+
+Step 2. Get the `assignment.json` file via the API
+https://bhs-cs.gigamonkeys.com/api/assignment/$assignentId and save it in the
+directory. (Should automate this in `javascript-unit-tests-questions.js`.)
+
+Step 3. Load scores with `./grade-javascript-unittest.sh` run from grading e.g.
+`./grade-javascript-unittest.sh itp/geometric-functions/`. That fills a `db.db`
+in the assignment directory with scores that are then loaded into the main
+course db.

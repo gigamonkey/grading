@@ -59,8 +59,20 @@ WHERE
 INSERT INTO scored_answers
   (assignment_id, question_number, answer, score)
 VALUES
-  (:assignment_id, :question_number, :answer, :score)
+  (:assignment_id, :question_number, :answer, :score);
 
 
 -- :name student_by_github :one
-select * from roster where github = :github
+select * from roster where github = :github;
+
+
+-- :name grades_for_assignment :many
+SELECT
+  user_id userId,
+  assignment_id assignmentId,
+  group_concat(standard, ', ') standard,
+  score,
+  grade
+FROM assignment_grades
+WHERE assignment_id = :assignment_id
+GROUP BY user_id, assignment_id;
