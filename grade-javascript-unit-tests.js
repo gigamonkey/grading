@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 import { readFileSync } from 'node:fs';
-import glob from 'fast-glob';
 import { basename, dirname, join } from 'node:path';
 import vm from 'node:vm';
 import { Command } from 'commander';
-import { count, loadJSON, values } from './modules/util.js';
+import glob from 'fast-glob';
 import { textIfOk } from './modules/fetch-helpers.js';
-import { getTimestamp, getSha, numCorrect } from './modules/grading.js';
+import { getSha, getTimestamp, numCorrect } from './modules/grading.js';
+import { count, loadJSON, values } from './modules/util.js';
 
 const get = (name, context) => {
   try {
@@ -46,22 +46,21 @@ const isFunction = (v) => typeof v === 'function';
 // it. We'll also assume that functions only occur directly as args, not
 // nested within other objects.
 const copyArgs = (args) => {
-
   // Find the function arguments and where they are.
-  const functs = Object.fromEntries(args.map((v, i) => [i, v]).filter(x => isFunction(x[1])));
+  const functs = Object.fromEntries(args.map((v, i) => [i, v]).filter((x) => isFunction(x[1])));
 
   // Null them out.
-  const noFuncts = args.map((a, i) => i in functs ? null : a);
+  const noFuncts = args.map((a, i) => (i in functs ? null : a));
 
   // Preserve all cycles, even between arguments. (That probably can't happen
   // the way we define arguments now but maybe later.)
   const cloned = structuredClone(noFuncts);
 
   // Put back the function args
-  Object.entries(functs).forEach(([i, f]) => cloned[i] = f);
+  Object.entries(functs).forEach(([i, f]) => (cloned[i] = f));
 
   return cloned;
-}
+};
 
 const runTestCase = (fn, test) => {
   let { args, expected, actualArgs, effects, extraCheck } = test;
@@ -69,8 +68,8 @@ const runTestCase = (fn, test) => {
   let extraOk = true;
 
   if (effects !== undefined) {
-    expected = effects.map(i => actualArgs[i]);
-    got = effects.map(i => testArgs[i]);
+    expected = effects.map((i) => actualArgs[i]);
+    got = effects.map((i) => testArgs[i]);
     if (effects.length == 1) {
       expected = expected[0];
       got = got[0];
@@ -102,7 +101,6 @@ const fnResults = (fn, cases) => {
   }
 };
 
-
 const runTests = (testcases, code) => {
   const { referenceImpls, allCases, sideEffects, extraChecks } = testcases;
 
@@ -110,22 +108,28 @@ const runTests = (testcases, code) => {
   const script = new vm.Script(code);
   script.runInNewContext(context);
 
-  const actualCases = Object.fromEntries(Object.entries(allCases).map(([name, cases]) => {
-    return [name, cases.map(args => {
-      return {
-        args: copyArgs(args), // The args that we use to run the user code
-        expected: referenceImpls[name](...args), // value returned
-        actualArgs: args, // args after the call
-        effects: sideEffects?.[name],
-        extraCheck: extraChecks?.[name],
-      }
-    })];
-  }));
+  const actualCases = Object.fromEntries(
+    Object.entries(allCases).map(([name, cases]) => {
+      return [
+        name,
+        cases.map((args) => {
+          return {
+            args: copyArgs(args), // The args that we use to run the user code
+            expected: referenceImpls[name](...args), // value returned
+            actualArgs: args, // args after the call
+            effects: sideEffects?.[name],
+            extraCheck: extraChecks?.[name],
+          };
+        }),
+      ];
+    }),
+  );
 
   return Object.fromEntries(
     Object.entries(actualCases).map(([name, cases]) => {
-      return [name, fnResults(get(name, context), cases)]
-    }));
+      return [name, fnResults(get(name, context), cases)];
+    }),
+  );
 };
 
 const noResults = (testcases) => {
@@ -133,34 +137,41 @@ const noResults = (testcases) => {
 
   const context = {};
 
-  const actualCases = Object.fromEntries(Object.entries(allCases).map(([name, cases]) => {
-    return [name, cases.map(args => {
-      return {
-        args: copyArgs(args), // The args that we use to run the user code
-        expected: referenceImpls[name](...args), // value returned
-        actualArgs: args, // args after the call
-        effects: sideEffects?.[name],
-        extraCheck: extraChecks?.[name],
-      }
-    })];
-  }));
+  const actualCases = Object.fromEntries(
+    Object.entries(allCases).map(([name, cases]) => {
+      return [
+        name,
+        cases.map((args) => {
+          return {
+            args: copyArgs(args), // The args that we use to run the user code
+            expected: referenceImpls[name](...args), // value returned
+            actualArgs: args, // args after the call
+            effects: sideEffects?.[name],
+            extraCheck: extraChecks?.[name],
+          };
+        }),
+      ];
+    }),
+  );
 
   return Object.fromEntries(
     Object.entries(actualCases).map(([name, cases]) => {
-      return [name, fnResults(get(name, context), cases)]
-    }));
+      return [name, fnResults(get(name, context), cases)];
+    }),
+  );
 };
 
-
-const isCorrect = (result) => result.every(q => q.passed) ? 1 : 0;
+const isCorrect = (result) => (result.every((q) => q.passed) ? 1 : 0);
 
 const empty = (testcases) => {
   return new Array(Object.keys(testcases.allCases).length).fill(0);
-}
+};
 
 const summary = (results) => {
-  return Object.fromEntries(Object.entries(results).map(([name, r]) => [name, summarizeResults(r)]));
-}
+  return Object.fromEntries(
+    Object.entries(results).map(([name, r]) => [name, summarizeResults(r)]),
+  );
+};
 
 const summarizeResults = (results) => {
   if (results == null) {
@@ -168,7 +179,7 @@ const summarizeResults = (results) => {
   } else {
     return results.reduce((t, x) => t + (x.passed ? 1 : 0), 0) / results.length;
   }
-}
+};
 
 const loadTestcases = (file) => {
   const testcasesSource = readFileSync(file, 'utf-8');
@@ -199,27 +210,31 @@ const dumpResults = (assignmentId, github, timestamp, sha, results) => {
   });
 };
 
-const emptyResults = (testcases) => Object.fromEntries(Object.keys(testcases.allCases).map(n => [n, null]));
+const emptyResults = (testcases) =>
+  Object.fromEntries(Object.keys(testcases.allCases).map((n) => [n, null]));
 
 new Command()
   .name('javascript-unit-tests-questions')
   .description('Run unit tests against dumped Javascript code.')
   .argument('<dir>', 'Code directory.')
   .action(async (dir, opts) => {
-
     const assignment = loadJSON(`${dir}/assignment.json`);
 
     try {
       const testcases = await fetchTestcases(assignment.url);
 
-      console.log(['assignment_id', 'github', 'question', 'answered', 'correct', 'timestamp', 'sha'].join('\t'));
+      console.log(
+        ['assignment_id', 'github', 'question', 'answered', 'correct', 'timestamp', 'sha'].join(
+          '\t',
+        ),
+      );
 
-      glob.sync(`${dir}/**/code.js`).forEach(file => {
-        const d            = dirname(file);
-        const github       = basename(d);
+      glob.sync(`${dir}/**/code.js`).forEach((file) => {
+        const d = dirname(file);
+        const github = basename(d);
         const assignmentId = assignment.assignment_id;
-        const timestamp    = getTimestamp(d);
-        const sha          = getSha(d);
+        const timestamp = getTimestamp(d);
+        const sha = getSha(d);
 
         try {
           const code = readFileSync(file, 'utf-8');
@@ -229,7 +244,6 @@ new Command()
           dumpResults(assignmentId, github, timestamp, sha, emptyResults(testcases));
         }
       });
-
     } catch (e) {
       console.log(e);
     }

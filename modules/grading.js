@@ -7,7 +7,7 @@ import { count, sum, values } from './util.js';
 /*
  * Number of questions completely correct.
  */
-const numCorrect = (results) => count(values(results), (r) => r?.every(x => x.passed) ?? 0);
+const numCorrect = (results) => count(values(results), (r) => r?.every((x) => x.passed) ?? 0);
 
 /*
  * Score a whole test based on the average per-question score.
@@ -17,14 +17,14 @@ const score = (results, numQuestions) => sum(values(results).map(scoreQuestion))
 /*
  * Score one question based on the fraction of test cases that passed.
  */
-const scoreQuestion = (cases) => sum(cases.map(c => c.passed ? 1 : 0)) / cases.length;
+const scoreQuestion = (cases) => sum(cases.map((c) => (c.passed ? 1 : 0))) / cases.length;
 
 /*
  * Get the timestamp of the code dumped from github.
  */
 const getTimestamp = (dir) => {
   try {
-    const file = path.join(dir, 'timestamp.txt')
+    const file = path.join(dir, 'timestamp.txt');
     return Number(fs.readFileSync(file, 'utf-8').trim());
   } catch {
     return null;
@@ -36,7 +36,7 @@ const getTimestamp = (dir) => {
  */
 const getSha = (dir) => {
   try {
-    const file = path.join(dir, 'sha.txt')
+    const file = path.join(dir, 'sha.txt');
     return fs.readFileSync(filename, 'utf-8').trim();
   } catch {
     return null;

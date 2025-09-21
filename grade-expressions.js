@@ -9,21 +9,21 @@
  *  -
  */
 
-import fs from 'node:fs';
-import glob from 'fast-glob';
-import { basename, dirname, join } from 'node:path';
 import child_process from 'node:child_process';
-import { promisify } from 'util';
+import fs from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 import { argv } from 'node:process';
-import { loadJSON, mapValues, dumpTSV, sum, count, average } from './modules/util.js'
 import { Command } from 'commander';
-import { getTimestamp, getSha } from './modules/grading.js';
+import glob from 'fast-glob';
+import { promisify } from 'util';
+import { getSha, getTimestamp } from './modules/grading.js';
+import { average, count, dumpTSV, loadJSON, mapValues, sum } from './modules/util.js';
 
 const { fromEntries, entries, keys, values, groupBy } = Object;
 
 const exec = promisify(child_process.exec);
 
-const numberOr = (n, value) => Number.isNaN(n) ? value : n;
+const numberOr = (n, value) => (Number.isNaN(n) ? value : n);
 
 const roster = loadJSON('../roster.json');
 
@@ -32,10 +32,9 @@ const roster = loadJSON('../roster.json');
  */
 const getAnswers = async (problemSet, handle) => {
   try {
-    const out = await exec(
-      `git show main:c/itp/expressions/${problemSet}/expressions.json`,
-      { cwd: `../github/${handle}.git/` }
-    );
+    const out = await exec(`git show main:c/itp/expressions/${problemSet}/expressions.json`, {
+      cwd: `../github/${handle}.git/`,
+    });
     return JSON.parse(out.stdout);
   } catch (e) {
     return [];
@@ -44,7 +43,7 @@ const getAnswers = async (problemSet, handle) => {
 
 const summarizeAttempts = (answers) => {
   const summary = { correct: 0, incorrect: 0, attempts: 0 };
-  answers.forEach(a => {
+  answers.forEach((a) => {
     summary.attempts++;
     if (a.correct) {
       summary.correct++;
@@ -59,7 +58,7 @@ const summary = (qs, numQuestions) => {
   const answered = entries(qs).length;
   return [
     answered,
-    answered === 0 ? 0 : average(values(qs).map(s => s.accuracy)),
+    answered === 0 ? 0 : average(values(qs).map((s) => s.accuracy)),
     answered === 0 ? 0 : count(values(qs), (s) => s.accuracy === 1.0) / answered,
     answered / numQuestions,
   ];
@@ -70,24 +69,36 @@ new Command()
   .description('Grade an expressions assignment')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
   .action((dir, opts) => {
-
     const { assignment_id, questions } = loadJSON(join(dir, 'assignment.json'));
 
     const results = glob.sync(`${dir}/**/expressions.json`);
 
-    console.log(['assignment_id', 'github', 'answered', 'average_accuracy', 'percent_first_try', 'percent_done', 'timestamp', 'sha' ].join('\t'));
+    console.log(
+      [
+        'assignment_id',
+        'github',
+        'answered',
+        'average_accuracy',
+        'percent_first_try',
+        'percent_done',
+        'timestamp',
+        'sha',
+      ].join('\t'),
+    );
 
-    results.forEach(file => {
-      const d         = dirname(file);
-      const github    = basename(d);
-      const label     = basename(dirname(d));
+    results.forEach((file) => {
+      const d = dirname(file);
+      const github = basename(d);
+      const label = basename(dirname(d));
       const timestamp = getTimestamp(d);
-      const sha       = getSha(d);
+      const sha = getSha(d);
       try {
         const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
         const grouped = groupBy(answers, (a) => a.name);
         const summarized = mapValues(grouped, summarizeAttempts);
-        console.log([assignment_id, github, ...summary(summarized, questions), timestamp, sha ].join('\t'));
+        console.log(
+          [assignment_id, github, ...summary(summarized, questions), timestamp, sha].join('\t'),
+        );
       } catch (e) {
         console.log(`Processing ${file}`);
         console.log(e);

@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
-import { promisify } from 'util';
-import { argv } from 'process';
 import { readFileSync } from 'fs';
+import { argv } from 'process';
+import { promisify } from 'util';
 
 const { fromEntries, entries, keys, values, groupBy } = Object;
 
@@ -26,28 +26,22 @@ const dumpJSON = (data) => console.log(JSON.stringify(data, null, 2));
 const readLines = (filename) => readFileSync(filename, { encoding: 'utf-8' }).split(/\n/);
 
 const dumpTSV = (objs) => {
-  objs.forEach(obj => {
+  objs.forEach((obj) => {
     console.log(values(obj).join('\t'));
   });
 };
 
 const fps = (n) => {
-  return (
-    n >= 0.85 ? 4
-      : n >= 0.70 ? 3
-      : n >= 0.45 ? 2
-      : n >= 0.20 ? 1
-      : 0
-  );
+  return n >= 0.85 ? 4 : n >= 0.7 ? 3 : n >= 0.45 ? 2 : n >= 0.2 ? 1 : 0;
 };
 
 const numbers = (a, b) => {
-  console.log(`in numbers with ${a} and ${b}`)
+  console.log(`in numbers with ${a} and ${b}`);
   return ns.map(Number);
 };
 
 const exec = (command, cwd) => {
-  return execSync(command, { cwd, encoding: 'utf-8', stdio: [ 'pipe', 'pipe', 'ignore' ] });
+  return execSync(command, { cwd, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
 };
 
 export {

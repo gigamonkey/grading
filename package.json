@@ -19,5 +19,8 @@
     "marked": "^16.2.1",
     "nunjucks": "^3.2.4",
     "pugsql": "^0.0.23"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.4"
   }
 }
