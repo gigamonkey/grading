@@ -12,31 +12,30 @@
 import child_process from 'node:child_process';
 import fs from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { argv } from 'node:process';
+import { promisify } from 'node:util';
 import { Command } from 'commander';
 import glob from 'fast-glob';
-import { promisify } from 'util';
 import { getSha, getTimestamp } from './modules/grading.js';
-import { average, count, dumpTSV, loadJSON, mapValues, sum } from './modules/util.js';
+import { average, count, loadJSON, mapValues } from './modules/util.js';
 
 const { fromEntries, entries, keys, values, groupBy } = Object;
 
 const exec = promisify(child_process.exec);
 
-const numberOr = (n, value) => (Number.isNaN(n) ? value : n);
+const _numberOr = (n, value) => (Number.isNaN(n) ? value : n);
 
-const roster = loadJSON('../roster.json');
+const _roster = loadJSON('../roster.json');
 
 /*
  * Get expressions.json file from local git repo
  */
-const getAnswers = async (problemSet, handle) => {
+const _getAnswers = async (problemSet, handle) => {
   try {
     const out = await exec(`git show main:c/itp/expressions/${problemSet}/expressions.json`, {
       cwd: `../github/${handle}.git/`,
     });
     return JSON.parse(out.stdout);
-  } catch (e) {
+  } catch {
     return [];
   }
 };
@@ -68,7 +67,7 @@ new Command()
   .name('grade-expressions')
   .description('Grade an expressions assignment')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
-  .action((dir, opts) => {
+  .action((dir, _opts) => {
     const { assignment_id, questions } = loadJSON(join(dir, 'assignment.json'));
 
     const results = glob.sync(`${dir}/**/expressions.json`);
@@ -89,7 +88,6 @@ new Command()
     results.forEach((file) => {
       const d = dirname(file);
       const github = basename(d);
-      const label = basename(dirname(d));
       const timestamp = getTimestamp(d);
       const sha = getSha(d);
       try {

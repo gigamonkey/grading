@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { count, sum, values } from './util.js';
 
 // Utility functions for grading scripts.
@@ -37,7 +37,7 @@ const getTimestamp = (dir) => {
 const getSha = (dir) => {
   try {
     const file = path.join(dir, 'sha.txt');
-    return fs.readFileSync(filename, 'utf-8').trim();
+    return fs.readFileSync(file, 'utf-8').trim();
   } catch {
     return null;
   }

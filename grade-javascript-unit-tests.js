@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 import { readFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname } from 'node:path';
 import vm from 'node:vm';
 import { Command } from 'commander';
 import glob from 'fast-glob';
 import { textIfOk } from './modules/fetch-helpers.js';
 import { getSha, getTimestamp, numCorrect } from './modules/grading.js';
-import { count, loadJSON, values } from './modules/util.js';
+import { loadJSON } from './modules/util.js';
 
 const get = (name, context) => {
   try {
@@ -70,7 +70,7 @@ const runTestCase = (fn, test) => {
   if (effects !== undefined) {
     expected = effects.map((i) => actualArgs[i]);
     got = effects.map((i) => testArgs[i]);
-    if (effects.length == 1) {
+    if (effects.length === 1) {
       expected = expected[0];
       got = got[0];
     }
@@ -132,7 +132,7 @@ const runTests = (testcases, code) => {
   );
 };
 
-const noResults = (testcases) => {
+const _noResults = (testcases) => {
   const { referenceImpls, allCases, sideEffects, extraChecks } = testcases;
 
   const context = {};
@@ -163,11 +163,11 @@ const noResults = (testcases) => {
 
 const isCorrect = (result) => (result.every((q) => q.passed) ? 1 : 0);
 
-const empty = (testcases) => {
+const _empty = (testcases) => {
   return new Array(Object.keys(testcases.allCases).length).fill(0);
 };
 
-const summary = (results) => {
+const _summary = (results) => {
   return Object.fromEntries(
     Object.entries(results).map(([name, r]) => [name, summarizeResults(r)]),
   );
@@ -179,11 +179,6 @@ const summarizeResults = (results) => {
   } else {
     return results.reduce((t, x) => t + (x.passed ? 1 : 0), 0) / results.length;
   }
-};
-
-const loadTestcases = (file) => {
-  const testcasesSource = readFileSync(file, 'utf-8');
-  return getTestcases(testcasesSource);
 };
 
 const fetchTestcases = async (url) => {
@@ -198,7 +193,7 @@ const getTestcases = (testcasesSource) => {
   return get('testcases', ctx);
 };
 
-const score = (results) => {
+const _score = (results) => {
   return numCorrect(results) / Object.keys(results).length;
 };
 
@@ -217,7 +212,7 @@ new Command()
   .name('javascript-unit-tests-questions')
   .description('Run unit tests against dumped Javascript code.')
   .argument('<dir>', 'Code directory.')
-  .action(async (dir, opts) => {
+  .action(async (dir, _opts) => {
     const assignment = loadJSON(`${dir}/assignment.json`);
 
     try {
@@ -240,7 +235,7 @@ new Command()
           const code = readFileSync(file, 'utf-8');
           const results = runTests(testcases, code);
           dumpResults(assignmentId, github, timestamp, sha, results);
-        } catch (e) {
+        } catch (_e) {
           dumpResults(assignmentId, github, timestamp, sha, emptyResults(testcases));
         }
       });

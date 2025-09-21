@@ -1,29 +1,17 @@
 #!/usr/bin/env node
 
+import { statSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { Command } from 'commander';
 import glob from 'fast-glob';
-import { readFileSync, statSync } from 'fs';
 import { getSha, getTimestamp, numCorrect, score } from './modules/grading.js';
-import {
-  argv,
-  count,
-  dumpTSV,
-  entries,
-  exec,
-  fromEntries,
-  loadJSON,
-  mapValues,
-  numbers,
-  sum,
-  values,
-} from './modules/util.js';
+import { loadJSON } from './modules/util.js';
 
 new Command()
   .name('grade-java-unit-tests')
   .description('Score results.json files from TestRunner')
   .argument('<dir>', 'Directory holding student code and results.json files')
-  .action((dir, opts) => {
+  .action((dir, _opts) => {
     const { assignment_id, questions } = loadJSON(join(dir, 'assignment.json'));
     const label = basename(dir);
     const results = glob.sync(`${dir}/**/results.json`);
