@@ -1,5 +1,83 @@
 -- Generated with pugilify v0.0.23.
 
+-- assignment_scores ---------------------------------------
+
+-- :name assignmentScores :all
+select * from assignment_scores;
+
+-- :name insertAssignmentScore :insert
+insert into assignment_scores
+  (user_id, assignment_id, score)
+values
+  ($userId, $assignmentId, $score);
+
+-- :name makeAssignmentScore :insert
+insert into assignment_scores
+  (user_id, assignment_id, score)
+values
+  ($userId, $assignmentId, $score);
+
+-- :name makeAssignmentScoreWithDefaultValues :insert
+insert into assignment_scores
+  (user_id, assignment_id, score)
+values
+  ($userId, $assignmentId, $score);
+
+
+-- assignment_weights --------------------------------------
+
+-- :name assignmentWeights :all
+select * from assignment_weights;
+
+-- :name insertAssignmentWeight :insert
+insert into assignment_weights
+  (assignment_id, standard, weight)
+values
+  ($assignmentId, $standard, $weight);
+
+-- :name assignmentWeightForGradedAssignment :get
+select * from assignment_weights where assignment_id = $assignmentId;
+
+-- :name assignmentWeightsForGradedAssignment :all
+select * from assignment_weights where assignment_id = $assignmentId;
+
+-- :name makeAssignmentWeight :insert
+insert into assignment_weights
+  (assignment_id, standard, weight)
+values
+  ($assignmentId, $standard, $weight);
+
+-- :name makeAssignmentWeightWithDefaultValues :insert
+insert into assignment_weights
+  (assignment_id, standard, weight)
+values
+  ($assignmentId, $standard, $weight);
+
+
+-- expressions ---------------------------------------------
+
+-- :name expressions :all
+select * from expressions;
+
+-- :name insertExpression :insert
+insert into expressions
+  (assignment_id, github, answered, average_accuracy, percent_first_try, percent_done, timestamp, sha)
+values
+  ($assignmentId, $github, $answered, $averageAccuracy, $percentFirstTry, $percentDone, $timestamp, $sha);
+
+-- :name makeExpression :insert
+insert into expressions
+  (assignment_id, github, answered, average_accuracy, percent_first_try, percent_done, timestamp, sha)
+values
+  ($assignmentId, $github, $answered, $averageAccuracy, $percentFirstTry, $percentDone, $timestamp, $sha);
+
+-- :name makeExpressionWithDefaultValues :insert
+insert into expressions
+  (assignment_id, github, answered, average_accuracy, percent_first_try, percent_done, timestamp, sha)
+values
+  ($assignmentId, $github, $answered, $averageAccuracy, $percentFirstTry, $percentDone, $timestamp, $sha);
+
+
 -- fps -----------------------------------------------------
 
 -- :name fps :all
@@ -16,6 +94,84 @@ select * from graded_assignments;
 
 -- :name insertGradedAssignment :insert
 insert into graded_assignments (assignment_id) values ($assignmentId);
+
+
+-- hand_graded ---------------------------------------------
+
+-- :name handGraded :all
+select * from hand_graded;
+
+-- :name insertHandGraded :insert
+insert into hand_graded (assignment_id, github, grade) values ($assignmentId, $github, $grade);
+
+-- :name makeHandGraded :insert
+insert into hand_graded (assignment_id, github, grade) values ($assignmentId, $github, $grade);
+
+-- :name makeHandGradedWithDefaultValues :insert
+insert into hand_graded (assignment_id, github, grade) values ($assignmentId, $github, $grade);
+
+
+-- hand_scored ---------------------------------------------
+
+-- :name handScored :all
+select * from hand_scored;
+
+-- :name insertHandScored :insert
+insert into hand_scored (assignment_id, github, score) values ($assignmentId, $github, $score);
+
+-- :name makeHandScored :insert
+insert into hand_scored (assignment_id, github, score) values ($assignmentId, $github, $score);
+
+-- :name makeHandScoredWithDefaultValues :insert
+insert into hand_scored (assignment_id, github, score) values ($assignmentId, $github, $score);
+
+
+-- java_unit_tests -----------------------------------------
+
+-- :name javaUnitTests :all
+select * from java_unit_tests;
+
+-- :name insertJavaUnitTest :insert
+insert into java_unit_tests
+  (assignment_id, github, correct, score, timestamp, sha)
+values
+  ($assignmentId, $github, $correct, $score, $timestamp, $sha);
+
+-- :name makeJavaUnitTest :insert
+insert into java_unit_tests
+  (assignment_id, github, correct, score, timestamp, sha)
+values
+  ($assignmentId, $github, $correct, $score, $timestamp, $sha);
+
+-- :name makeJavaUnitTestWithDefaultValues :insert
+insert into java_unit_tests
+  (assignment_id, github, correct, score, timestamp, sha)
+values
+  ($assignmentId, $github, $correct, $score, $timestamp, $sha);
+
+
+-- javascript_unit_tests -----------------------------------
+
+-- :name javascriptUnitTests :all
+select * from javascript_unit_tests;
+
+-- :name insertJavascriptUnitTest :insert
+insert into javascript_unit_tests
+  (assignment_id, github, question, answered, correct, timestamp, sha)
+values
+  ($assignmentId, $github, $question, $answered, $correct, $timestamp, $sha);
+
+-- :name makeJavascriptUnitTest :insert
+insert into javascript_unit_tests
+  (assignment_id, github, question, answered, correct, timestamp, sha)
+values
+  ($assignmentId, $github, $question, $answered, $correct, $timestamp, $sha);
+
+-- :name makeJavascriptUnitTestWithDefaultValues :insert
+insert into javascript_unit_tests
+  (assignment_id, github, question, answered, correct, timestamp, sha)
+values
+  ($assignmentId, $github, $question, $answered, $correct, $timestamp, $sha);
 
 
 -- normalized_answers --------------------------------------

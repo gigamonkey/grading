@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 import glob from 'fast-glob';
-import path from 'path';
-import vm from 'vm';
+import { basename, dirname, join } from 'node:path';
+import vm from 'node:vm';
 import { Command } from 'commander';
-import { count, loadJSON } from './modules/util.js';
+import { count, loadJSON, values } from './modules/util.js';
 import { textIfOk } from './modules/fetch-helpers.js';
+import { getTimestamp, getSha, numCorrect } from './modules/grading.js';
 
 const get = (name, context) => {
   try {
@@ -153,10 +154,6 @@ const noResults = (testcases) => {
 
 const isCorrect = (result) => result.every(q => q.passed) ? 1 : 0;
 
-const numCorrect = (results) => {
-  return count(Object.values(results), (r) => r?.every(x => x.passed) ?? 0);
-}
-
 const empty = (testcases) => {
   return new Array(Object.keys(testcases.allCases).length).fill(0);
 }
@@ -194,31 +191,15 @@ const score = (results) => {
   return numCorrect(results) / Object.keys(results).length;
 };
 
-const dumpResults = (github, assignmentId, timestamp, sha, results) => {
+const dumpResults = (assignmentId, github, timestamp, sha, results) => {
   Object.entries(results).forEach(([question, result]) => {
     const answered = result === null ? 0 : 1;
     const correct = result === null ? 0 : isCorrect(result);
-    console.log([github, assignmentId, question, answered, correct, timestamp, sha].join('\t'));
+    console.log([assignmentId, github, question, answered, correct, timestamp, sha].join('\t'));
   });
 };
 
 const emptyResults = (testcases) => Object.fromEntries(Object.keys(testcases.allCases).map(n => [n, null]));
-
-const getTimestamp = (filename) => {
-  try {
-    return Number(readFileSync(filename, 'utf-8').trim());
-  } catch {
-    return 0;
-  }
-};
-
-const getSha = (filename) => {
-  try {
-    return readFileSync(filename, 'utf-8').trim();
-  } catch (e) {
-    return '';
-  }
-};
 
 new Command()
   .name('javascript-unit-tests-questions')
@@ -231,22 +212,21 @@ new Command()
     try {
       const testcases = await fetchTestcases(assignment.url);
 
-      console.log(['github', 'assignment_id', 'question', 'answered', 'correct', 'timestamp', 'sha'].join('\t'));
+      console.log(['assignment_id', 'github', 'question', 'answered', 'correct', 'timestamp', 'sha'].join('\t'));
 
       glob.sync(`${dir}/**/code.js`).forEach(file => {
-        //console.warn(`Scoring ${file}`);
-        const github = path.basename(path.dirname(file));
+        const d            = dirname(file);
+        const github       = basename(d);
         const assignmentId = assignment.assignment_id;
-
-        const timestamp = getTimestamp(path.join(path.dirname(file), 'timestamp.txt'));
-        const sha = getSha(path.join(path.dirname(file), 'sha.txt'));
+        const timestamp    = getTimestamp(d);
+        const sha          = getSha(d);
 
         try {
           const code = readFileSync(file, 'utf-8');
           const results = runTests(testcases, code);
-          dumpResults(github, assignmentId, timestamp, sha, results);
+          dumpResults(assignmentId, github, timestamp, sha, results);
         } catch (e) {
-          dumpResults(github, assignmentId, timestamp, sha, emptyResults(testcases));
+          dumpResults(assignmentId, github, timestamp, sha, emptyResults(testcases));
         }
       });
 

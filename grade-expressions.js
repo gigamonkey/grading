@@ -9,14 +9,15 @@
  *  -
  */
 
-import fs from 'fs';
+import fs from 'node:fs';
 import glob from 'fast-glob';
-import path from 'path';
-import child_process from 'child_process';
+import { basename, dirname, join } from 'node:path';
+import child_process from 'node:child_process';
 import { promisify } from 'util';
-import { argv } from 'process';
+import { argv } from 'node:process';
 import { loadJSON, mapValues, dumpTSV, sum, count, average } from './modules/util.js'
 import { Command } from 'commander';
+import { getTimestamp, getSha } from './modules/grading.js';
 
 const { fromEntries, entries, keys, values, groupBy } = Object;
 
@@ -64,40 +65,24 @@ const summary = (qs, numQuestions) => {
   ];
 };
 
-const getTimestamp = (filename) => {
-  try {
-    return Number(fs.readFileSync(filename, 'utf-8').trim());
-  } catch (e) {
-    return 0;
-  }
-};
-
-const getSha = (filename) => {
-  try {
-    return fs.readFileSync(filename, 'utf-8').trim();
-  } catch (e) {
-    return '';
-  }
-};
-
-
 new Command()
   .name('grade-expressions')
   .description('Grade an expressions assignment')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
   .action((dir, opts) => {
 
-    const { assignment_id, questions } = loadJSON(path.join(dir, 'assignment.json'));
+    const { assignment_id, questions } = loadJSON(join(dir, 'assignment.json'));
 
     const results = glob.sync(`${dir}/**/expressions.json`);
 
     console.log(['assignment_id', 'github', 'answered', 'average_accuracy', 'percent_first_try', 'percent_done', 'timestamp', 'sha' ].join('\t'));
 
     results.forEach(file => {
-      const github = path.basename(path.dirname(file));
-      const label = path.basename(path.dirname(path.dirname(file)));
-      const timestamp = getTimestamp(path.join(path.dirname(file), 'timestamp.txt'));
-      const sha = getSha(path.join(path.dirname(file), 'sha.txt'));
+      const d         = dirname(file);
+      const github    = basename(d);
+      const label     = basename(dirname(d));
+      const timestamp = getTimestamp(d);
+      const sha       = getSha(d);
       try {
         const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
         const grouped = groupBy(answers, (a) => a.name);
