@@ -12,7 +12,7 @@ const numCorrect = (results) => count(values(results), (r) => r?.every((x) => x.
 /*
  * Score a whole test based on the average per-question score.
  */
-const score = (results, numQuestions) => sum(values(results).map(scoreQuestion)) / numQuestions;
+const scoreTest = (results, numQuestions) => sum(values(results).map(scoreQuestion)) / numQuestions;
 
 /*
  * Score one question based on the fraction of test cases that passed.
@@ -43,4 +43,4 @@ const getSha = (dir) => {
   }
 };
 
-export { getTimestamp, getSha, numCorrect, score, scoreQuestion };
+export { getTimestamp, getSha, numCorrect, scoreTest, scoreQuestion };

@@ -1,5 +1,13 @@
 PRAGMA foreign_keys = ON;
 
+-- Exported from site db assignments_table. Should move to fetching from server
+-- via API.
+CREATE TABLE IF NOT EXISTS assignments (
+  assignment_id INTEGER,
+  title TEXT,
+  PRIMARY KEY (assignment_id)
+);
+
 -- Assignments that should be graded. This table mostly exists so we can delete
 -- an assignment and all its associated data by deleting it from this table and
 -- letting the delete cascade to everything that references it. (Assuming those
@@ -14,14 +22,19 @@ CREATE TABLE IF NOT EXISTS graded_assignments (
 CREATE TABLE IF NOT EXISTS assignment_weights (
   assignment_id INTEGER,
   standard TEXT,
-  weight REAL,
-  FOREIGN KEY (assignment_id) REFERENCES graded_assignments(assignment_id) ON DELETE CASCADE
+  weight REAL
+);
+
+-- Assignments that are graded by scoring some number of individual questions.
+CREATE TABLE IF NOT EXISTS scored_question_assignments (
+  assignment_id INTEGER PRIMARY KEY,
+  questions INTEGER NOT NULL
 );
 
 --------------------------------------------------------------------------------
 -- Expression problem sets. Autograded from answers.json files in git.
 
-CREATE TABLE expressions(
+CREATE TABLE IF NOT EXISTS expressions(
   assignment_id INTEGER,
   github TEXT,
   answered INTEGER,
@@ -32,13 +45,22 @@ CREATE TABLE expressions(
   sha TEXT
 );
 
+DROP VIEW IF EXISTS expressions_scores;
+CREATE VIEW expressions_scores AS
+SELECT
+  assignment_id,
+  user_id,
+  percent_done score
+FROM expressions
+JOIN roster using (github);
+
 --------------------------------------------------------------------------------
 -- Javascript unit tests. Autograded by running unit tests and recording how many
 -- questions were correct (all test cases passed) and also a score that gives
 -- partial credit for each question based on the fraction of test cases that
 -- passed.
 
-CREATE TABLE javascript_unit_tests(
+CREATE TABLE IF NOT EXISTS javascript_unit_tests(
   assignment_id INTEGER,
   github TEXT,
   question TEXT,
@@ -48,13 +70,24 @@ CREATE TABLE javascript_unit_tests(
   sha TEXT
 );
 
+DROP VIEW IF EXISTS javascript_unit_tests_scores;
+CREATE VIEW javascript_unit_tests_scores AS
+SELECT
+  assignment_id,
+  user_id,
+  sum(correct) / cast(questions as real) score
+FROM javascript_unit_tests
+JOIN scored_question_assignments USING (assignment_id)
+JOIN roster USING (github)
+GROUP BY assignment_id, github;
+
 --------------------------------------------------------------------------------
 -- Java unit tests. Autograded by running unit tests and recording how many
 -- questions were correct (all test cases passed) and also a score that gives
 -- partial credit for each question based on the fraction of test cases that
 -- passed.
 
-CREATE TABLE java_unit_tests(
+CREATE TABLE IF NOT EXISTS java_unit_tests(
   assignment_id INTEGER,
   github TEXT,
   correct INTEGER,
@@ -63,25 +96,46 @@ CREATE TABLE java_unit_tests(
   sha TEXT
 );
 
---------------------------------------------------------------------------------
--- Hand graded assignments. No score since I just assign 0-4 grade to each
--- student.
+DROP VIEW IF EXISTS java_unit_tests_scores;
+CREATE VIEW java_unit_tests_scores AS
+SELECT
+  assignment_id,
+  user_id,
+  (score * questions + sum(hg.correct)) / questions score
+FROM java_unit_tests
+JOIN hand_graded_questions hg using (assignment_id, github)
+JOIN scored_question_assignments USING (assignment_id)
+JOIN roster USING (github)
+GROUP BY assignment_id, github;
 
-CREATE TABLE hand_graded(
+
+--------------------------------------------------------------------------------
+-- Hand graded stuff. These are filled by importing data that is produced in a
+-- Google sheet or some other system where we don't want to load the details
+-- into the database.
+
+-- Whole assignment graded 0-4
+CREATE TABLE IF NOT EXISTS hand_graded(
   assignment_id INTEGER,
   github TEXT,
   grade INTEGER
 );
 
---------------------------------------------------------------------------------
--- Hand scored assignments. Somehow I assigned a 0.0 to 1.0 score to each
--- student. Sometimes this is a way to deal with a mostly auto-graded assignment
--- that needs a few questions hand graded.
-
-CREATE TABLE hand_scored(
+-- Whole assignment scored 0.0 to 1.0. Not sure I actually need this any more
+-- since we can use hand_graded_questions for many such cases.
+CREATE TABLE IF NOT EXISTS hand_scored(
   assignment_id INTEGER,
   github TEXT,
   score REAL
+);
+
+-- Individual questions hand graded. At the moment this is used to augment
+-- autograded unit test questions when certain questions can't be autograded.
+CREATE TABLE IF NOT EXISTS hand_graded_questions(
+  assignment_id INTEGER,
+  github TEXT,
+  question TEXT,
+  correct INTEGER
 );
 
 --------------------------------------------------------------------------------
@@ -136,6 +190,41 @@ CREATE TABLE IF NOT EXISTS student_answers (
 );
 
 
+-- Compute per question scores for each student. Question score is computed
+-- differently depending on the kind of question. Currently handled are choices,
+-- freeanswer, ad mchoices.
+DROP VIEW IF EXISTS question_scores;
+CREATE VIEW question_scores AS
+WITH mchoices AS (
+  SELECT
+    assignment_id,
+    question_number,
+    SUM(CASE WHEN score > 0 THEN score ELSE 0 END) high,
+    SUM(CASE WHEN score < 0 THEN score ELSE 0 END) low
+  FROM questions
+  JOIN scored_answers USING (assignment_id, question_number)
+  WHERE kind = 'mchoices'
+  GROUP BY assignment_id, question_number
+)
+SELECT
+  assignment_id,
+  question_number,
+  user_id,
+  kind,
+  group_concat(raw_answer) answers,
+  CASE
+    WHEN kind = 'freeanswer' THEN score
+    WHEN kind = 'choices' THEN score
+    WHEN KIND = 'mchoices' THEN (sum(score) - low) / (high - low)
+  END score
+FROM questions
+JOIN student_answers USING (assignment_id, question_number)
+JOIN normalized_answers USING (assignment_id, question_number, raw_answer)
+JOIN scored_answers USING (assignment_id, question_number, answer)
+LEFT JOIN mchoices USING (assignment_id, question_number)
+GROUP BY user_id, assignment_id, question_number
+ORDER BY assignment_id, question_number, user_id;
+
 --------------------------------------------------------------------------------
 -- Responses to prompts. Just graded on a 0-4 scale.
 
@@ -146,7 +235,6 @@ CREATE TABLE IF NOT EXISTS prompt_response_grades (
   grade INTEGER,
   PRIMARY KEY (user_id, posted)
 );
-
 
 --------------------------------------------------------------------------------
 -- Graded by rubric. For each student we compare their work against a rubric and
@@ -164,9 +252,11 @@ CREATE TABLE IF NOT EXISTS rubric_grades (
 --------------------------------------------------------------------------------
 -- Raw scores per user per assignment distilled from other tables. This could
 -- possibly be a view created as a union of a the computed scores from all the
--- different specific ways of grading an assignment.
+-- different specific ways of grading an assignment. For assignments that are
+-- just graded on 0-4 we fill this table with the maximum score that would
+-- achieve that grade, e.g. 1.0 for a 4, 0.84 for a 3, etc.
 
-CREATE TABLE assignment_scores (
+CREATE TABLE IF NOT EXISTS assignment_scores (
   user_id TEXT,
   assignment_id INTEGER,
   score REAL
@@ -204,62 +294,51 @@ CREATE TABLE IF NOT EXISTS roster (
   course_id TEXT
 );
 
--- Compute per question scores for each student. Question score is computed
--- differently depending on the kind of question. Currently handled are choices,
--- freeanswer, ad mchoices.
-drop view if exists question_scores;
-create view question_scores as
-with mchoices as (
-  select
-    assignment_id,
-    question_number,
-    sum(case when score > 0 then score else 0 end) high,
-    sum(case when score < 0 then score else 0 end) low
-  from questions
-  join scored_answers using (assignment_id, question_number)
-  where kind = 'mchoices'
-  group by assignment_id, question_number
-)
-select
-  assignment_id,
-  question_number,
-  user_id,
-  kind,
-  group_concat(raw_answer) answers,
-  case
-    when kind = 'freeanswer' then score
-    when kind = 'choices' then score
-    when kind = 'mchoices' then (sum(score) - low) / (high - low)
-  end score
-from questions
-join student_answers using (assignment_id, question_number)
-join normalized_answers using (assignment_id, question_number, raw_answer)
-join scored_answers using (assignment_id, question_number, answer)
-left join mchoices using (assignment_id, question_number)
-group by user_id, assignment_id, question_number
-order by assignment_id, question_number, user_id;
-
 drop view if exists grades;
-create view grades as
-with
-   num_questions as (select assignment_id, count(*) num_questions from questions group by assignment_id),
-   scores as (
-     select assignment_id, user_id, sum(score == 0) wrong, sum(coalesce(score, 0)) / num_questions score
-     from roster
-     join question_scores using (user_id)
-     join num_questions using (assignment_id)
-     group by assignment_id, user_id
-   )
-select assignment_id, user_id, period, sortable_name, wrong, score, max(coalesce(fps.grade, 0)) grade
-     from roster
-     left join scores using (user_id)
-     left join fps on score >= minimum
-     where period in (1, 2)
-     group by assignment_id, user_id
-     order by period, sortable_name;
+-- create view grades as
+-- with
+--    num_questions as (select assignment_id, count(*) num_questions from questions group by assignment_id),
+--    scores as (
+--      select assignment_id, user_id, sum(score == 0) wrong, sum(coalesce(score, 0)) / num_questions score
+--      from roster
+--      join question_scores using (user_id)
+--      join num_questions using (assignment_id)
+--      group by assignment_id, user_id
+--    )
+-- select assignment_id, user_id, period, sortable_name, wrong, score, max(coalesce(fps.grade, 0)) grade
+--      from roster
+--      left join scores using (user_id)
+--      left join fps on score >= minimum
+--      where period in (1, 2)
+--      group by assignment_id, user_id
+--      order by period, sortable_name;
 
 -- Assignment scores turned into per-standard grades for the assignment.
 -- FIXME: should this table have the weight too? Probably.
+
+DROP VIEW IF EXISTS all_scores;
+CREATE VIEW all_scores AS
+SELECT * from expressions_scores
+UNION
+SELECT * from javascript_unit_tests_scores
+UNION
+SELECT * from java_unit_tests_scores;
+
+DROP VIEW IF EXISTS all_grades;
+CREATE VIEW all_grades AS
+SELECT
+  user_id,
+  assignment_id,
+  standard,
+  score,
+  max(grade) grade
+FROM all_scores
+JOIN assignment_weights using (assignment_id)
+JOIN fps on score >= minimum
+GROUP BY user_id, assignment_id, standard;
+
+
+DROP VIEW IF EXISTS assignment_grades;
 CREATE VIEW assignment_grades as
 SELECT
   user_id,
@@ -273,6 +352,7 @@ JOIN fps on score >= minimum
 GROUP BY user_id, assignment_id, standard;
 
 -- Standard grades derived from assignment grades and assignment weights
+DROP VIEW IF EXISTS standards;
 CREATE VIEW standards as
 WITH combined AS (
   SELECT

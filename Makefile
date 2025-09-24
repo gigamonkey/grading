@@ -1,9 +1,13 @@
-all:
-	echo "Use db.db to rebuild db."
+all: modules/pugly.sql db.db
 
-db.db:
+db.db: schema.sql
 	sqlite3 $@ < schema.sql
-	sqlite3 $@ < load-roster.sql
+
+check:
+	npx @biomejs/biome check --write
+
+modules/pugly.sql: schema.sql
+	npx puglify schema.sql > $@
 
 clean:
 	rm -f db.db*

@@ -9,6 +9,7 @@
  *  -
  */
 
+import { DB } from 'pugsql';
 import child_process from 'node:child_process';
 import fs from 'node:fs';
 import { basename, dirname, join } from 'node:path';
@@ -19,6 +20,10 @@ import { getSha, getTimestamp } from './modules/grading.js';
 import { average, count, loadJSON, mapValues, values } from './modules/util.js';
 
 const { entries, groupBy } = Object;
+
+const db = new DB('db.db')
+  .addQueries('modules/pugly.sql')
+  .addQueries('modules/queries.sql');
 
 const exec = promisify(child_process.exec);
 
@@ -55,12 +60,12 @@ const summarizeAttempts = (answers) => {
 
 const summary = (qs, numQuestions) => {
   const answered = entries(qs).length;
-  return [
+  return {
     answered,
-    answered === 0 ? 0 : average(values(qs).map((s) => s.accuracy)),
-    answered === 0 ? 0 : count(values(qs), (s) => s.accuracy === 1.0) / answered,
-    answered / numQuestions,
-  ];
+    averageAccuracy: answered === 0 ? 0 : average(values(qs).map((s) => s.accuracy)),
+    percentFirstTry: answered === 0 ? 0 : count(values(qs), (s) => s.accuracy === 1.0) / answered,
+    percentDone: answered / numQuestions,
+  };
 };
 
 new Command()
@@ -68,39 +73,29 @@ new Command()
   .description('Grade an expressions assignment')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
   .action((dir, _opts) => {
-    const { assignment_id, questions } = loadJSON(join(dir, 'assignment.json'));
+    const { assignment_id: assignmentId, questions } = loadJSON(join(dir, 'assignment.json'));
 
     const results = glob.sync(`${dir}/**/expressions.json`);
 
-    console.log(
-      [
-        'assignment_id',
-        'github',
-        'answered',
-        'average_accuracy',
-        'percent_first_try',
-        'percent_done',
-        'timestamp',
-        'sha',
-      ].join('\t'),
-    );
+    db.transaction(() => {
 
-    results.forEach((file) => {
-      const d = dirname(file);
-      const github = basename(d);
-      const timestamp = getTimestamp(d);
-      const sha = getSha(d);
-      try {
-        const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
-        const grouped = groupBy(answers, (a) => a.name);
-        const summarized = mapValues(grouped, summarizeAttempts);
-        console.log(
-          [assignment_id, github, ...summary(summarized, questions), timestamp, sha].join('\t'),
-        );
-      } catch (e) {
-        console.log(`Processing ${file}`);
-        console.log(e);
-      }
+      db.clearExpression({assignmentId});
+
+      results.forEach((file) => {
+        const d = dirname(file);
+        const github = basename(d);
+        const timestamp = getTimestamp(d);
+        const sha = getSha(d);
+        try {
+          const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
+          const grouped = groupBy(answers, (a) => a.name);
+          const summarized = mapValues(grouped, summarizeAttempts);
+          db.insertExpression({assignmentId, github, ...summary(summarized, questions), timestamp, sha });
+        } catch (e) {
+          console.log(`Processing ${file}`);
+          console.log(e);
+        }
+      });
     });
   })
   .parse();

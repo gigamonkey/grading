@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { DB } from 'pugsql';
 import { readFileSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import vm from 'node:vm';
@@ -8,6 +9,12 @@ import glob from 'fast-glob';
 import { textIfOk } from './modules/fetch-helpers.js';
 import { getSha, getTimestamp, numCorrect } from './modules/grading.js';
 import { loadJSON } from './modules/util.js';
+
+const { entries, fromEntries, keys } = Object;
+
+const db = new DB('db.db')
+  .addQueries('modules/pugly.sql')
+  .addQueries('modules/queries.sql');
 
 const get = (name, context) => {
   try {
@@ -29,7 +36,7 @@ const equals = (o1, o2) => {
   if (t1 === t2) {
     if (t1 === 'object') {
       const same = (k) => equals(o1[k], o2[k]);
-      return Object.keys(o1).every(same) && Object.keys(o2).every(same);
+      return keys(o1).every(same) && keys(o2).every(same);
     } else {
       return o1 === o2;
     }
@@ -47,7 +54,7 @@ const isFunction = (v) => typeof v === 'function';
 // nested within other objects.
 const copyArgs = (args) => {
   // Find the function arguments and where they are.
-  const functs = Object.fromEntries(args.map((v, i) => [i, v]).filter((x) => isFunction(x[1])));
+  const functs = fromEntries(args.map((v, i) => [i, v]).filter((x) => isFunction(x[1])));
 
   // Null them out.
   const noFuncts = args.map((a, i) => (i in functs ? null : a));
@@ -57,7 +64,7 @@ const copyArgs = (args) => {
   const cloned = structuredClone(noFuncts);
 
   // Put back the function args
-  Object.entries(functs).forEach(([i, f]) => {
+  entries(functs).forEach(([i, f]) => {
     cloned[i] = f;
   });
 
@@ -110,8 +117,8 @@ const runTests = (testcases, code) => {
   const script = new vm.Script(code);
   script.runInNewContext(context);
 
-  const actualCases = Object.fromEntries(
-    Object.entries(allCases).map(([name, cases]) => {
+  const actualCases = fromEntries(
+    entries(allCases).map(([name, cases]) => {
       return [
         name,
         cases.map((args) => {
@@ -127,8 +134,8 @@ const runTests = (testcases, code) => {
     }),
   );
 
-  return Object.fromEntries(
-    Object.entries(actualCases).map(([name, cases]) => {
+  return fromEntries(
+    entries(actualCases).map(([name, cases]) => {
       return [name, fnResults(get(name, context), cases)];
     }),
   );
@@ -139,8 +146,8 @@ const _noResults = (testcases) => {
 
   const context = {};
 
-  const actualCases = Object.fromEntries(
-    Object.entries(allCases).map(([name, cases]) => {
+  const actualCases = fromEntries(
+    entries(allCases).map(([name, cases]) => {
       return [
         name,
         cases.map((args) => {
@@ -156,8 +163,8 @@ const _noResults = (testcases) => {
     }),
   );
 
-  return Object.fromEntries(
-    Object.entries(actualCases).map(([name, cases]) => {
+  return fromEntries(
+    entries(actualCases).map(([name, cases]) => {
       return [name, fnResults(get(name, context), cases)];
     }),
   );
@@ -166,13 +173,11 @@ const _noResults = (testcases) => {
 const isCorrect = (result) => (result.every((q) => q.passed) ? 1 : 0);
 
 const _empty = (testcases) => {
-  return new Array(Object.keys(testcases.allCases).length).fill(0);
+  return new Array(keys(testcases.allCases).length).fill(0);
 };
 
 const _summary = (results) => {
-  return Object.fromEntries(
-    Object.entries(results).map(([name, r]) => [name, summarizeResults(r)]),
-  );
+  return fromEntries(entries(results).map(([name, r]) => [name, summarizeResults(r)]));
 };
 
 const summarizeResults = (results) => {
@@ -196,53 +201,56 @@ const getTestcases = (testcasesSource) => {
 };
 
 const _score = (results) => {
-  return numCorrect(results) / Object.keys(results).length;
+  return numCorrect(results) / keys(results).length;
 };
 
 const dumpResults = (assignmentId, github, timestamp, sha, results) => {
-  Object.entries(results).forEach(([question, result]) => {
+  entries(results).forEach(([question, result]) => {
     const answered = result === null ? 0 : 1;
     const correct = result === null ? 0 : isCorrect(result);
-    console.log([assignmentId, github, question, answered, correct, timestamp, sha].join('\t'));
+    db.insertJavascriptUnitTest({assignmentId, github, question, answered, correct, timestamp, sha });
   });
 };
 
-const emptyResults = (testcases) =>
-  Object.fromEntries(Object.keys(testcases.allCases).map((n) => [n, null]));
+const emptyResults = (testcases) => fromEntries(keys(testcases.allCases).map((n) => [n, null]));
 
 new Command()
   .name('javascript-unit-tests-questions')
   .description('Run unit tests against dumped Javascript code.')
   .argument('<dir>', 'Code directory.')
   .action(async (dir, _opts) => {
-    const assignment = loadJSON(`${dir}/assignment.json`);
+    const { assignment_id: assignmentId, url } = loadJSON(`${dir}/assignment.json`);
 
     try {
-      const testcases = await fetchTestcases(assignment.url);
+      const testcases = await fetchTestcases(url);
+      const questions = keys(testcases.allCases).length;
 
-      console.log(
-        ['assignment_id', 'github', 'question', 'answered', 'correct', 'timestamp', 'sha'].join(
-          '\t',
-        ),
-      );
+      db.transaction(() => {
+        db.clearJavascriptUnitTest({assignmentId});
+        db.clearScoredQuestionAssignment({assignmentId});
 
-      glob.sync(`${dir}/**/code.js`).forEach((file) => {
-        const d = dirname(file);
-        const github = basename(d);
-        const assignmentId = assignment.assignment_id;
-        const timestamp = getTimestamp(d);
-        const sha = getSha(d);
+        db.insertScoredQuestionAssignment({ assignmentId, questions });
 
-        try {
-          const code = readFileSync(file, 'utf-8');
-          const results = runTests(testcases, code);
-          dumpResults(assignmentId, github, timestamp, sha, results);
-        } catch (_e) {
-          dumpResults(assignmentId, github, timestamp, sha, emptyResults(testcases));
-        }
-      });
+        const code = glob.sync(`${dir}/**/code.js`);
+
+        code.forEach((file) => {
+          const d = dirname(file);
+          const github = basename(d);
+          const timestamp = getTimestamp(d);
+          const sha = getSha(d);
+
+          try {
+            const code = readFileSync(file, 'utf-8');
+            const results = runTests(testcases, code);
+            dumpResults(assignmentId, github, timestamp, sha, results);
+          } catch (_e) {
+            dumpResults(assignmentId, github, timestamp, sha, emptyResults(testcases));
+          }
+        });
+      })
     } catch (e) {
       console.log(e);
     }
+
   })
   .parse();

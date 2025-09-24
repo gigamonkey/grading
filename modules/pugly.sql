@@ -35,12 +35,6 @@ insert into assignment_weights
 values
   ($assignmentId, $standard, $weight);
 
--- :name assignmentWeightForGradedAssignment :get
-select * from assignment_weights where assignment_id = $assignmentId;
-
--- :name assignmentWeightsForGradedAssignment :all
-select * from assignment_weights where assignment_id = $assignmentId;
-
 -- :name makeAssignmentWeight :insert
 insert into assignment_weights
   (assignment_id, standard, weight)
@@ -52,6 +46,27 @@ insert into assignment_weights
   (assignment_id, standard, weight)
 values
   ($assignmentId, $standard, $weight);
+
+
+-- assignments ---------------------------------------------
+
+-- :name assignments :all
+select * from assignments;
+
+-- :name insertAssignment :insert
+insert into assignments (assignment_id, title) values ($assignmentId, $title);
+
+-- :name assignment :get
+select * from assignments where assignment_id = $assignmentId;
+
+-- :name updateAssignment :run
+update assignments set (title) = ($title) where assignment_id = $assignmentId
+
+-- :name makeAssignment :insert
+insert into assignments (title) values ($title);
+
+-- :name makeAssignmentWithDefaultValues :insert
+insert into assignments (title) values ($title);
 
 
 -- expressions ---------------------------------------------
@@ -109,6 +124,30 @@ insert into hand_graded (assignment_id, github, grade) values ($assignmentId, $g
 
 -- :name makeHandGradedWithDefaultValues :insert
 insert into hand_graded (assignment_id, github, grade) values ($assignmentId, $github, $grade);
+
+
+-- hand_graded_questions -----------------------------------
+
+-- :name handGradedQuestions :all
+select * from hand_graded_questions;
+
+-- :name insertHandGradedQuestion :insert
+insert into hand_graded_questions
+  (assignment_id, github, question, correct)
+values
+  ($assignmentId, $github, $question, $correct);
+
+-- :name makeHandGradedQuestion :insert
+insert into hand_graded_questions
+  (assignment_id, github, question, correct)
+values
+  ($assignmentId, $github, $question, $correct);
+
+-- :name makeHandGradedQuestionWithDefaultValues :insert
+insert into hand_graded_questions
+  (assignment_id, github, question, correct)
+values
+  ($assignmentId, $github, $question, $correct);
 
 
 -- hand_scored ---------------------------------------------
@@ -366,6 +405,34 @@ insert into scored_answers (score) values ($score);
 
 -- :name makeScoredAnswerWithDefaultValues :insert
 insert into scored_answers (score) values ($score);
+
+
+-- scored_question_assignments -----------------------------
+
+-- :name scoredQuestionAssignments :all
+select * from scored_question_assignments;
+
+-- :name insertScoredQuestionAssignment :insert
+insert into scored_question_assignments
+  (assignment_id, questions)
+values
+  ($assignmentId, $questions);
+
+-- :name scoredQuestionAssignment :get
+select * from scored_question_assignments where assignment_id = $assignmentId;
+
+-- :name updateScoredQuestionAssignment :run
+update scored_question_assignments set
+  (questions) =
+  ($questions)
+where
+  assignment_id = $assignmentId
+
+-- :name makeScoredQuestionAssignment :insert
+insert into scored_question_assignments (questions) values ($questions);
+
+-- :name makeScoredQuestionAssignmentWithDefaultValues :insert
+insert into scored_question_assignments (questions) values ($questions);
 
 
 -- student_answers -----------------------------------------
