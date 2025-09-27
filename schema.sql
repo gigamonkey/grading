@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS assignment_weights (
 );
 
 -- Assignments that are graded by scoring some number of individual questions.
+-- Store the number of questions so we can compute the assignment score as the
+-- average of the question scores.
 CREATE TABLE IF NOT EXISTS scored_question_assignments (
   assignment_id INTEGER PRIMARY KEY,
   questions INTEGER NOT NULL
@@ -110,9 +112,9 @@ GROUP BY assignment_id, github;
 
 
 --------------------------------------------------------------------------------
--- Hand graded stuff. These are filled by importing data that is produced in a
--- Google sheet or some other system where we don't want to load the details
--- into the database.
+-- Completele hand graded stuff. These are filled by importing data that is
+-- produced in a Google sheet or some other system where we don't want to load
+-- the details into the database.
 
 -- Whole assignment graded 0-4
 CREATE TABLE IF NOT EXISTS hand_graded(
@@ -131,6 +133,7 @@ CREATE TABLE IF NOT EXISTS hand_scored(
 
 -- Individual questions hand graded. At the moment this is used to augment
 -- autograded unit test questions when certain questions can't be autograded.
+-- But could also be used to grade all the questions on something.
 CREATE TABLE IF NOT EXISTS hand_graded_questions(
   assignment_id INTEGER,
   github TEXT,
@@ -319,9 +322,9 @@ drop view if exists grades;
 DROP VIEW IF EXISTS all_scores;
 CREATE VIEW all_scores AS
 SELECT * from expressions_scores
-UNION
+  UNION
 SELECT * from javascript_unit_tests_scores
-UNION
+  UNION
 SELECT * from java_unit_tests_scores;
 
 DROP VIEW IF EXISTS all_grades;

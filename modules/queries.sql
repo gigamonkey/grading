@@ -19,3 +19,47 @@ delete from javascript_unit_tests where assignment_id = $assignmentId;
 
 -- :name clearJavaUnitTest :run
 delete from java_unit_tests where assignment_id = $assignmentId;
+
+-- :name gradesForAssignment :all
+select
+  user_id userId,
+  assignment_id assignmentId,
+  standard,
+  score,
+  grade
+from all_grades
+where assignment_id = $assignmentId
+order by user_id, standard;
+
+-- :name gradesForUser :all
+select
+  user_id userId,
+  assignment_id assignmentId,
+  standard,
+  score,
+  grade
+from all_grades
+where user_id = $userId
+order by assignment_id, standard;
+
+-- :name gradesForUserAndAssignment :all
+select
+  user_id userId,
+  assignment_id assignmentId,
+  standard,
+  score,
+  grade
+from all_grades
+where user_id = $userId and assignment_id = $assignmentId
+order by standard;
+
+
+-- :name allGrades :all
+select
+  user_id userId,
+  assignment_id assignmentId,
+  standard,
+  score,
+  grade
+from all_grades
+order by user_id, assignment_id, standard;

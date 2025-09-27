@@ -18,6 +18,7 @@ import { Command } from 'commander';
 import glob from 'fast-glob';
 import { getSha, getTimestamp } from './modules/grading.js';
 import { average, count, loadJSON, mapValues, values } from './modules/util.js';
+import process from 'node:process';
 
 const { entries, groupBy } = Object;
 
@@ -72,14 +73,20 @@ new Command()
   .name('grade-expressions')
   .description('Grade an expressions assignment')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
-  .action((dir, _opts) => {
+  .option('-n, --dry-run', "Don't write to database database.")
+  .action((dir, opts) => {
     const { assignment_id: assignmentId, questions } = loadJSON(join(dir, 'assignment.json'));
+
+    if (!questions) {
+      console.log("Must supply number of questions in assigments.json");
+      process.exit(1);
+    }
 
     const results = glob.sync(`${dir}/**/expressions.json`);
 
     db.transaction(() => {
 
-      db.clearExpression({assignmentId});
+      if (!opts.dryRun) db.clearExpression({assignmentId});
 
       results.forEach((file) => {
         const d = dirname(file);
@@ -90,7 +97,12 @@ new Command()
           const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
           const grouped = groupBy(answers, (a) => a.name);
           const summarized = mapValues(grouped, summarizeAttempts);
-          db.insertExpression({assignmentId, github, ...summary(summarized, questions), timestamp, sha });
+          const row = {assignmentId, github, ...summary(summarized, questions), timestamp, sha };
+          if (opts.dryRun) {
+            console.log(row);
+          } else {
+            db.insertExpression(row);
+          }
         } catch (e) {
           console.log(`Processing ${file}`);
           console.log(e);

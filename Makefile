@@ -2,6 +2,7 @@ all: modules/pugly.sql db.db
 
 db.db: schema.sql
 	sqlite3 $@ < schema.sql
+	sqlite3 $@ < load.sql
 
 check:
 	npx @biomejs/biome check --write

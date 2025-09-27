@@ -7,6 +7,13 @@ or whatever, we should have a script that grabs just their work from their
 github mirror and puts it into the directory. We should also save the timestamp
 and the SHA of the commit it came from.
 
+Grading scripts will also need the `assignent.json` file we can fetch from the
+server with the `get-assignment-json.js` script which takes the assignment id
+and the directory where to save `assignment.json`. Some grading scripts may need
+other information about the assignment such as the number of questions which can
+be added to the `assignments.json` file after it is fetched. (May want to move
+it out to another file or, better yet, embed all the information necessary to
+grade an assignment in the assignment output itself.)
 
 ## Form based quizzes and tests
 
@@ -30,12 +37,9 @@ questions if we stored those with the questions or in a separate key.
 
 ## ItP expressions problem sets
 
-Graded with expressions.js invoked from itp/load-expressions.sql. Need to update
-script as new problem sets are added.
-
-Add mapping from problem-set name to assignment_id in itp/assignment-weights.sql
-and actual assignment_weight there as well.
-
+Graded with `grade-expressions.js` to insert into the expression table from
+which the assignment scores/grades are derived. The script requires an
+assignment.json in the directory containing the snapshots of student work.
 
 ## Javascript unit test assignments
 
