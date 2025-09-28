@@ -17,14 +17,24 @@ new Command()
   .option('-u, --user <user>', 'User id')
   .action((opts) => {
     const { assignment: assignmentId, user: userId } = opts;
+
+    let data;
+
     if (assignmentId && userId) {
-      dumpJSON(db.gradesForUserAndAssignment({assignmentId, userId}));
+      data = db.gradesForUserAndAssignment({assignmentId, userId});
     } else if (assignmentId) {
-      dumpJSON(db.gradesForAssignment({assignmentId}));
+      data = db.gradesForAssignment({assignmentId});
     } else if (userId) {
-      dumpJSON(db.gradesForUser({userId}))
+      data = db.gradesForUser({userId});
     } else {
-      dumpJSON(db.allGrades());
+      data = db.allGrades();
     }
+
+    if (!data) {
+      console.warn("No data!!!");
+    } else {
+      dumpJSON(data);
+    }
+
   })
   .parse();
