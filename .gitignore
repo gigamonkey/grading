@@ -21,3 +21,6 @@ grades/
 itp/
 csa/
 eng/
+
+exports/*.csv
+exports/*.tsv

@@ -88,6 +88,10 @@ class API {
     return this.get(`/api/assignment/${assignmentId}`);
   }
 
+  reflectionGradeData(assignmentId) {
+    return this.get(`/api/reflection-grade-data/${assignmentId}`);
+  }
+
 }
 
 const jsonIfOk = r => {

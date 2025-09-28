@@ -1,29 +1,5 @@
 -- Generated with pugilify v0.0.23.
 
--- assignment_scores ---------------------------------------
-
--- :name assignmentScores :all
-select * from assignment_scores;
-
--- :name insertAssignmentScore :insert
-insert into assignment_scores
-  (user_id, assignment_id, score)
-values
-  ($userId, $assignmentId, $score);
-
--- :name makeAssignmentScore :insert
-insert into assignment_scores
-  (user_id, assignment_id, score)
-values
-  ($userId, $assignmentId, $score);
-
--- :name makeAssignmentScoreWithDefaultValues :insert
-insert into assignment_scores
-  (user_id, assignment_id, score)
-values
-  ($userId, $assignmentId, $score);
-
-
 -- assignment_weights --------------------------------------
 
 -- :name assignmentWeights :all
@@ -67,6 +43,32 @@ insert into assignments (title) values ($title);
 
 -- :name makeAssignmentWithDefaultValues :insert
 insert into assignments (title) values ($title);
+
+
+-- direct_scores -------------------------------------------
+
+-- :name directScores :all
+select * from direct_scores;
+
+-- :name insertDirectScore :insert
+insert into direct_scores (assignment_id, user_id, score) values ($assignmentId, $userId, $score);
+
+-- :name directScore :get
+select * from direct_scores where assignment_id = $assignmentId and user_id = $userId;
+
+-- :name updateDirectScore :run
+update direct_scores set
+  (score) =
+  ($score)
+where
+  assignment_id = $assignmentId and
+  user_id = $userId
+
+-- :name makeDirectScore :insert
+insert into direct_scores (score) values ($score);
+
+-- :name makeDirectScoreWithDefaultValues :insert
+insert into direct_scores (score) values ($score);
 
 
 -- expressions ---------------------------------------------

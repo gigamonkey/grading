@@ -73,7 +73,7 @@ new Command()
   .name('grade-expressions')
   .description('Grade an expressions assignment')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
-  .option('-n, --dry-run', "Don't write to database database.")
+  .option('-n, --dry-run', "Don't write to database.")
   .action((dir, opts) => {
     const { assignment_id: assignmentId, questions } = loadJSON(join(dir, 'assignment.json'));
 

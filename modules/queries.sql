@@ -27,7 +27,7 @@ select
   standard,
   score,
   grade
-from all_grades
+from assignment_grades
 where assignment_id = $assignmentId
 order by user_id, standard;
 
@@ -38,7 +38,7 @@ select
   standard,
   score,
   grade
-from all_grades
+from assignment_grades
 where user_id = $userId
 order by assignment_id, standard;
 
@@ -49,10 +49,9 @@ select
   standard,
   score,
   grade
-from all_grades
+from assignment_grades
 where user_id = $userId and assignment_id = $assignmentId
 order by standard;
-
 
 -- :name allGrades :all
 select
@@ -61,5 +60,12 @@ select
   standard,
   score,
   grade
-from all_grades
+from assignment_grades
 order by user_id, assignment_id, standard;
+
+-- :name clearDirectScores :run
+delete from direct_scores where assignment_id = $assignmentId;
+
+-- :name ensureIcGrade :insert
+insert into ic_grades (student_number, standard, grade) values ($studentNumber, $standard, $grade)
+on conflict(student_number, standard) do update set grade=excluded.grade;

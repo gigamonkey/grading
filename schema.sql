@@ -8,16 +8,6 @@ CREATE TABLE IF NOT EXISTS assignments (
   PRIMARY KEY (assignment_id)
 );
 
--- Assignments that should be graded. This table mostly exists so we can delete
--- an assignment and all its associated data by deleting it from this table and
--- letting the delete cascade to everything that references it. (Assuming those
--- are all set up properly.). FIXME: may want to add some more columns here such
--- as title and maybe the opens and due dates.
-CREATE TABLE IF NOT EXISTS graded_assignments (
-  assignment_id INTEGER,
-  PRIMARY KEY (assignment_id)
-);
-
 -- Weights for any standard an assignment affects
 CREATE TABLE IF NOT EXISTS assignment_weights (
   assignment_id INTEGER,
@@ -142,12 +132,34 @@ CREATE TABLE IF NOT EXISTS hand_graded_questions(
 );
 
 --------------------------------------------------------------------------------
+-- Directly scored
+
+-- For assignments where we compute the score outside the database, e.g.
+-- reflections.
+CREATE TABLE IF NOT EXISTS direct_scores(
+  assignment_id INTEGER,
+  user_id TEXT,
+  score REAL NOT NULL,
+  PRIMARY KEY (assignment_id, user_id)
+);
+
+
+--------------------------------------------------------------------------------
 -- Form based questions. We grade these by collecting all the student answers
 -- and then blind scoring the unique normalized answers. Then we can compute
 -- each student's grade from the score their actual answer received. For MCQ
 -- questions the correct answer and the distractors are loaded automatically.
 -- For FRQs we have to manually (with some help from a script) grade all the
 -- given answers.
+
+-- This table mostly exists so we can delete an assignment and all its
+-- associated data by deleting it from this table and letting the delete cascade
+-- to everything that references it. (Assuming those are all set up properly.).
+-- Despite the name, this is really just for form-based assessments.
+CREATE TABLE IF NOT EXISTS graded_assignments (
+  assignment_id INTEGER,
+  PRIMARY KEY (assignment_id)
+);
 
 -- Questions. Probably extracted from the test in some way.
 CREATE TABLE IF NOT EXISTS questions (
@@ -191,7 +203,6 @@ CREATE TABLE IF NOT EXISTS student_answers (
   PRIMARY KEY (user_id, assignment_id, question_number, answer_number),
   FOREIGN KEY (assignment_id) REFERENCES graded_assignments(assignment_id) ON DELETE CASCADE
 );
-
 
 -- Compute per question scores for each student. Question score is computed
 -- differently depending on the kind of question. Currently handled are choices,
@@ -259,12 +270,6 @@ CREATE TABLE IF NOT EXISTS rubric_grades (
 -- just graded on 0-4 we fill this table with the maximum score that would
 -- achieve that grade, e.g. 1.0 for a 4, 0.84 for a 3, etc.
 
-CREATE TABLE IF NOT EXISTS assignment_scores (
-  user_id TEXT,
-  assignment_id INTEGER,
-  score REAL
-);
-
 -- Mapping from percentages to four point scale grade
 CREATE TABLE IF NOT EXISTS fps (
   minimum REAL, grade INTEGER,
@@ -285,6 +290,7 @@ VALUES
 CREATE TABLE IF NOT EXISTS roster (
   period INTEGER,
   user_id TEXT,
+  student_number TEXT,
   email TEXT,
   github TEXT,
   name TEXT,
@@ -296,6 +302,14 @@ CREATE TABLE IF NOT EXISTS roster (
   birthdate TEXT,
   course_id TEXT
 );
+
+CREATE TABLE IF NOT EXISTS ic_grades (
+  student_number TEXT,
+  standard TEXT,
+  grade INTEGER,
+  PRIMARY KEY (student_number, standard)
+);
+
 
 drop view if exists grades;
 -- create view grades as
@@ -319,27 +333,15 @@ drop view if exists grades;
 -- Assignment scores turned into per-standard grades for the assignment.
 -- FIXME: should this table have the weight too? Probably.
 
-DROP VIEW IF EXISTS all_scores;
-CREATE VIEW all_scores AS
-SELECT * from expressions_scores
+DROP VIEW IF EXISTS assignment_scores;
+CREATE VIEW assignment_scores AS
+SELECT * FROM expressions_scores
   UNION
-SELECT * from javascript_unit_tests_scores
+SELECT * FROM javascript_unit_tests_scores
   UNION
-SELECT * from java_unit_tests_scores;
-
-DROP VIEW IF EXISTS all_grades;
-CREATE VIEW all_grades AS
-SELECT
-  user_id,
-  assignment_id,
-  standard,
-  score,
-  max(grade) grade
-FROM all_scores
-JOIN assignment_weights using (assignment_id)
-JOIN fps on score >= minimum
-GROUP BY user_id, assignment_id, standard;
-
+SELECT * FROM java_unit_tests_scores
+  UNION
+SELECT * FROM direct_scores;
 
 DROP VIEW IF EXISTS assignment_grades;
 CREATE VIEW assignment_grades as
@@ -354,31 +356,43 @@ JOIN assignment_weights using (assignment_id)
 JOIN fps on score >= minimum
 GROUP BY user_id, assignment_id, standard;
 
+DROP VIEW IF EXISTS user_standards_summary;
+DROP VIEW IF EXISTS users_standards_summary;
+CREATE VIEW users_standards_summary AS
+SELECT
+  user_id,
+  standard,
+  group_concat(assignment_id order by assignment_id) assignments,
+  group_concat(score order by assignment_id) scores,
+  sum(score * weight) / sum(weight) score
+FROM assignment_grades g
+JOIN assignment_weights USING (assignment_id, standard)
+GROUP BY user_id, standard;
+
 -- Standard grades derived from assignment grades and assignment weights
 DROP VIEW IF EXISTS standards;
 CREATE VIEW standards as
-WITH combined AS (
-  SELECT
-    user_id,
-    standard,
-    group_concat(assignment_id order by assignment_id) assignments,
-    group_concat(score order by assignment_id) scores,
-    sum(score * weight) / sum(weight) score
-  FROM assignment_grades g
-  JOIN assignment_weights USING (assignment_id, standard)
-  GROUP BY user_id, standard
-)
 SELECT
-  user_id,
   period,
-  assignments,
-  scores,
+  student_number,
   sortable_name,
   standard,
-  score,
   max(grade) grade
-FROM combined
+FROM users_standards_summary
 JOIN roster USING (user_id)
 JOIN fps ON score >= minimum
 GROUP BY user_id, standard
 ORDER BY sortable_name;
+
+
+DROP VIEW IF EXISTS to_update;
+CREATE VIEW to_update AS
+SELECT
+  period,
+  sortable_name,
+  standard,
+  ic.grade old,
+  s.grade new
+FROM ic_grades ic
+JOIN standards s USING (student_number, standard)
+WHERE ic.grade <> s.grade ORDER BY period, sortable_name;
