@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { argv } from 'node:process';
+import fs from 'node:fs';
 
 const { fromEntries, entries, keys, values, groupBy } = Object;
 
@@ -30,6 +31,11 @@ const dumpTSV = (objs) => {
   });
 };
 
+const loadTSV = (file) => {
+  const text = fs.readFileSync(file, 'utf-8');
+  return text.split('\n').filter(line => line).map(line => line.split('\t'));
+}
+
 const fps = (n) => {
   return n >= 0.85 ? 4 : n >= 0.7 ? 3 : n >= 0.45 ? 2 : n >= 0.2 ? 1 : 0;
 };
@@ -56,6 +62,7 @@ export {
   groupBy,
   keys,
   loadJSON,
+  loadTSV,
   mapValues,
   maximum,
   minimum,
