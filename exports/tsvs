@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-cp ~/Downloads/Grade\ Book\ Export*.csv .
+mv ~/Downloads/Grade\ Book\ Export*.csv .
 
 for f in *.csv; do
     cat "$f" | mlr --icsv --otsv cat > "$(basename "$f" .csv).tsv"
