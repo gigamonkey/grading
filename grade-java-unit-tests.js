@@ -16,15 +16,18 @@ new Command()
   .name('grade-java-unit-tests')
   .description('Score results.json files from TestRunner')
   .argument('<dir>', 'Directory holding student code and results.json files')
-  .action((dir, _opts) => {
+  .option('-n, --dry-run', "Don't write to database.")
+  .action((dir, opts) => {
     const { assignment_id: assignmentId, questions } = loadJSON(join(dir, 'assignment.json'));
     const results = glob.sync(`${dir}/**/results.json`);
 
     db.transaction(() => {
-      db.clearJavaUnitTest({assignmentId});
-      db.clearScoredQuestionAssignment({assignmentId});
 
-      db.insertScoredQuestionAssignment({ assignmentId, questions });
+      if (!opts.dryRun) {
+        db.clearJavaUnitTest({assignmentId});
+        db.clearScoredQuestionAssignment({assignmentId});
+        db.insertScoredQuestionAssignment({ assignmentId, questions });
+      }
 
       results.forEach((file) => {
         const d = dirname(file);
@@ -35,7 +38,11 @@ new Command()
           const results = statSync(file).size > 0 ? loadJSON(file) : [];
           const correct = numCorrect(results);
           const score = scoreTest(results, questions);
-          db.insertJavaUnitTest({assignmentId, github, correct, score, timestamp, sha});
+          if (!opts.dryRun) {
+            db.insertJavaUnitTest({assignmentId, github, correct, score, timestamp, sha});
+          } else {
+            console.log({assignmentId, github, correct, score, timestamp, sha});
+          }
         } catch (e) {
           console.log(e);
         }
