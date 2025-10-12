@@ -5,6 +5,8 @@ import fs from 'node:fs';
 
 const { fromEntries, entries, keys, values, groupBy } = Object;
 
+const mapKeys = (o, fn) => fromEntries(entries(o).map(([k, v]) => [fn(k, v), v]));
+
 const mapValues = (o, fn) => fromEntries(entries(o).map(([k, v]) => [k, fn(v, k)]));
 
 const sum = (nums) => nums.reduce((tot, n) => tot + n, 0);
@@ -22,6 +24,10 @@ const numberOr = (n, value) => (Number.isNaN(n) ? value : n);
 const loadJSON = (filename) => JSON.parse(readFileSync(filename));
 
 const dumpJSON = (data) => console.log(JSON.stringify(data, null, 2));
+
+const loadSnakeCaseJSON = (filename) => mapKeys(loadJSON(filename), snakeToCamel);
+
+const snakeToCamel = (s) => s.replace(/_(.)/g, (_, c) => c.toUpperCase());
 
 const readLines = (filename) => readFileSync(filename, { encoding: 'utf-8' }).split(/\n/);
 
@@ -62,7 +68,9 @@ export {
   groupBy,
   keys,
   loadJSON,
+  loadSnakeCaseJSON,
   loadTSV,
+  mapKeys,
   mapValues,
   maximum,
   minimum,
@@ -70,6 +78,7 @@ export {
   numbers,
   readFileSync,
   readLines,
+  snakeToCamel,
   sum,
   values,
 };

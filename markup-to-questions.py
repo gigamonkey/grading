@@ -8,7 +8,7 @@ import sys
 def store_questions(db, assignment_id, filename):
     questions = load_questions(assignment_id, filename)
     with db.transaction():
-        db.add_graded_assignment(assignment_id=assignment_id)
+        db.add_form_assessment(assignment_id=assignment_id)
         for q in questions:
             db.add_question(**q)
             if "choices" in q:

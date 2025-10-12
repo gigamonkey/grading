@@ -1,10 +1,11 @@
 PRAGMA foreign_keys = ON;
 
--- Exported from site db assignments_table. Should move to fetching from server
--- via API.
+-- Only the assignments we are grading.
 CREATE TABLE IF NOT EXISTS assignments (
   assignment_id INTEGER,
-  title TEXT,
+  date TEXT NOT NULL,
+  course_id TEXT NOT NULL,
+  title TEXT NOT NULL,
   PRIMARY KEY (assignment_id)
 );
 
@@ -93,16 +94,16 @@ CREATE VIEW java_unit_tests_scores AS
 SELECT
   assignment_id,
   user_id,
-  (score * questions + sum(hg.correct)) / questions score
+  (score * questions + sum(coalesce(hg.correct, 0))) / questions score
 FROM java_unit_tests
-JOIN hand_graded_questions hg using (assignment_id, github)
+LEFT JOIN hand_graded_questions hg using (assignment_id, github)
 JOIN scored_question_assignments USING (assignment_id)
 JOIN roster USING (github)
 GROUP BY assignment_id, github;
 
 
 --------------------------------------------------------------------------------
--- Completele hand graded stuff. These are filled by importing data that is
+-- Completely hand graded stuff. These are filled by importing data that is
 -- produced in a Google sheet or some other system where we don't want to load
 -- the details into the database.
 
@@ -112,6 +113,16 @@ CREATE TABLE IF NOT EXISTS hand_graded(
   github TEXT,
   grade INTEGER
 );
+
+DROP VIEW IF EXISTS hand_graded_to_scores;
+CREATE VIEW hand_graded_to_scores as
+SELECT
+  assignment_id,
+  user_id,
+  score
+FROM hand_graded
+JOIN fps USING (grade)
+JOIN roster USING (github);
 
 -- Whole assignment scored 0.0 to 1.0. Not sure I actually need this any more
 -- since we can use hand_graded_questions for many such cases.
@@ -154,9 +165,8 @@ CREATE TABLE IF NOT EXISTS direct_scores(
 
 -- This table mostly exists so we can delete an assignment and all its
 -- associated data by deleting it from this table and letting the delete cascade
--- to everything that references it. (Assuming those are all set up properly.).
--- Despite the name, this is really just for form-based assessments.
-CREATE TABLE IF NOT EXISTS graded_assignments (
+-- to everything that references it. (Assuming those are all set up properly.)
+CREATE TABLE IF NOT EXISTS form_assessments (
   assignment_id INTEGER,
   PRIMARY KEY (assignment_id)
 );
@@ -169,7 +179,7 @@ CREATE TABLE IF NOT EXISTS questions (
   kind TEXT,
   question TEXT,
   PRIMARY KEY (assignment_id, question_number),
-  FOREIGN KEY (assignment_id) REFERENCES graded_assignments(assignment_id) ON DELETE CASCADE
+  FOREIGN KEY (assignment_id) REFERENCES form_assessments(assignment_id) ON DELETE CASCADE
 );
 
 -- The canonical answers with attached scores.
@@ -179,7 +189,7 @@ CREATE TABLE IF NOT EXISTS scored_answers (
   answer TEXT,
   score REAL NOT NULL,
   PRIMARY KEY (assignment_id, question_number, answer),
-  FOREIGN KEY (assignment_id) REFERENCES graded_assignments(assignment_id) ON DELETE CASCADE
+  FOREIGN KEY (assignment_id) REFERENCES form_assessments(assignment_id) ON DELETE CASCADE
 );
 
 -- Map from the raw answers to the normalized answers we store in the
@@ -190,18 +200,18 @@ CREATE TABLE IF NOT EXISTS normalized_answers (
   raw_answer TEXT,
   answer TEXT NOT NULL,
   PRIMARY KEY (assignment_id, question_number, raw_answer),
-  FOREIGN KEY (assignment_id) REFERENCES graded_assignments(assignment_id) ON DELETE CASCADE
+  FOREIGN KEY (assignment_id) REFERENCES form_assessments(assignment_id) ON DELETE CASCADE
 );
 
 -- Raw student answers.
 CREATE TABLE IF NOT EXISTS student_answers (
-  user_id TEXT,
+  github TEXT,
   assignment_id INT,
   question_number INT,
   answer_number,
   raw_answer TEXT,
-  PRIMARY KEY (user_id, assignment_id, question_number, answer_number),
-  FOREIGN KEY (assignment_id) REFERENCES graded_assignments(assignment_id) ON DELETE CASCADE
+  PRIMARY KEY (github, assignment_id, question_number, answer_number),
+  FOREIGN KEY (assignment_id) REFERENCES form_assessments(assignment_id) ON DELETE CASCADE
 );
 
 -- Compute per question scores for each student. Question score is computed
@@ -223,7 +233,7 @@ WITH mchoices AS (
 SELECT
   assignment_id,
   question_number,
-  user_id,
+  github,
   kind,
   group_concat(raw_answer) answers,
   CASE
@@ -236,8 +246,18 @@ JOIN student_answers USING (assignment_id, question_number)
 JOIN normalized_answers USING (assignment_id, question_number, raw_answer)
 JOIN scored_answers USING (assignment_id, question_number, answer)
 LEFT JOIN mchoices USING (assignment_id, question_number)
-GROUP BY user_id, assignment_id, question_number
-ORDER BY assignment_id, question_number, user_id;
+GROUP BY github, assignment_id, question_number
+ORDER BY assignment_id, question_number, github;
+
+DROP VIEW IF EXISTS form_assessment_scores;
+CREATE VIEW form_assessment_scores AS
+SELECT
+  assignment_id,
+  user_id,
+  sum(score) / count(*) score
+FROM question_scores
+JOIN roster using (github)
+GROUP BY assignment_id, github;
 
 --------------------------------------------------------------------------------
 -- Responses to prompts. Just graded on a 0-4 scale.
@@ -272,19 +292,21 @@ CREATE TABLE IF NOT EXISTS rubric_grades (
 
 -- Mapping from percentages to four point scale grade
 CREATE TABLE IF NOT EXISTS fps (
-  minimum REAL, grade INTEGER,
-  PRIMARY KEY (minimum, grade)
+  grade INTEGER,
+  minimum REAL, -- threshold for this grade
+  score REAL,   -- score we use if mapping from a grade
+  PRIMARY KEY (grade)
 )
 WITHOUT ROWID;
 
 INSERT OR IGNORE INTO fps
-  (minimum, grade)
+  (grade, minimum, score)
 VALUES
-  (0.85, 4),
-  (0.70, 3),
-  (0.45, 2),
-  (0.20, 1),
-  (0.0, 0);
+  (4, 0.85, 1.0),
+  (3, 0.70, 0.84),
+  (2, 0.45, 0.69),
+  (1, 0.20, 0.44),
+  (0, 0.0, 0.0);
 
 -- Filled in from ../roster.json
 CREATE TABLE IF NOT EXISTS roster (
@@ -341,7 +363,11 @@ SELECT * FROM javascript_unit_tests_scores
   UNION
 SELECT * FROM java_unit_tests_scores
   UNION
-SELECT * FROM direct_scores;
+SELECT * FROM direct_scores
+  UNION
+SELECT * FROM form_assessment_scores
+  UNION
+SELECT * FROM hand_graded_to_scores;
 
 DROP VIEW IF EXISTS assignment_grades;
 CREATE VIEW assignment_grades as
@@ -349,41 +375,48 @@ SELECT
   user_id,
   assignment_id,
   standard,
-  score,
+  s.score,
   max(grade) grade
-FROM assignment_scores
+FROM assignment_scores s
 JOIN assignment_weights using (assignment_id)
-JOIN fps on score >= minimum
+JOIN fps on s.score >= minimum
 GROUP BY user_id, assignment_id, standard;
 
-DROP VIEW IF EXISTS user_standards_summary;
 DROP VIEW IF EXISTS users_standards_summary;
 CREATE VIEW users_standards_summary AS
 SELECT
   user_id,
   standard,
   group_concat(assignment_id order by assignment_id) assignments,
-  group_concat(score order by assignment_id) scores,
+  group_concat(printf("%.2f", score), ', ' order by assignment_id) scores,
   sum(score * weight) / sum(weight) score
 FROM assignment_grades g
 JOIN assignment_weights USING (assignment_id, standard)
 GROUP BY user_id, standard;
 
--- Standard grades derived from assignment grades and assignment weights
 DROP VIEW IF EXISTS standards;
-CREATE VIEW standards as
+CREATE VIEW standards AS
+SELECT DISTINCT PERIOD, STANDARD
+FROM assignment_scores
+JOIN assignment_weights w USING (assignment_id)
+JOIN roster USING (user_id)
+ORDER BY period, standard;
+
+-- Standard grades derived from assignment grades and assignment weights
+DROP VIEW IF EXISTS standard_grades;
+CREATE VIEW standard_grades AS
 SELECT
   period,
   student_number,
   sortable_name,
   standard,
   max(grade) grade
-FROM users_standards_summary
-JOIN roster USING (user_id)
-JOIN fps ON score >= minimum
+FROM standards
+JOIN roster using (period)
+LEFT JOIN users_standards_summary uss USING (user_id, standard)
+JOIN fps ON coalesce(uss.score, 0) >= minimum
 GROUP BY user_id, standard
 ORDER BY sortable_name;
-
 
 DROP VIEW IF EXISTS to_update;
 CREATE VIEW to_update AS
@@ -393,6 +426,30 @@ SELECT
   standard,
   ic.grade old,
   s.grade new
-FROM ic_grades ic
-JOIN standards s USING (student_number, standard)
-WHERE ic.grade <> s.grade ORDER BY period, sortable_name;
+FROM standard_grades s
+LEFT JOIN ic_grades ic USING (student_number, standard)
+WHERE ic.grade is null or ic.grade <> s.grade
+ORDER BY period, sortable_name;
+
+DROP VIEW IF EXISTS unweighted;
+CREATE VIEW unweighted AS
+SELECT distinct assignment_id
+FROM assignment_scores
+LEFT JOIN assignment_weights w using (assignment_id)
+WHERE w.assignment_id IS NULL;
+
+DROP VIEW IF EXISTS wrong_answers;
+CREATE VIEW wrong_answers as
+select
+  assignment_id,
+  question_number + 1 n,
+  question,
+  answer,
+  count(*) num,
+  group_concat(github, ', ') who
+FROM questions
+JOIN student_answers USING (assignment_id, question_number)
+JOIN normalized_answers USING (assignment_id, question_number, raw_answer)
+JOIN scored_answers USING (assignment_id, question_number, answer)
+WHERE score = 0
+GROUP BY assignment_id, question_number, answer;

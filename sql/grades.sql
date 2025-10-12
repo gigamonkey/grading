@@ -1,5 +1,5 @@
--- :name add_graded_assignment :insert
-INSERT INTO graded_assignments (assignment_id) VALUES (:assignment_id);
+-- :name add_form_assessment :insert
+INSERT INTO form_assessments (assignment_id) VALUES (:assignment_id);
 
 -- :name add_question :insert
 INSERT INTO questions

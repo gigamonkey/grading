@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+#
+# Copy the current database files to a timestamped backup dir. To be run on the
+# fly server where DB_DIR and DB_FILE are defined.
+#
+
+set -eou pipefail
+
+DB_DIR=.
+DB_FILE=db.db
+
+timestamp=$(date -u +%Y-%m-%dT%H%MZ)
+
+mkdir -p "db-backups/$timestamp/"
+
+sqlite3 "$DB_DIR/$DB_FILE" "VACUUM INTO '$DB_DIR/db-backups/$timestamp/$DB_FILE'"
+cd "$DB_DIR/db-backups"
+ln -sfn "$timestamp" latest

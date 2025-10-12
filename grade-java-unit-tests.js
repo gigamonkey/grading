@@ -6,7 +6,7 @@ import { basename, dirname, join } from 'node:path';
 import { Command } from 'commander';
 import glob from 'fast-glob';
 import { getSha, getTimestamp, numCorrect, scoreTest } from './modules/grading.js';
-import { loadJSON } from './modules/util.js';
+import { loadJSON, loadSnakeCaseJSON } from './modules/util.js';
 
 const db = new DB('db.db')
   .addQueries('modules/pugly.sql')
@@ -18,12 +18,15 @@ new Command()
   .argument('<dir>', 'Directory holding student code and results.json files')
   .option('-n, --dry-run', "Don't write to database.")
   .action((dir, opts) => {
-    const { assignment_id: assignmentId, questions } = loadJSON(join(dir, 'assignment.json'));
+
+    const { assignmentId, openDate, questions, title, courseId } = loadSnakeCaseJSON(join(dir, 'assignment.json'));
+
     const results = glob.sync(`${dir}/**/results.json`);
 
     db.transaction(() => {
 
       if (!opts.dryRun) {
+        db.ensureAssignment({ assignmentId, openDate, courseId, title });
         db.clearJavaUnitTest({assignmentId});
         db.clearScoredQuestionAssignment({assignmentId});
         db.insertScoredQuestionAssignment({ assignmentId, questions });

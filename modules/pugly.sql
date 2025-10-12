@@ -95,6 +95,15 @@ values
   ($assignmentId, $github, $answered, $averageAccuracy, $percentFirstTry, $percentDone, $timestamp, $sha);
 
 
+-- form_assessments ----------------------------------------
+
+-- :name formAssessments :all
+select * from form_assessments;
+
+-- :name insertFormAssessment :insert
+insert into form_assessments (assignment_id) values ($assignmentId);
+
+
 -- fps -----------------------------------------------------
 
 -- :name fps :all
@@ -102,15 +111,6 @@ select * from fps;
 
 -- :name insertFp :insert
 insert into fps (minimum, grade) values ($minimum, $grade);
-
-
--- graded_assignments --------------------------------------
-
--- :name gradedAssignments :all
-select * from graded_assignments;
-
--- :name insertGradedAssignment :insert
-insert into graded_assignments (assignment_id) values ($assignmentId);
 
 
 -- hand_graded ---------------------------------------------
@@ -165,6 +165,32 @@ insert into hand_scored (assignment_id, github, score) values ($assignmentId, $g
 
 -- :name makeHandScoredWithDefaultValues :insert
 insert into hand_scored (assignment_id, github, score) values ($assignmentId, $github, $score);
+
+
+-- ic_grades -----------------------------------------------
+
+-- :name icGrades :all
+select * from ic_grades;
+
+-- :name insertIcGrade :insert
+insert into ic_grades (student_number, standard, grade) values ($studentNumber, $standard, $grade);
+
+-- :name icGrade :get
+select * from ic_grades where student_number = $studentNumber and standard = $standard;
+
+-- :name updateIcGrade :run
+update ic_grades set
+  (grade) =
+  ($grade)
+where
+  student_number = $studentNumber and
+  standard = $standard
+
+-- :name makeIcGrade :insert
+insert into ic_grades (grade) values ($grade);
+
+-- :name makeIcGradeWithDefaultValues :insert
+insert into ic_grades (grade) values ($grade);
 
 
 -- java_unit_tests -----------------------------------------
@@ -242,10 +268,10 @@ where
   question_number = $questionNumber and
   raw_answer = $rawAnswer
 
--- :name normalizedAnswerForGradedAssignment :get
+-- :name normalizedAnswerForFormAssessment :get
 select * from normalized_answers where assignment_id = $assignmentId;
 
--- :name normalizedAnswersForGradedAssignment :all
+-- :name normalizedAnswersForFormAssessment :all
 select * from normalized_answers where assignment_id = $assignmentId;
 
 -- :name makeNormalizedAnswer :insert
@@ -298,10 +324,10 @@ where
   assignment_id = $assignmentId and
   question_number = $questionNumber
 
--- :name questionForGradedAssignment :get
+-- :name questionForFormAssessment :get
 select * from questions where assignment_id = $assignmentId;
 
--- :name questionsForGradedAssignment :all
+-- :name questionsForFormAssessment :all
 select * from questions where assignment_id = $assignmentId;
 
 -- :name makeQuestion :insert
@@ -318,21 +344,21 @@ select * from roster;
 
 -- :name insertRoster :insert
 insert into roster
-  (period, user_id, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+  (period, user_id, student_number, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
 values
-  ($period, $userId, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+  ($period, $userId, $studentNumber, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
 
 -- :name makeRoster :insert
 insert into roster
-  (period, user_id, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+  (period, user_id, student_number, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
 values
-  ($period, $userId, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+  ($period, $userId, $studentNumber, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
 
 -- :name makeRosterWithDefaultValues :insert
 insert into roster
-  (period, user_id, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+  (period, user_id, student_number, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
 values
-  ($period, $userId, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+  ($period, $userId, $studentNumber, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
 
 
 -- rubric_grades -------------------------------------------
@@ -396,10 +422,10 @@ where
   question_number = $questionNumber and
   answer = $answer
 
--- :name scoredAnswerForGradedAssignment :get
+-- :name scoredAnswerForFormAssessment :get
 select * from scored_answers where assignment_id = $assignmentId;
 
--- :name scoredAnswersForGradedAssignment :all
+-- :name scoredAnswersForFormAssessment :all
 select * from scored_answers where assignment_id = $assignmentId;
 
 -- :name makeScoredAnswer :insert
@@ -444,14 +470,14 @@ select * from student_answers;
 
 -- :name insertStudentAnswer :insert
 insert into student_answers
-  (user_id, assignment_id, question_number, answer_number, raw_answer)
+  (github, assignment_id, question_number, answer_number, raw_answer)
 values
-  ($userId, $assignmentId, $questionNumber, $answerNumber, $rawAnswer);
+  ($github, $assignmentId, $questionNumber, $answerNumber, $rawAnswer);
 
 -- :name studentAnswer :get
 select * from student_answers
 where
-  user_id = $userId and
+  github = $github and
   assignment_id = $assignmentId and
   question_number = $questionNumber and
   answer_number = $answerNumber;
@@ -461,15 +487,15 @@ update student_answers set
   (raw_answer) =
   ($rawAnswer)
 where
-  user_id = $userId and
+  github = $github and
   assignment_id = $assignmentId and
   question_number = $questionNumber and
   answer_number = $answerNumber
 
--- :name studentAnswerForGradedAssignment :get
+-- :name studentAnswerForFormAssessment :get
 select * from student_answers where assignment_id = $assignmentId;
 
--- :name studentAnswersForGradedAssignment :all
+-- :name studentAnswersForFormAssessment :all
 select * from student_answers where assignment_id = $assignmentId;
 
 -- :name makeStudentAnswer :insert

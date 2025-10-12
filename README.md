@@ -54,3 +54,32 @@ Step 3. Load scores with `./grade-javascript-unittest.sh` run from grading e.g.
 `./grade-javascript-unittest.sh itp/geometric-functions/`. That fills a `db.db`
 in the assignment directory with scores that are then loaded into the main
 course db.
+
+## Java unit test assignments
+
+Step 1. Export student code to directory named for the assignment. With `repo
+one-file`.
+
+Step 2. Get the `assignment.json` file via the API
+https://bhs-cs.gigamonkeys.com/api/assignment/$assignentId and save it in the
+directory. (Should automate this in `javascript-unit-tests-questions.js`.)
+
+Step 3. Run the unit tests with `./test-java-files.sh` specifying the tester
+class and a list of files. Something like:
+
+  ./test-java-files.sh LoopIdiomsTester csa/loop-idioms/*/LoopIdioms.java
+
+Step 4. (Optional) find any directories with `broken.txt` in them and make
+minimal fixes necessary to get the code to compile. Then rerun
+`test-java-files.sh`.
+
+Step 5. Load scores with `./grade-java-unittest.sh` run from grading e.g.
+`./grade-javascript-unittest.sh itp/geometric-functions/`. That fills a `db.db`
+in the assignment directory with scores that are then loaded into the main
+course db.
+
+# Adding weights
+
+Use `weight-assignment.js` to assign a weight to one or more standards for an
+assignment by assignment id after the assignment has been created in the db.
+Scores for an assignment are only computed

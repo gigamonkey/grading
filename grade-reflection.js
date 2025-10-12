@@ -52,7 +52,12 @@ new Command()
 
     db.transaction(() => {
 
-      db.clearDirectScores({assignmentId});
+
+      if (!opts.dryRun) {
+        // FIXME: need to ensure assignment here, probably by pulling assignment
+        // data from server.
+        db.clearDirectScores({assignmentId});
+      }
 
       data.forEach((row) => {
         const score = computeScore(row, minimumWords, opts.late);
