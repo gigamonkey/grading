@@ -16,6 +16,20 @@ CREATE TABLE IF NOT EXISTS assignment_weights (
   weight REAL
 );
 
+-- Assignments that I don't expect every student in a class to have done.
+CREATE TABLE IF NOT EXISTS optional_assignments (
+  assignment_id INTEGER,
+  PRIMARY KEY (assignment_id)
+);
+
+-- Assignments that individual students have been excused from doing
+CREATE TABLE IF NOT EXISTS excused_assignments (
+  assignment_id INTEGER,
+  user_id TEXT,
+  reason TEXT,
+  PRIMARY KEY (assignment_id, user_id)
+);
+
 -- Assignments that are graded by scoring some number of individual questions.
 -- Store the number of questions so we can compute the assignment score as the
 -- average of the question scores.
@@ -417,6 +431,22 @@ LEFT JOIN users_standards_summary uss USING (user_id, standard)
 JOIN fps ON coalesce(uss.score, 0) >= minimum
 GROUP BY user_id, standard
 ORDER BY sortable_name;
+
+DROP VIEW IF EXISTS missing_assignments;
+CREATE VIEW missing_assignments AS
+SELECT
+  user_id,
+  assignment_id
+FROM roster
+JOIN assignments USING (course_id)
+LEFT JOIN optional_assignments opt USING (assignment_id)
+LEFT JOIN excused_assignments ex USING (assignment_id, user_id)
+LEFT JOIN assignment_scores scores USING (user_id, assignment_id)
+WHERE
+  opt.assignment_id IS NULL AND
+  ex.assignment_id IS NULL AND
+  scores.user_id IS NULL;
+
 
 DROP VIEW IF EXISTS to_update;
 CREATE VIEW to_update AS
