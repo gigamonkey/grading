@@ -16,6 +16,21 @@ CREATE TABLE IF NOT EXISTS assignment_weights (
   weight REAL
 );
 
+-- Weights for any standard that will be increased by an assignment if a student
+-- did better on the assignment than their current grade for that standard. So a
+-- student who has, say, a 2 on some standard and takes a test that touches on
+-- that standard and gets a 4 will have their grade raised as if the assignment
+-- had been weighted for that standard but a student who already has a 4 and
+-- does worse won't have their grade lowered. This allows students to
+-- demonstrate improved mastery of old standards without penalizing them on old
+-- standards due to poor performance on new material.
+CREATE TABLE IF NOT EXISTS secondary_weights (
+  assignment_id INTEGER,
+  standard TEXT,
+  weight REAL,
+  PRIMARY KEY (assignment_id, standard)
+);
+
 -- Assignments that I don't expect every student in a class to have done.
 CREATE TABLE IF NOT EXISTS optional_assignments (
   assignment_id INTEGER,
@@ -265,11 +280,15 @@ ORDER BY assignment_id, question_number, github;
 
 DROP VIEW IF EXISTS form_assessment_scores;
 CREATE VIEW form_assessment_scores AS
+WITH num_questions as (
+  select assignment_id, count(*) questions from questions group by assignment_id
+)
 SELECT
   assignment_id,
   user_id,
-  sum(score) / count(*) score
+  sum(score) / questions score
 FROM question_scores
+JOIN num_questions using (assignment_id)
 JOIN roster using (github)
 GROUP BY assignment_id, github;
 
@@ -346,29 +365,8 @@ CREATE TABLE IF NOT EXISTS ic_grades (
   PRIMARY KEY (student_number, standard)
 );
 
-
-drop view if exists grades;
--- create view grades as
--- with
---    num_questions as (select assignment_id, count(*) num_questions from questions group by assignment_id),
---    scores as (
---      select assignment_id, user_id, sum(score == 0) wrong, sum(coalesce(score, 0)) / num_questions score
---      from roster
---      join question_scores using (user_id)
---      join num_questions using (assignment_id)
---      group by assignment_id, user_id
---    )
--- select assignment_id, user_id, period, sortable_name, wrong, score, max(coalesce(fps.grade, 0)) grade
---      from roster
---      left join scores using (user_id)
---      left join fps on score >= minimum
---      where period in (1, 2)
---      group by assignment_id, user_id
---      order by period, sortable_name;
-
--- Assignment scores turned into per-standard grades for the assignment.
--- FIXME: should this table have the weight too? Probably.
-
+-- This view only contains scores that actually exist. If a student hasn't done
+-- an assignment they will have no entry in this table.
 DROP VIEW IF EXISTS assignment_scores;
 CREATE VIEW assignment_scores AS
 SELECT * FROM expressions_scores
@@ -383,18 +381,56 @@ SELECT * FROM form_assessment_scores
   UNION
 SELECT * FROM hand_graded_to_scores;
 
+-- This view adds the 0-4 grade but also fills in any missing assignments with a
+-- score of 0 and grade of 0 unless the assignment was optional for everyone or
+-- excused for an individual.
 DROP VIEW IF EXISTS assignment_grades;
 CREATE VIEW assignment_grades as
 SELECT
   user_id,
   assignment_id,
-  standard,
-  s.score,
-  max(grade) grade
-FROM assignment_scores s
-JOIN assignment_weights using (assignment_id)
-JOIN fps on s.score >= minimum
-GROUP BY user_id, assignment_id, standard;
+  coalesce(s.score, 0) score,
+  max(coalesce(grade, 0)) grade
+FROM assignments
+--JOIN assignment_weights using (assignment_id)
+JOIN roster using (course_id)
+LEFT JOIN excused_assignments ex using (assignment_id, user_id)
+LEFT JOIN optional_assignments opt using (assignment_id)
+LEFT JOIN assignment_scores s using (assignment_id, user_id)
+LEFT JOIN fps on s.score >= minimum
+WHERE
+  ex.assignment_id is null and
+  (grade is not null or opt.assignment_id is null)
+GROUP BY user_id, assignment_id;
+
+-- Weights for standards per assignment and student since secondary weights are
+-- only applied for students whose performance is better than their current
+-- standard grade.
+-- DROP VIEW IF EXISTS per_student_assignment_weights;
+-- CREATE VIEW per_student_assignment_weights AS
+-- SELECT
+--   assignment_id,
+--   user_id,
+--   standard,
+--   weight
+-- FROM assignments
+-- JOIN roster USING (course_id)
+-- JOIN assignment_weights USING (assignment_id)
+
+-- UNION
+
+-- SELECT
+--   assignment_id,
+--   user_id,
+--   standard,
+--   weight
+-- FROM assignments
+-- JOIN roster USING (course_id)
+-- JOIN secondary_weights USING (assignment_id)
+-- JOIN assignment_grades USING (assignment_id, user_id)
+-- JOIN standard_grades USING (user_id, standard)
+-- WHERE standard_grades.grade < assignment_grades.grade;
+
 
 DROP VIEW IF EXISTS users_standards_summary;
 CREATE VIEW users_standards_summary AS
@@ -405,12 +441,13 @@ SELECT
   group_concat(printf("%.2f", score), ', ' order by assignment_id) scores,
   sum(score * weight) / sum(weight) score
 FROM assignment_grades g
-JOIN assignment_weights USING (assignment_id, standard)
+JOIN assignment_weights USING (assignment_id)
 GROUP BY user_id, standard;
 
+-- The standards that exist.
 DROP VIEW IF EXISTS standards;
 CREATE VIEW standards AS
-SELECT DISTINCT PERIOD, STANDARD
+SELECT DISTINCT period, standard
 FROM assignment_scores
 JOIN assignment_weights w USING (assignment_id)
 JOIN roster USING (user_id)
@@ -421,6 +458,7 @@ DROP VIEW IF EXISTS standard_grades;
 CREATE VIEW standard_grades AS
 SELECT
   period,
+  user_id,
   student_number,
   sortable_name,
   standard,
@@ -436,7 +474,9 @@ DROP VIEW IF EXISTS missing_assignments;
 CREATE VIEW missing_assignments AS
 SELECT
   user_id,
-  assignment_id
+  assignment_id,
+  sortable_name,
+  title
 FROM roster
 JOIN assignments USING (course_id)
 LEFT JOIN optional_assignments opt USING (assignment_id)
@@ -446,7 +486,6 @@ WHERE
   opt.assignment_id IS NULL AND
   ex.assignment_id IS NULL AND
   scores.user_id IS NULL;
-
 
 DROP VIEW IF EXISTS to_update;
 CREATE VIEW to_update AS
