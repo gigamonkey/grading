@@ -153,12 +153,13 @@ class Speedrun {
     }
   }
 
-  private void withResults() throws IOException, InterruptedException {
+  private void withResults(long timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
     ConcurrentTester tester = new ConcurrentTester(testerClass.get());
+
     try (var lines = repo.log(branch)) {
       List<Commit> commits = lines.toList();
       List<String> sources = sources(commits);
-      List<ConcurrentTester.Result> results = tester.testSources(sources, 2, TimeUnit.SECONDS);
+      List<ConcurrentTester.Result> results = tester.testSources(sources, timeout, timeUnit);
       for (int i = 0; i < commits.size(); i++) {
         var c = commits.get(i);
         var shortSha = c.sha().substring(0, 8);
@@ -207,7 +208,7 @@ class Speedrun {
     var speedrun = new Speedrun(dir, branch, file, testerClass);
 
     if (testerClass.isPresent()) {
-      speedrun.withResults();
+      speedrun.withResults(2, TimeUnit.SECONDS);
     } else {
       speedrun.dumpLog();
     }
