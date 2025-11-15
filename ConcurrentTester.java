@@ -20,15 +20,6 @@ public class ConcurrentTester {
       }
     };
 
-
-  public record Result(Map<String, TestResult[]> results, Exception problem) {
-    public static final Result TIMEOUT = new Result(null, null);
-    public boolean hasResults() {
-      return results != null;
-    }
-  }
-
-
   private final TestRunner runner = new TestRunner();
   private final Class<? extends Tester> testerClass;
 
@@ -36,42 +27,14 @@ public class ConcurrentTester {
     this.testerClass = testerClass;
   }
 
-  public Result testSource(String source) throws Exception {
-    var r = runner.results(testerClass, runner.classFromSource(source));
-    return new Result(r, null);
-  }
-
-  public Callable<Result> makeTask(String source) {
-    return new Callable<>() {
-      public Result call() throws Exception {
-        return testSource(source);
-      }
-      public String toString() {
-        return "Source: " + source;
-      }
-    };
-  }
-
   public List<Result> testSources(List<String> sources, long timeout, TimeUnit unit) throws InterruptedException {
     ExecutorService executor = Executors.newCachedThreadPool(daemons);
-    List<Callable<Result>> tasks = sources.stream().map(this::makeTask).toList();
+    List<Callable<Map<String, TestResult[]>>> tasks = sources.stream().map(this::makeTask).toList();
 
     try {
-      List<Future<Result>> futures = executor.invokeAll(tasks, timeout, unit);
+      List<Future<Map<String, TestResult[]>>> futures = executor.invokeAll(tasks, timeout, unit);
 
-      return futures.stream().map(future -> {
-          if (!future.isCancelled()) {
-            try {
-              return future.get(); // Normal completion
-            } catch (ExecutionException e) {
-              return new Result(null, (Exception) e.getCause()); // Exceptional completion
-            } catch (InterruptedException ie) {
-              return new Result(null, ie); // Exceptional completion
-            }
-          } else {
-            return Result.TIMEOUT; // Canceled due to timeout
-          }
-        }).toList();
+      return futures.stream().map(this::mapResult).toList();
 
     } finally {
       List<Runnable> notStartedTasks = executor.shutdownNow();
@@ -80,4 +43,34 @@ public class ConcurrentTester {
       }
     }
   }
+
+  private Result mapResult(Future<Map<String, TestResult[]>> future) {
+    if (!future.isCancelled()) {
+      try {
+        return new GoodResult(future.get()); // Normal completion
+      } catch (ExecutionException e) {
+        return new ErrorResult((Exception) e.getCause()); // Exceptional completion
+      } catch (InterruptedException ie) {
+        return new ErrorResult(ie); // Exceptional completion
+      }
+    } else {
+      return new TimeoutResult(); // Canceled due to timeout
+    }
+  }
+
+  private Callable<Map<String, TestResult[]>> makeTask(String source) {
+    return new Callable<>() {
+      public Map<String, TestResult[]> call() throws Exception {
+        return testSource(source);
+      }
+      public String toString() {
+        return "Source: " + source;
+      }
+    };
+  }
+
+  private Map<String, TestResult[]>  testSource(String source) throws Exception {
+    return runner.results(testerClass, runner.classFromSource(source));
+  }
+
 }
