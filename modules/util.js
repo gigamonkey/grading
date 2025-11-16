@@ -25,7 +25,9 @@ const loadJSON = (filename) => JSON.parse(readFileSync(filename));
 
 const dumpJSON = (data) => console.log(JSON.stringify(data, null, 2));
 
-const loadSnakeCaseJSON = (filename) => mapKeys(loadJSON(filename), snakeToCamel);
+const loadSnakeCaseJSON = (filename) => camelify(loadJSON(filename));
+
+const camelify = (data) => mapKeys(data, snakeToCamel);
 
 const snakeToCamel = (s) => s.replace(/_(.)/g, (_, c) => c.toUpperCase());
 
@@ -51,6 +53,37 @@ const numbers = (a, b) => {
   return ns.map(Number);
 };
 
+const median = (ns) => {
+  const sorted = ns.toSorted();
+  if (ns.length == 0) {
+    return undefined;
+  } else if (ns.length % 2 === 0) {
+    const i = ns.length / 2;
+    return (ns[i - 1] + ns[i]) / 2;
+  } else {
+    return ns[Math.floor(ns.length / 2)];
+  }
+};
+
+const percentileRank = (ns, n) => {
+  const cf = count(ns, x => x <= n);
+  const f = count(ns, x => x === n);
+  return 100 * (cf - (0.5 * f)) / ns.length;
+};
+
+const stats = (data) => {
+  const total = sum(data);
+  return {
+    data,
+    sum: total,
+    mean: total / data.length,
+    median: median(data),
+    min: data.reduce((acc, n) => Math.min(n, acc), Infinity),
+    max: data.reduce((acc, n) => Math.max(n, acc), -Infinity),
+    rank: function (n) { return percentileRank(this.data, n) },
+  }
+};
+
 const exec = (command, cwd) => {
   return execSync(command, { cwd, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
 };
@@ -58,6 +91,7 @@ const exec = (command, cwd) => {
 export {
   argv,
   average,
+  camelify,
   count,
   dumpJSON,
   dumpTSV,
@@ -79,6 +113,7 @@ export {
   readFileSync,
   readLines,
   snakeToCamel,
+  stats,
   sum,
   values,
 };
