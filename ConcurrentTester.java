@@ -47,14 +47,14 @@ public class ConcurrentTester {
   private Result mapResult(Future<Map<String, TestResult[]>> future) {
     if (!future.isCancelled()) {
       try {
-        return new GoodResult(future.get()); // Normal completion
+        return new Result.Good(future.get());
       } catch (ExecutionException e) {
-        return new ErrorResult((Exception) e.getCause()); // Exceptional completion
+        return new Result.Error((Exception) e.getCause());
       } catch (InterruptedException ie) {
-        return new ErrorResult(ie); // Exceptional completion
+        return new Result.Error(ie);
       }
     } else {
-      return new TimeoutResult(); // Canceled due to timeout
+      return new Result.Timeout();
     }
   }
 

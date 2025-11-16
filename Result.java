@@ -2,10 +2,13 @@ import module java.base;
 
 import com.gigamonkeys.bhs.testing.*;
 
-public sealed interface Result permits GoodResult, ErrorResult, TimeoutResult {}
+public sealed interface Result permits Result.Good, Result.Error, Result.Timeout {
 
-record GoodResult(Map<String, TestResult[]> results) implements Result {}
+  public record Good(Map<String, TestResult[]> results) implements Result {}
 
-record ErrorResult(Exception exception) implements Result {}
+  public record Error(Exception exception) implements Result {}
 
-record TimeoutResult() implements Result {}
+  public record Timeout() implements Result {}
+
+
+}

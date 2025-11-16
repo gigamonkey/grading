@@ -88,9 +88,9 @@ class Speedrun {
 
   private String showResult(Result r) {
     return switch (r) {
-    case GoodResult g -> "Passed: " + numPassed(g.results());
-    case ErrorResult e -> shortString(e.exception().getMessage());
-    case TimeoutResult t -> "timeout";
+    case Result.Good g -> "Passed: " + numPassed(g.results());
+    case Result.Error e -> shortString(e.exception().getMessage());
+    case Result.Timeout t -> "timeout";
     };
   }
 
