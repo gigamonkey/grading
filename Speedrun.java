@@ -4,9 +4,7 @@ import com.gigamonkeys.bhs.testing.*;
 
 class Speedrun {
 
-  private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("h:m M/d/y");
-
-  record CommitResults(Commit commit, Result result) {}
+  private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("hh:mm M/d/yyyy");
 
   private final Repo repo;
   private final String branch;
@@ -83,6 +81,18 @@ class Speedrun {
         var r = results.get(i);
         IO.println(shortSha + ": " + date + " - " + showResult(r));
       }
+
+      var start = commits.getLast();
+      var end = commits.getFirst();
+      var ellapsed = Duration.between(start.time(), end.time());
+
+      long hours = ellapsed.toHours();
+      long minutes = ellapsed.toMinutesPart();
+      long seconds = ellapsed.toSecondsPart();
+
+      IO.println(start);
+      IO.println(end);
+      IO.println(String.format("%02d:%02d:%02d", hours, minutes, seconds));
     }
   }
 

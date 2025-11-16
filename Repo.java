@@ -23,7 +23,7 @@ public record Repo(String dir) {
   public Stream<Commit> log(String treeish) throws IOException {
 
     var args = makeArgs("log", "--pretty=tformat:%H %at", treeish);
-    var inWindow = new TimeWindow(Duration.of(1, ChronoUnit.HOURS));
+    var inWindow = new TimeWindow(Duration.of(2, ChronoUnit.HOURS));
     var process = new ProcessBuilder(args).start();
     var reader = buffered(process.getInputStream());
 
