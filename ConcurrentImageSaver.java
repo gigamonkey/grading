@@ -63,7 +63,21 @@ public class ConcurrentImageSaver {
   public static void main(String[] args) throws Exception {
     var gens = sourceFiles(args[0]).map(Generator::new).toList();
     var runner = new WithTimeouts<Path>(10, TimeUnit.SECONDS);
-    var results = runner.run(gens);
+    var oldIn = System.in;
+    var oldOut = System.out;
+    var oldErr = System.err;
+    List<WithTimeouts.Result<Path>> results;
+    try {
+      System.setIn(InputStream.nullInputStream());
+      System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+      System.setErr(new PrintStream(OutputStream.nullOutputStream()));
+      results = runner.run(gens);
+    } finally {
+      System.setIn(oldIn);
+      System.setOut(oldOut);
+      System.setErr(oldErr);
+    }
+
     for (int i = 0; i < gens.size(); i++) {
       IO.println("%s: %s".formatted(results.get(i).emoji(), gens.get(i).dir()));
     }
