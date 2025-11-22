@@ -70,7 +70,7 @@ public class ConcurrentTester {
   }
 
   private Map<String, TestResult[]>  testSource(String source) throws Exception {
-    return runner.results(testerClass, runner.classFromSource(source));
+    return runner.results(testerClass, TestRunner.classFromSource(source));
   }
 
 }
