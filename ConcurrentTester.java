@@ -9,17 +9,6 @@ import com.gigamonkeys.bhs.testing.*;
  */
 public class ConcurrentTester {
 
-  private static final ThreadFactory daemons = new ThreadFactory() {
-      private final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
-
-      @Override
-      public Thread newThread(Runnable r) {
-        Thread thread = defaultFactory.newThread(r);
-        thread.setDaemon(true);
-        return thread;
-      }
-    };
-
   private final TestRunner runner = new TestRunner();
   private final Class<? extends Tester> testerClass;
 
@@ -28,7 +17,7 @@ public class ConcurrentTester {
   }
 
   public List<Result> testSources(List<String> sources, long timeout, TimeUnit unit) throws InterruptedException {
-    ExecutorService executor = Executors.newCachedThreadPool(daemons);
+    ExecutorService executor = Executors.newCachedThreadPool(DaemonThreads.factory());
     List<Callable<Map<String, TestResult[]>>> tasks = sources.stream().map(this::makeTask).toList();
 
     try {

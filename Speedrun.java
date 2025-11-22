@@ -4,7 +4,7 @@ import com.gigamonkeys.bhs.testing.*;
 
 class Speedrun {
 
-  private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("hh:mm M/d/yyyy");
+  private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("hh:mm:ss M/d/yyyy");
 
   private final Repo repo;
   private final String branch;
@@ -34,36 +34,24 @@ class Speedrun {
     return Arrays.stream(results).allMatch(TestResult::passed);
   }
 
-  private double scoreMethodResults(TestResult[] results) {
-    return (double) Arrays.stream(results).filter(TestResult::passed).count() / results.length;
-  }
-
   private void dumpLog() throws IOException {
 
+    IO.println("-*- mode: markup; -*-");
+    IO.println();
+
     try (var lines = repo.log(branch)) {
-      lines.forEach(c -> {
-          try {
-            var shortSha = c.sha().substring(0, 8);
-            var date = c.time().atZone(ZoneId.systemDefault()).format(dateFormat);
-            var code = repo.fileContents(c.sha(), branch + "/" + file);
+      List<Commit> commits = lines.toList().reversed();
+      for (var c : commits) {
+        var shortSha = c.sha().substring(0, 8);
+        var date = c.time().atZone(ZoneId.systemDefault()).format(dateFormat);
+        var code = getSource(c);
 
-            var results = testerClass.map(tester -> {
-                try {
-                  return runner.results(tester, runner.classFromSource(code));
-                } catch (ClassNotFoundException cnfe) {
-                  IO.println(cnfe);
-                  return null;
-                } catch (Exception e) {
-                  return null;
-                }
-              });
-
-
-            IO.println(shortSha + ": " + date + " (" + code.length() + ") " + results.map(this::numPassed).orElse(0));
-          } catch (IOException ioe) {
-            IO.println("Problem processing " + c);
-          }
-        });
+        IO.println();
+        IO.println("* " + shortSha + ": " + date);
+        IO.println();
+        IO.println(code);
+        IO.println();
+      }
     }
   }
 
@@ -78,23 +66,56 @@ class Speedrun {
         var c = commits.get(i);
         var shortSha = c.sha().substring(0, 8);
         var date = c.time().atZone(ZoneId.systemDefault()).format(dateFormat);
+        var elapsed = i < commits.size() - 1 ? Duration.between(commits.get(i + 1).time(), c.time()) : Duration.ZERO;
         var r = results.get(i);
-        IO.println(shortSha + ": " + date + " - " + showResult(r));
+        IO.println(shortSha + ": " + date + " (" + durationString(elapsed, TimeUnit.MINUTES) + ") - " + showResult(r));
       }
 
       var start = commits.getLast();
       var end = commits.getFirst();
-      var ellapsed = Duration.between(start.time(), end.time());
+      var elapsed = Duration.between(start.time(), end.time());
 
-      long hours = ellapsed.toHours();
-      long minutes = ellapsed.toMinutesPart();
-      long seconds = ellapsed.toSecondsPart();
-
-      IO.println(start);
-      IO.println(end);
-      IO.println(String.format("%02d:%02d:%02d", hours, minutes, seconds));
+      IO.println("Total time: " + durationString(elapsed, TimeUnit.HOURS));
     }
   }
+
+  private static final TimeUnit[] units = { TimeUnit.SECONDS, TimeUnit.MINUTES, TimeUnit.HOURS };
+
+  private TimeUnit maximumUnit(Duration d) {
+    for (int i = units.length - 1; i >=0; i--) {
+      if (toPart(d, units[i]) > 0) return units[i];
+    }
+    return TimeUnit.SECONDS;
+  }
+
+  private String durationString(Duration d, TimeUnit minUnit) {
+    TimeUnit maxUnit = maximumUnit(d);
+    TimeUnit firstUnit = maxUnit.compareTo(minUnit) > 0 ? maxUnit : minUnit;
+
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < units.length; i++) {
+      long v = toPart(d, units[i]);
+      if (units[i] == firstUnit) {
+        sb.insert(0, "%d".formatted(v));
+      } else if (units[i].compareTo(firstUnit) < 0 || v > 0) {
+        sb.insert(0, ":%02d".formatted(v));
+      }
+    }
+    return sb.toString();
+  }
+
+    public static long toPart(Duration duration, TimeUnit unit) {
+      switch (unit) {
+      case TimeUnit.HOURS:
+        return duration.toHoursPart();
+      case TimeUnit.MINUTES:
+        return duration.toMinutesPart();
+      case TimeUnit.SECONDS:
+        return duration.toSecondsPart();
+      default:
+        throw new UnsupportedOperationException("Unit " + unit + " is not supported for part extraction");
+      }
+    }
 
   private String showResult(Result r) {
     return switch (r) {
@@ -105,7 +126,7 @@ class Speedrun {
   }
 
   private static String shortString(String s) {
-    return s.substring(0, Math.min(20, s.indexOf("\n")));
+    return s.substring(0, Math.min(20, Math.max(s.length(), s.indexOf("\n"))));
   }
 
   private String getSource(Commit commit) {
@@ -120,25 +141,82 @@ class Speedrun {
     return commits.stream().map(this::getSource).toList();
   }
 
+  static void doDumpLog(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
+
+    var dir = args.get(0);
+    var branch = args.get(1);
+    var file = args.get(2);
+
+    var speedrun = new Speedrun(dir, branch, file, Optional.empty());
+    speedrun.dumpLog();
+  }
+
+  static void doWithResults(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
+
+    var dir = args.get(0);
+    var branch = args.get(1);
+    var file = args.get(2);
+    var testerClass = args.get(3);
+
+    var speedrun = new Speedrun(dir, branch, file, Optional.of(testerClass));
+    speedrun.withResults(2, TimeUnit.SECONDS);
+  }
+
+  static void doEmit(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
+
+    var dir = args.get(0);
+    var repo = new Repo(dir);
+
+    var start = repo.commit(args.get(1));
+    var end = repo.commit(args.get(2));
+
+    var elapsed = Duration.between(start.time(), end.time());
+
+    long hours = elapsed.toHours();
+    long minutes = elapsed.toMinutesPart();
+    long seconds = elapsed.toSecondsPart();
+
+    var date = end.time().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
+
+    var gitname = Path.of(dir).getFileName().toString();
+
+    IO.println("%s,%s,%s,%s,%d".formatted(
+                 gitname.substring(0, gitname.indexOf(".git")),
+                 date,
+                 start.sha(),
+                 end.sha(),
+                 elapsed.getSeconds()));
+  }
+
   static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 
-    if (args.length < 3) {
-      System.err.println("args: repo-directory branch file");
+    if (args.length < 1) {
+      System.err.println("args: command <args>");
+      System.err.println("Commands:");
+      System.err.println("  log - emit a log of changes");
+      System.err.println("  results - emit a log of changes with score for each commit");
+      System.err.println("  emit - emit a record with the date, shas, and elapsed seconds");
+      System.exit(1);
     }
 
-    var dir = args[0];
-    var branch = args[1];
-    var file = args[2];
+    var rest = Arrays.asList(args).subList(1, args.length);
 
-    Optional<String> testerClass = Optional.ofNullable(args.length > 3 ? args[3] : null);
-
-    var speedrun = new Speedrun(dir, branch, file, testerClass);
-
-    if (testerClass.isPresent()) {
-      speedrun.withResults(2, TimeUnit.SECONDS);
-    } else {
-      speedrun.dumpLog();
+    switch (args[0]) {
+    case "log":
+      doDumpLog(rest);
+      break;
+    case "results":
+      doWithResults(rest);
+      break;
+    case "emit":
+      doEmit(rest);
+      break;
+    default:
+      System.err.println("Don't understand command " + args[0]);
+      System.exit(1);
     }
+
+
 
   }
 }
