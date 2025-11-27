@@ -2,13 +2,13 @@
 
 import { DB } from 'pugsql';
 import { readFileSync } from 'node:fs';
-import { basename, dirname } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import vm from 'node:vm';
 import { Command } from 'commander';
 import glob from 'fast-glob';
 import { textIfOk } from './modules/fetch-helpers.js';
 import { getSha, getTimestamp, numCorrect } from './modules/grading.js';
-import { loadJSON } from './modules/util.js';
+import { loadJSON, loadSnakeCaseJSON } from './modules/util.js';
 
 const { entries, fromEntries, keys } = Object;
 
@@ -204,32 +204,43 @@ const _score = (results) => {
   return numCorrect(results) / keys(results).length;
 };
 
-const dumpResults = (assignmentId, github, timestamp, sha, results) => {
+const dumpResults = (assignmentId, github, timestamp, sha, results, dryRun) => {
   entries(results).forEach(([question, result]) => {
     const answered = result === null ? 0 : 1;
     const correct = result === null ? 0 : isCorrect(result);
-    db.insertJavascriptUnitTest({assignmentId, github, question, answered, correct, timestamp, sha });
+    if (!dryRun) {
+      db.insertJavascriptUnitTest({assignmentId, github, question, answered, correct, timestamp, sha });
+    } else {
+      console.log({assignmentId, github, question, answered, correct, timestamp, sha });
+    }
   });
 };
 
 const emptyResults = (testcases) => fromEntries(keys(testcases.allCases).map((n) => [n, null]));
 
 new Command()
-  .name('javascript-unit-tests-questions')
+  .name('grade-javascript-unit-tests')
   .description('Run unit tests against dumped Javascript code.')
   .argument('<dir>', 'Code directory.')
-  .action(async (dir, _opts) => {
-    const { assignment_id: assignmentId, url } = loadJSON(`${dir}/assignment.json`);
+  .option('-n, --dry-run', "Don't write to database.")
+  .action(async (dir, opts) => {
+    const { assignmentId, openDate, title, courseId, url } = loadSnakeCaseJSON(join(dir, 'assignment.json'));
 
     try {
       const testcases = await fetchTestcases(url);
       const questions = keys(testcases.allCases).length;
 
-      db.transaction(() => {
-        db.clearJavascriptUnitTest({assignmentId});
-        db.clearScoredQuestionAssignment({assignmentId});
+      console.log(JSON.stringify(keys(testcases.allCases), null, 2));
+      console.log(`questions: ${questions}`);
 
-        db.insertScoredQuestionAssignment({ assignmentId, questions });
+      db.transaction(() => {
+
+        if (!opts.dryRun) {
+          db.ensureAssignment({ assignmentId, openDate, courseId, title });
+          db.clearJavascriptUnitTest({assignmentId});
+          db.clearScoredQuestionAssignment({assignmentId});
+          db.insertScoredQuestionAssignment({ assignmentId, questions });
+        }
 
         const code = glob.sync(`${dir}/**/code.js`);
 
@@ -242,9 +253,9 @@ new Command()
           try {
             const code = readFileSync(file, 'utf-8');
             const results = runTests(testcases, code);
-            dumpResults(assignmentId, github, timestamp, sha, results);
+            dumpResults(assignmentId, github, timestamp, sha, results, opts.dryRun);
           } catch (_e) {
-            dumpResults(assignmentId, github, timestamp, sha, emptyResults(testcases));
+            dumpResults(assignmentId, github, timestamp, sha, emptyResults(testcases), opts.dryRun);
           }
         });
       })
