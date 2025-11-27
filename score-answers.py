@@ -24,7 +24,6 @@ if __name__ == "__main__":
 
     questions = db.question_numbers(assignment_id=assignment_id)
     for q in questions:
-        print(q)
         question_number = q['question_number']
         question = q['question']
         kind = q['kind']
