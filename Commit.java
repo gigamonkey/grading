@@ -5,4 +5,8 @@ record Commit(String sha, Instant time) {
     String[] parts = line.split(" ");
     return new Commit(parts[0], Instant.ofEpochSecond(Long.parseLong(parts[1])));
   }
+
+  public long timestamp() {
+    return time.getEpochSecond();
+  }
 }
