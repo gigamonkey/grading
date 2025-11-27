@@ -1,5 +1,14 @@
 -- :name ensureAssignment :insert
-insert or replace into assignments (assignment_id, date, course_id, title) values ($assignmentId, $openDate, $courseId, $title);
+insert or replace into assignments
+  (assignment_id, date, course_id, title)
+values
+  ($assignmentId, $openDate, $courseId, $title);
+
+-- :name ensureAssignmentWeight :insert
+insert or replace into assignment_weights
+  (assignment_id, standard, weight)
+values
+  ($assignmentId, $standard, $weight);
 
 -- :name postPromptResponseGrade :insert
 insert into prompt_response_grades (user_id, posted, grade) values ($userId, $posted, $grade)
@@ -38,6 +47,7 @@ select
   score,
   grade
 from assignment_grades
+join assignment_weights using (assignment_id)
 where assignment_id = $assignmentId
 order by user_id, standard;
 
@@ -49,6 +59,7 @@ select
   score,
   grade
 from assignment_grades
+join assignment_weights using (assignment_id)
 where user_id = $userId
 order by assignment_id, standard;
 
@@ -60,6 +71,7 @@ select
   score,
   grade
 from assignment_grades
+join assignment_weights using (assignment_id)
 where user_id = $userId and assignment_id = $assignmentId
 order by standard;
 
@@ -71,6 +83,7 @@ select
   score,
   grade
 from assignment_grades
+join assignment_weights using (assignment_id)
 order by user_id, assignment_id, standard;
 
 -- :name clearDirectScores :run
@@ -112,3 +125,7 @@ WHERE
   course_id = $courseId AND
   standard = $standard
 ORDER BY date;
+
+
+-- :name speedrunsWithGit :all
+select speedruns.*, github from speedruns join roster using (user_id);

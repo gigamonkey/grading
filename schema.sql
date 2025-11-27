@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS assignments (
 CREATE TABLE IF NOT EXISTS assignment_weights (
   assignment_id INTEGER,
   standard TEXT,
-  weight REAL
+  weight REAL,
+  PRIMARY KEY (assignment_id, standard)
 );
 
 -- Weights for any standard that will be increased by an assignment if a student
@@ -365,6 +366,45 @@ CREATE TABLE IF NOT EXISTS ic_grades (
   PRIMARY KEY (student_number, standard)
 );
 
+-- Record each time a student does a successful speedrun of a given assignment.
+-- THIS SHOULD NO LONGER BE NEEDED.
+CREATE TABLE IF NOT EXISTS speedruns (
+  assignment_id INTEGER,
+  user_id TEXT,
+  date TEXT,
+  first_sha TEXT,
+  last_sha TEXT,
+  seconds INTEGER,
+  PRIMARY KEY (assignment_id, user_id, date)
+);
+
+-- Loaded from non-abandoned speedruns from the server
+CREATE TABLE IF NOT EXISTS completed_speedruns (
+  speedrun_id INTEGER PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  started_at INTEGER NULL,
+  first_sha TEXT NULL,
+  finished_at INTEGER NULL,
+  last_sha TEXT NULL
+);
+
+-- Record whether speedrun was acceptable or not.
+CREATE TABLE IF NOT EXISTS graded_speedruns (
+  speedrun_id INTEGER PRIMARY_KEY,
+  ok INTEGER NOT NULL
+);
+
+-- Count of number of successful speedruns per user and assignment
+DROP VIEW IF EXISTS speedrun_points;
+CREATE VIEW speedrun_points AS
+SELECT user_id, assignment_id, COUNT(*) runs
+FROM completed_speedruns
+JOIN graded_speedruns USING (speedrun_id)
+WHERE ok
+GROUP BY user_id, assignment_id;
+
+
 -- This view only contains scores that actually exist. If a student hasn't done
 -- an assignment they will have no entry in this table.
 DROP VIEW IF EXISTS assignment_scores;
@@ -389,19 +429,24 @@ CREATE VIEW assignment_grades as
 SELECT
   user_id,
   assignment_id,
-  coalesce(s.score, 0) score,
-  max(coalesce(grade, 0)) grade
+  coalesce(s.score, 0) raw_score,
+  max(fps.grade) raw_grade,
+  coalesce(speedrun_points.runs, 0) speedruns,
+  case when speedrun_points.runs > 0 then max(next_fps.minimum) else coalesce(s.score, 0) end score,
+  max(next_fps.grade) grade
 FROM assignments
---JOIN assignment_weights using (assignment_id)
 JOIN roster using (course_id)
 LEFT JOIN excused_assignments ex using (assignment_id, user_id)
 LEFT JOIN optional_assignments opt using (assignment_id)
 LEFT JOIN assignment_scores s using (assignment_id, user_id)
-LEFT JOIN fps on s.score >= minimum
+LEFT JOIN speedrun_points using (user_id, assignment_id)
+JOIN fps on coalesce(s.score, 0) >= fps.minimum
+JOIN fps next_fps on next_fps.grade = min(fps.grade + coalesce(speedrun_points.runs, 0), 4)
 WHERE
   ex.assignment_id is null and
-  (grade is not null or opt.assignment_id is null)
+  (opt.assignment_id is null or coalesce(s.score, 0) > 0)
 GROUP BY user_id, assignment_id;
+
 
 -- Weights for standards per assignment and student since secondary weights are
 -- only applied for students whose performance is better than their current

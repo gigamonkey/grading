@@ -11,17 +11,22 @@ insert into assignment_weights
 values
   ($assignmentId, $standard, $weight);
 
+-- :name assignmentWeight :get
+select * from assignment_weights where assignment_id = $assignmentId and standard = $standard;
+
+-- :name updateAssignmentWeight :run
+update assignment_weights set
+  (weight) =
+  ($weight)
+where
+  assignment_id = $assignmentId and
+  standard = $standard
+
 -- :name makeAssignmentWeight :insert
-insert into assignment_weights
-  (assignment_id, standard, weight)
-values
-  ($assignmentId, $standard, $weight);
+insert into assignment_weights (weight) values ($weight);
 
 -- :name makeAssignmentWeightWithDefaultValues :insert
-insert into assignment_weights
-  (assignment_id, standard, weight)
-values
-  ($assignmentId, $standard, $weight);
+insert into assignment_weights (weight) values ($weight);
 
 
 -- assignments ---------------------------------------------
@@ -30,19 +35,60 @@ values
 select * from assignments;
 
 -- :name insertAssignment :insert
-insert into assignments (assignment_id, title) values ($assignmentId, $title);
+insert into assignments
+  (assignment_id, date, course_id, title)
+values
+  ($assignmentId, $date, $courseId, $title);
 
 -- :name assignment :get
 select * from assignments where assignment_id = $assignmentId;
 
 -- :name updateAssignment :run
-update assignments set (title) = ($title) where assignment_id = $assignmentId
+update assignments set
+  (date, course_id, title) =
+  ($date, $courseId, $title)
+where
+  assignment_id = $assignmentId
 
 -- :name makeAssignment :insert
-insert into assignments (title) values ($title);
+insert into assignments (date, course_id, title) values ($date, $courseId, $title);
 
 -- :name makeAssignmentWithDefaultValues :insert
-insert into assignments (title) values ($title);
+insert into assignments (date, course_id, title) values ($date, $courseId, $title);
+
+
+-- completed_speedruns -------------------------------------
+
+-- :name completedSpeedruns :all
+select * from completed_speedruns;
+
+-- :name insertCompletedSpeedrun :insert
+insert into completed_speedruns
+  (speedrun_id, user_id, assignment_id, started_at, first_sha, finished_at, last_sha)
+values
+  ($speedrunId, $userId, $assignmentId, $startedAt, $firstSha, $finishedAt, $lastSha);
+
+-- :name completedSpeedrun :get
+select * from completed_speedruns where speedrun_id = $speedrunId;
+
+-- :name updateCompletedSpeedrun :run
+update completed_speedruns set
+  (user_id, assignment_id, started_at, first_sha, finished_at, last_sha) =
+  ($userId, $assignmentId, $startedAt, $firstSha, $finishedAt, $lastSha)
+where
+  speedrun_id = $speedrunId
+
+-- :name makeCompletedSpeedrun :insert
+insert into completed_speedruns
+  (user_id, assignment_id, started_at, first_sha, finished_at, last_sha)
+values
+  ($userId, $assignmentId, $startedAt, $firstSha, $finishedAt, $lastSha);
+
+-- :name makeCompletedSpeedrunWithDefaultValues :insert
+insert into completed_speedruns
+  (user_id, assignment_id, started_at, first_sha, finished_at, last_sha)
+values
+  ($userId, $assignmentId, $startedAt, $firstSha, $finishedAt, $lastSha);
 
 
 -- direct_scores -------------------------------------------
@@ -69,6 +115,35 @@ insert into direct_scores (score) values ($score);
 
 -- :name makeDirectScoreWithDefaultValues :insert
 insert into direct_scores (score) values ($score);
+
+
+-- excused_assignments -------------------------------------
+
+-- :name excusedAssignments :all
+select * from excused_assignments;
+
+-- :name insertExcusedAssignment :insert
+insert into excused_assignments
+  (assignment_id, user_id, reason)
+values
+  ($assignmentId, $userId, $reason);
+
+-- :name excusedAssignment :get
+select * from excused_assignments where assignment_id = $assignmentId and user_id = $userId;
+
+-- :name updateExcusedAssignment :run
+update excused_assignments set
+  (reason) =
+  ($reason)
+where
+  assignment_id = $assignmentId and
+  user_id = $userId
+
+-- :name makeExcusedAssignment :insert
+insert into excused_assignments (reason) values ($reason);
+
+-- :name makeExcusedAssignmentWithDefaultValues :insert
+insert into excused_assignments (reason) values ($reason);
 
 
 -- expressions ---------------------------------------------
@@ -110,7 +185,37 @@ insert into form_assessments (assignment_id) values ($assignmentId);
 select * from fps;
 
 -- :name insertFp :insert
-insert into fps (minimum, grade) values ($minimum, $grade);
+insert into fps (grade, minimum, score) values ($grade, $minimum, $score);
+
+-- :name fp :get
+select * from fps where grade = $grade;
+
+-- :name updateFp :run
+update fps set (minimum, score) = ($minimum, $score) where grade = $grade
+
+
+-- graded_speedruns ----------------------------------------
+
+-- :name gradedSpeedruns :all
+select * from graded_speedruns;
+
+-- :name insertGradedSpeedrun :insert
+insert into graded_speedruns
+  (speedrun_id, user_id, assignment_id, ok)
+values
+  ($speedrunId, $userId, $assignmentId, $ok);
+
+-- :name makeGradedSpeedrun :insert
+insert into graded_speedruns
+  (speedrun_id, user_id, assignment_id, ok)
+values
+  ($speedrunId, $userId, $assignmentId, $ok);
+
+-- :name makeGradedSpeedrunWithDefaultValues :insert
+insert into graded_speedruns
+  (speedrun_id, user_id, assignment_id, ok)
+values
+  ($speedrunId, $userId, $assignmentId, $ok);
 
 
 -- hand_graded ---------------------------------------------
@@ -279,6 +384,15 @@ insert into normalized_answers (answer) values ($answer);
 
 -- :name makeNormalizedAnswerWithDefaultValues :insert
 insert into normalized_answers (answer) values ($answer);
+
+
+-- optional_assignments ------------------------------------
+
+-- :name optionalAssignments :all
+select * from optional_assignments;
+
+-- :name insertOptionalAssignment :insert
+insert into optional_assignments (assignment_id) values ($assignmentId);
 
 
 -- prompt_response_grades ----------------------------------
@@ -461,6 +575,65 @@ insert into scored_question_assignments (questions) values ($questions);
 
 -- :name makeScoredQuestionAssignmentWithDefaultValues :insert
 insert into scored_question_assignments (questions) values ($questions);
+
+
+-- secondary_weights ---------------------------------------
+
+-- :name secondaryWeights :all
+select * from secondary_weights;
+
+-- :name insertSecondaryWeight :insert
+insert into secondary_weights
+  (assignment_id, standard, weight)
+values
+  ($assignmentId, $standard, $weight);
+
+-- :name secondaryWeight :get
+select * from secondary_weights where assignment_id = $assignmentId and standard = $standard;
+
+-- :name updateSecondaryWeight :run
+update secondary_weights set
+  (weight) =
+  ($weight)
+where
+  assignment_id = $assignmentId and
+  standard = $standard
+
+-- :name makeSecondaryWeight :insert
+insert into secondary_weights (weight) values ($weight);
+
+-- :name makeSecondaryWeightWithDefaultValues :insert
+insert into secondary_weights (weight) values ($weight);
+
+
+-- speedruns -----------------------------------------------
+
+-- :name speedruns :all
+select * from speedruns;
+
+-- :name insertSpeedrun :insert
+insert into speedruns
+  (assignment_id, user_id, date, first_sha, last_sha, seconds)
+values
+  ($assignmentId, $userId, $date, $firstSha, $lastSha, $seconds);
+
+-- :name speedrun :get
+select * from speedruns where assignment_id = $assignmentId and user_id = $userId and date = $date;
+
+-- :name updateSpeedrun :run
+update speedruns set
+  (first_sha, last_sha, seconds) =
+  ($firstSha, $lastSha, $seconds)
+where
+  assignment_id = $assignmentId and
+  user_id = $userId and
+  date = $date
+
+-- :name makeSpeedrun :insert
+insert into speedruns (first_sha, last_sha, seconds) values ($firstSha, $lastSha, $seconds);
+
+-- :name makeSpeedrunWithDefaultValues :insert
+insert into speedruns (first_sha, last_sha, seconds) values ($firstSha, $lastSha, $seconds);
 
 
 -- student_answers -----------------------------------------
