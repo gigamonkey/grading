@@ -21,11 +21,11 @@ Step 1. Load the questions for a given assignment with `markup-to-questions.py`
 which takes the assignment id and the path to the Markup file. Also loads the
 choices and mchoices answers into `normalized_answers` all with scores of 0.0.
 
-Step 2. Load student answers with `get-answers.py` which takes the assignment id
-and course id and then gets the information it needs about the assignment and
-the github repos of the students it was assigned to from the server. Loads all
-the answers into `student_answers` and the normalized versions into
-`normalized_answers`.
+Step 2. Load student answers from current with `./repos` and the `questions`
+script which puts them in a directory under `grading/<course_id>`
+
+Step 3. Load the answers into the database with `load-answers.js` which takes
+the name of thdirectory created in Step 2.
 
 Step 3. Score all the answers with `score-answers.py` which for each question
 finds unique normalized answers that haven't been assigned a score and prompts
@@ -58,11 +58,14 @@ course db.
 ## Java unit test assignments
 
 Step 1. Export student code to directory named for the assignment. With `repo
-one-file`.
+coding`.
 
 Step 2. Get the `assignment.json` file via the API
 https://bhs-cs.gigamonkeys.com/api/assignment/$assignentId and save it in the
-directory. (Should automate this in `javascript-unit-tests-questions.js`.)
+directory. (Should automate this in `java-unit-tests-questions.js`.) Need to add
+`questions` property with the number of questions to answers file. In theory we
+should be able to extract that automatically from the index.njk for the
+assignment.
 
 Step 3. Run the unit tests with `./test-java-files.sh` specifying the tester
 class and a list of files. Something like:
