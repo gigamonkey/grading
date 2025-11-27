@@ -27,6 +27,13 @@ new Command()
 
       if (!opts.dryRun) {
         db.ensureAssignment({ assignmentId, openDate, courseId, title });
+        // FIXME: Not sure what's right here. If we want to just update one
+        // student's grade, e.g. someone who did the test late, we want to leave
+        // all the old scores there. But maybe more normally we've got all the
+        // results for all students in the directory where we've exported the
+        // code and tested it. In that case we clear everything out and reload
+        // everything. Maybe the right thing is to use an ensure rather than
+        // insert method in the loop below.
         db.clearJavaUnitTest({assignmentId});
         db.clearScoredQuestionAssignment({assignmentId});
         db.insertScoredQuestionAssignment({ assignmentId, questions });
