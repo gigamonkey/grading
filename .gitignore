@@ -26,4 +26,5 @@ exports/*.csv
 exports/*.tsv
 
 db-backups/
-.junk
+.junk/
+speedrun-logs/
