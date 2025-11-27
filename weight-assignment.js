@@ -21,7 +21,7 @@ const db = new DB('db.db')
 new Command()
   .name('weight-assignment')
   .description('Add assignment weights for an assignment')
-  .argument('<id>', 'Directory')
+  .argument('<id>', 'Assignment id')
   .option('-n, --dry-run', "Don't write to database.")
   .action(async (assignmentId, opts) => {
 
