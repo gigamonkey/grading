@@ -13,7 +13,7 @@ import { promisify } from 'node:util';
 import { Command } from 'commander';
 import glob from 'fast-glob';
 import { getSha, getTimestamp } from './modules/grading.js';
-import { average, count, loadJSON, mapValues, values } from './modules/util.js';
+import { average, camelify, count, loadJSON, mapValues, values } from './modules/util.js';
 import process from 'node:process';
 import { API } from './api.js';
 
@@ -48,15 +48,15 @@ new Command()
   .action(async (assignmentId, opts) => {
 
     const api = new API(opts.server, opts.apiKey);
+    const { openDate, courseId, title } = camelify(await api.assignmentJSON(assignmentId));
     const { minimumWords, data } = await api.reflectionGradeData(assignmentId);
 
     db.transaction(() => {
 
-
       if (!opts.dryRun) {
-        // FIXME: need to ensure assignment here, probably by pulling assignment
-        // data from server.
+        db.ensureAssignment({ assignmentId, openDate, courseId, title });
         db.clearDirectScores({assignmentId});
+        db.ensureAssignmentWeight({assignmentId, standard: 'Reflections', weight: 1.0});
       }
 
       data.forEach((row) => {
