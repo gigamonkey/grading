@@ -56,7 +56,6 @@ const saveAnswers = (sink, github, assignmentId, answers) => {
 };
 
 new Command()
-  .name('load-answers')
   .description('Load answers to form-based assessment into database.')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
   .option('-n, --dry-run', "Don't write to database.")

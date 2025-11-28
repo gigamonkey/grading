@@ -37,7 +37,6 @@ const computeScore = (row, minimumWords, late) => {
 };
 
 new Command()
-  .name('grade-reflection')
   .description('Grade reflection assignment')
   .argument('<assignmentId>', 'Assignment id of reflection')
   .option('-l, --late <late>', 'Points off late responses.', Number, 0.5)

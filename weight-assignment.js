@@ -19,7 +19,6 @@ const db = new DB('db.db')
   .addQueries('modules/queries.sql');
 
 new Command()
-  .name('weight-assignment')
   .description('Add assignment weights for an assignment')
   .argument('<id>', 'Assignment id')
   .option('-n, --dry-run', "Don't write to database.")

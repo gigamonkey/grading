@@ -13,7 +13,6 @@ const db = new DB('db.db').addQueries('modules/queries.sql');
 const intOrStar = (v) => v === '*' ? undefined : parseInt(v);
 
 new Command()
-  .name('dump-grades')
   .description('Dump grades in JSON for a given assignment id.')
   .argument('[assignment]', 'Assignment', '*')
   .option('-u, --user <user>', 'User id')

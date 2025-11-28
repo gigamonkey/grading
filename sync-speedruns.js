@@ -60,7 +60,6 @@ const main = async (opts) => {
 };
 
 new Command()
-  .name('sync-speedruns')
   .description('Sync speedruns recorded on server')
   .option('-s, --server <url>', 'Server URL', env.BHS_CS_SERVER)
   .option('-k, --api-key <key>', 'API key', env.BHS_CS_API_KEY)

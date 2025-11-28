@@ -70,7 +70,6 @@ const summary = (qs, numQuestions) => {
 };
 
 new Command()
-  .name('grade-expressions')
   .description('Grade an expressions assignment')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
   .option('-n, --dry-run', "Don't write to database.")

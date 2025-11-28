@@ -13,7 +13,6 @@ const main = async (assignment, dir, opts) => {
 };
 
 new Command()
-  .name('get-assignment-json')
   .description('Get assignment.json file via the server API')
   .argument('<assignment>', 'Assignment id')
   .argument('<dir>', 'Directory to save it in')

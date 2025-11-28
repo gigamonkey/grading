@@ -13,7 +13,6 @@ const db = new DB('db.db')
   .addQueries('modules/queries.sql');
 
 new Command()
-  .name('grade-java-unit-tests')
   .description('Score results.json files from TestRunner')
   .argument('<dir>', 'Directory holding student code and results.json files')
   .option('-n, --dry-run', "Don't write to database.")

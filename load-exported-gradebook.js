@@ -8,7 +8,6 @@ import { Command } from 'commander';
 const db = new DB('db.db').addQueries('modules/queries.sql');
 
 new Command()
-  .name('load-exported-grades')
   .description('Load grades exported from IC')
   .argument('<files...>', 'TSV files')
   .option('-n, --dry-run', "Don't write to database.")

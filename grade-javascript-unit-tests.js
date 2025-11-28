@@ -219,7 +219,6 @@ const dumpResults = (assignmentId, github, timestamp, sha, results, dryRun) => {
 const emptyResults = (testcases) => fromEntries(keys(testcases.allCases).map((n) => [n, null]));
 
 new Command()
-  .name('grade-javascript-unit-tests')
   .description('Run unit tests against dumped Javascript code.')
   .argument('<dir>', 'Code directory.')
   .option('-n, --dry-run', "Don't write to database.")

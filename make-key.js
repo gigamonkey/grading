@@ -10,7 +10,6 @@ const db = new DB('db.db').addQueries('modules/queries.sql');
 
 
 new Command()
-  .name('make-key')
   .description('Make a key from scored answers')
   .argument('<assignment>', 'Assignment id')
   .action((assignmentId, opts) => {
