@@ -58,26 +58,8 @@ class Speedrun {
   }
 
   private void withResults(long timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
-    ConcurrentTester tester = new ConcurrentTester(testerClass.get());
-
     try (var lines = repo.log(branch, Duration.of(4, ChronoUnit.HOURS))) {
-      List<Commit> commits = lines.toList();
-      List<String> sources = sources(commits);
-      List<Result> results = tester.testSources(sources, timeout, timeUnit);
-      for (int i = 0; i < commits.size(); i++) {
-        var c = commits.get(i);
-        var shortSha = c.sha().substring(0, 8);
-        var date = c.time().atZone(ZoneId.systemDefault()).format(dateFormat);
-        var elapsed = i < commits.size() - 1 ? Duration.between(commits.get(i + 1).time(), c.time()) : Duration.ZERO;
-        var r = results.get(i);
-        IO.println(shortSha + ": " + date + " (" + durationString(elapsed, TimeUnit.MINUTES) + ") - " + showResult(r));
-      }
-
-      var start = commits.getLast();
-      var end = commits.getFirst();
-      var elapsed = Duration.between(start.time(), end.time());
-
-      IO.println("Total time: " + durationString(elapsed, TimeUnit.HOURS));
+      showResults(lines, 0, timeout, timeUnit);
     }
   }
 
