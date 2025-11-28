@@ -126,6 +126,5 @@ WHERE
   standard = $standard
 ORDER BY date;
 
-
--- :name speedrunsWithGit :all
-select speedruns.*, github from speedruns join roster using (user_id);
+-- :name ungradedSpeedruns :all
+select * from ungraded_speedruns;

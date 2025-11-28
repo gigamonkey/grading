@@ -60,6 +60,10 @@ class API {
     return this.put('/api/grades', grades);
   }
 
+  codingConfig(url) {
+    return this.get(`/api/speedrun/config${url}`);
+  }
+
   clearAssignmentGrades(assignmentId) {
     return this.delete(`/api/grades/${assignmentId}`);
   }

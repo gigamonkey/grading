@@ -28,3 +28,4 @@ exports/*.tsv
 db-backups/
 .junk/
 speedrun-logs/
+classes/

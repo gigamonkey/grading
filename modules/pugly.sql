@@ -200,22 +200,13 @@ update fps set (minimum, score) = ($minimum, $score) where grade = $grade
 select * from graded_speedruns;
 
 -- :name insertGradedSpeedrun :insert
-insert into graded_speedruns
-  (speedrun_id, user_id, assignment_id, ok)
-values
-  ($speedrunId, $userId, $assignmentId, $ok);
+insert into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
 
 -- :name makeGradedSpeedrun :insert
-insert into graded_speedruns
-  (speedrun_id, user_id, assignment_id, ok)
-values
-  ($speedrunId, $userId, $assignmentId, $ok);
+insert into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
 
 -- :name makeGradedSpeedrunWithDefaultValues :insert
-insert into graded_speedruns
-  (speedrun_id, user_id, assignment_id, ok)
-values
-  ($speedrunId, $userId, $assignmentId, $ok);
+insert into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
 
 
 -- hand_graded ---------------------------------------------
@@ -606,34 +597,32 @@ insert into secondary_weights (weight) values ($weight);
 insert into secondary_weights (weight) values ($weight);
 
 
--- speedruns -----------------------------------------------
+-- speedrunnables ------------------------------------------
 
--- :name speedruns :all
-select * from speedruns;
+-- :name speedrunnables :all
+select * from speedrunnables;
 
--- :name insertSpeedrun :insert
-insert into speedruns
-  (assignment_id, user_id, date, first_sha, last_sha, seconds)
+-- :name insertSpeedrunnable :insert
+insert into speedrunnables
+  (assignment_id, kind, questions)
 values
-  ($assignmentId, $userId, $date, $firstSha, $lastSha, $seconds);
+  ($assignmentId, $kind, $questions);
 
--- :name speedrun :get
-select * from speedruns where assignment_id = $assignmentId and user_id = $userId and date = $date;
+-- :name speedrunnable :get
+select * from speedrunnables where assignment_id = $assignmentId;
 
--- :name updateSpeedrun :run
-update speedruns set
-  (first_sha, last_sha, seconds) =
-  ($firstSha, $lastSha, $seconds)
+-- :name updateSpeedrunnable :run
+update speedrunnables set
+  (kind, questions) =
+  ($kind, $questions)
 where
-  assignment_id = $assignmentId and
-  user_id = $userId and
-  date = $date
+  assignment_id = $assignmentId
 
--- :name makeSpeedrun :insert
-insert into speedruns (first_sha, last_sha, seconds) values ($firstSha, $lastSha, $seconds);
+-- :name makeSpeedrunnable :insert
+insert into speedrunnables (kind, questions) values ($kind, $questions);
 
--- :name makeSpeedrunWithDefaultValues :insert
-insert into speedruns (first_sha, last_sha, seconds) values ($firstSha, $lastSha, $seconds);
+-- :name makeSpeedrunnableWithDefaultValues :insert
+insert into speedrunnables (kind, questions) values ($kind, $questions);
 
 
 -- student_answers -----------------------------------------

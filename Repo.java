@@ -31,9 +31,21 @@ public record Repo(String dir) {
     }
   }
 
-  public Stream<Commit> log(String treeish) throws IOException {
-
+  public Stream<Commit> log(String treeish, Duration window) throws IOException {
     var args = makeArgs("log", "--pretty=tformat:%H %at", treeish);
+    var inWindow = new TimeWindow(window);
+    var process = new ProcessBuilder(args).start();
+    var reader = buffered(process.getInputStream());
+
+    return reader.lines()
+      .map(Commit::parse)
+      .takeWhile(inWindow)
+      .onClose(closer(process));
+  }
+
+  public Stream<Commit> changes(String start, String end, String branch) throws IOException {
+    var range = "%s^...%s".formatted(start, end);
+    var args = makeArgs("log", "--pretty=tformat:%H %at", range, branch);
     var inWindow = new TimeWindow(Duration.of(4, ChronoUnit.HOURS));
     var process = new ProcessBuilder(args).start();
     var reader = buffered(process.getInputStream());

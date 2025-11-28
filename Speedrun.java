@@ -1,5 +1,7 @@
 import module java.base;
 
+import static java.lang.Math.max;
+
 import com.gigamonkeys.bhs.testing.*;
 
 class Speedrun {
@@ -39,7 +41,7 @@ class Speedrun {
     IO.println("-*- mode: markup; -*-");
     IO.println();
 
-    try (var lines = repo.log(branch)) {
+    try (var lines = repo.log(branch, Duration.of(4, ChronoUnit.HOURS))) {
       List<Commit> commits = lines.toList().reversed();
       for (var c : commits) {
         var shortSha = c.sha().substring(0, 8);
@@ -58,7 +60,7 @@ class Speedrun {
   private void withResults(long timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
     ConcurrentTester tester = new ConcurrentTester(testerClass.get());
 
-    try (var lines = repo.log(branch)) {
+    try (var lines = repo.log(branch, Duration.of(4, ChronoUnit.HOURS))) {
       List<Commit> commits = lines.toList();
       List<String> sources = sources(commits);
       List<Result> results = tester.testSources(sources, timeout, timeUnit);
@@ -77,6 +79,40 @@ class Speedrun {
 
       IO.println("Total time: " + durationString(elapsed, TimeUnit.HOURS));
     }
+  }
+
+  private void checkRange(String startSha, String endSha, int questions, long timeout, TimeUnit timeUnit)
+    throws IOException, InterruptedException
+  {
+    try (var lines = repo.changes(startSha, endSha, branch)) {
+      showResults(lines, questions, timeout, timeUnit);
+    }
+  }
+
+  private void showResults(Stream<Commit> lines, int questions, long timeout, TimeUnit timeUnit)
+    throws IOException, InterruptedException
+  {
+    ConcurrentTester tester = new ConcurrentTester(testerClass.get());
+
+    List<Commit> commits = lines.toList();
+    List<String> sources = sources(commits);
+    List<Result> results = tester.testSources(sources, timeout, timeUnit);
+    int mostPassed = 0;
+    for (int i = 0; i < commits.size(); i++) {
+      var c = commits.get(i);
+      var shortSha = c.sha().substring(0, 8);
+      var date = c.time().atZone(ZoneId.systemDefault()).format(dateFormat);
+      var elapsed = i < commits.size() - 1 ? Duration.between(commits.get(i + 1).time(), c.time()) : Duration.ZERO;
+      var r = results.get(i);
+      mostPassed = max(mostPassed, numCorrect(r));
+      IO.println(shortSha + ": " + date + " (" + durationString(elapsed, TimeUnit.MINUTES) + ") - " + showResult(r));
+    }
+
+    var start = commits.getLast();
+    var end = commits.getFirst();
+    var elapsed = Duration.between(start.time(), end.time());
+
+    IO.println("Total time: %s; passed %d of %d".formatted(durationString(elapsed, TimeUnit.HOURS), mostPassed, questions));
   }
 
   private static final TimeUnit[] units = { TimeUnit.SECONDS, TimeUnit.MINUTES, TimeUnit.HOURS };
@@ -125,6 +161,14 @@ class Speedrun {
     };
   }
 
+  private int numCorrect(Result r) {
+    return switch (r) {
+    case Result.Good g -> numPassed(g.results());
+    case Result.Error e -> 0;
+    case Result.Timeout t -> 0;
+    };
+  }
+
   private static String shortString(String s) {
     return s.substring(0, Math.min(20, Math.max(s.length(), s.indexOf("\n"))));
   }
@@ -162,6 +206,20 @@ class Speedrun {
     speedrun.withResults(2, TimeUnit.SECONDS);
   }
 
+  static void doCheck(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
+
+    var dir = args.get(0);
+    var branch = args.get(1);
+    var file = args.get(2);
+    var testerClass = args.get(3);
+    var start = args.get(4);
+    var end = args.get(5);
+    var questions = Integer.parseInt(args.get(6));
+
+    var speedrun = new Speedrun(dir, branch, file, Optional.of(testerClass));
+    speedrun.checkRange(start, end, questions, 2, TimeUnit.SECONDS);
+  }
+
   static void doEmit(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
 
     var dir = args.get(0);
@@ -193,15 +251,19 @@ class Speedrun {
     if (args.length < 1) {
       System.err.println("args: command <args>");
       System.err.println("Commands:");
-      System.err.println("  log - emit a log of changes");
+      System.err.println("  check   - emit a log of changes with scores for each commit in range");
+      System.err.println("  emit    - emit a record with the date, shas, and elapsed seconds");
+      System.err.println("  log     - emit a log of changes");
       System.err.println("  results - emit a log of changes with score for each commit");
-      System.err.println("  emit - emit a record with the date, shas, and elapsed seconds");
       System.exit(1);
     }
 
     var rest = Arrays.asList(args).subList(1, args.length);
 
     switch (args[0]) {
+    case "check":
+      doCheck(rest);
+      break;
     case "log":
       doDumpLog(rest);
       break;

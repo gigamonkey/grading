@@ -366,16 +366,11 @@ CREATE TABLE IF NOT EXISTS ic_grades (
   PRIMARY KEY (student_number, standard)
 );
 
--- Record each time a student does a successful speedrun of a given assignment.
--- THIS SHOULD NO LONGER BE NEEDED.
-CREATE TABLE IF NOT EXISTS speedruns (
-  assignment_id INTEGER,
-  user_id TEXT,
-  date TEXT,
-  first_sha TEXT,
-  last_sha TEXT,
-  seconds INTEGER,
-  PRIMARY KEY (assignment_id, user_id, date)
+-- Information needed to grade speedruns
+CREATE TABLE IF NOT EXISTS speedrunnables (
+  assignment_id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL,
+  questions INTEGER
 );
 
 -- Loaded from non-abandoned speedruns from the server
@@ -394,6 +389,19 @@ CREATE TABLE IF NOT EXISTS graded_speedruns (
   speedrun_id INTEGER PRIMARY_KEY,
   ok INTEGER NOT NULL
 );
+
+DROP VIEW IF EXISTS ungraded_speedruns;
+CREATE VIEW ungraded_speedruns AS
+SELECT
+  s.*,
+  r.github,
+  kind,
+  questions
+FROM completed_speedruns s
+JOIN roster r USING (user_id)
+JOIN speedrunnables USING (assignment_id)
+LEFT JOIN graded_speedruns USING (speedrun_id)
+WHERE graded_speedruns.speedrun_id IS NULL;
 
 -- Count of number of successful speedruns per user and assignment
 DROP VIEW IF EXISTS speedrun_points;
