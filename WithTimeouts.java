@@ -2,7 +2,7 @@ import module java.base;
 
 /**
  * Run a bunch of tasks concurrently, mostly so we can timeout runs that don't
- * return (e.g. student code goes into an infinite loop.)
+ * return (e.g. student code that goes into an infinite loop.)
  */
 public class WithTimeouts<R> {
 
