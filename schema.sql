@@ -540,6 +540,26 @@ WHERE
   ex.assignment_id IS NULL AND
   scores.user_id IS NULL;
 
+DROP VIEW IF EXISTS zeros;
+CREATE VIEW zeros AS
+SELECT
+  sortable_name,
+  period,
+  course_id,
+  date,
+  assignment_id,
+  title
+FROM roster
+JOIN assignments USING (course_id)
+LEFT JOIN optional_assignments opt USING (assignment_id)
+LEFT JOIN excused_assignments ex USING (assignment_id, user_id)
+LEFT JOIN assignment_scores scores USING (user_id, assignment_id)
+WHERE
+  opt.assignment_id IS NULL AND
+  ex.assignment_id IS NULL AND
+  (scores.user_id is null OR scores.score = 0)
+ORDER by sortable_name, date;
+
 DROP VIEW IF EXISTS to_update;
 CREATE VIEW to_update AS
 SELECT
