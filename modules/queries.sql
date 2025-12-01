@@ -128,3 +128,15 @@ ORDER BY date;
 
 -- :name ungradedSpeedruns :all
 select * from ungraded_speedruns;
+
+-- :name githubForPeriod :list
+select github from roster where period = $period;
+
+-- :name githubForCourse :list
+select github from roster where course_id = $course;
+
+-- :name githubForUser :list
+select github from roster where github = $user;
+
+-- :name findUser :all
+select * from roster where upper(github) like $q or upper(sortable_name) like $q;
