@@ -139,4 +139,4 @@ select github from roster where course_id = $course;
 select github from roster where github = $user;
 
 -- :name findUser :all
-select * from roster where upper(github) like $q or upper(sortable_name) like $q;
+select * from roster where upper(github) like '%' || upper($q) || '%' or upper(sortable_name) like '%' || upper($q) || '%' or user_id = $q;
