@@ -16,7 +16,8 @@ public class ConcurrentTester {
     this.testerClass = testerClass;
   }
 
-  public List<Result> testSources(List<String> sources, long timeout, TimeUnit unit) throws InterruptedException {
+  public List<Result> testSources(List<String> sources, long timeout, TimeUnit unit)
+      throws InterruptedException {
     ExecutorService executor = Executors.newCachedThreadPool(DaemonThreads.factory());
     List<Callable<Map<String, TestResult[]>>> tasks = sources.stream().map(this::makeTask).toList();
 
@@ -52,14 +53,14 @@ public class ConcurrentTester {
       public Map<String, TestResult[]> call() throws Exception {
         return testSource(source);
       }
+
       public String toString() {
         return "Source: " + source;
       }
     };
   }
 
-  private Map<String, TestResult[]>  testSource(String source) throws Exception {
+  private Map<String, TestResult[]> testSource(String source) throws Exception {
     return runner.results(testerClass, TestRunner.classFromSource(source));
   }
-
 }

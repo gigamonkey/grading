@@ -1,23 +1,15 @@
 import module java.base;
 
+import com.gigamonkeys.bhs.graphics.ImageGenerator;
+import com.gigamonkeys.bhs.testing.TestRunner;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.imageio.ImageIO;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
-
-import com.gigamonkeys.bhs.graphics.ImageGenerator;
-import com.gigamonkeys.bhs.testing.TestRunner;
 
 public class ConcurrentImageSaver {
 
@@ -26,17 +18,19 @@ public class ConcurrentImageSaver {
     private final Path javaFile;
     private final Path dir;
 
-    Generator(Path javaFile)  {
+    Generator(Path javaFile) {
       this.javaFile = javaFile;
       this.dir = javaFile.getParent();
     }
 
-    Path dir() { return dir; }
+    Path dir() {
+      return dir;
+    }
 
     @Override
     public Path call() throws Exception {
       var clazz = TestRunner.classFromPath(javaFile);
-      var gen  = (ImageGenerator) clazz.getDeclaredConstructor().newInstance();
+      var gen = (ImageGenerator) clazz.getDeclaredConstructor().newInstance();
       save(gen, "Portrait", 3000, 5000);
       save(gen, "Landscape", 5000, 3000);
       save(gen, "Square", 3000, 3000);
@@ -55,9 +49,7 @@ public class ConcurrentImageSaver {
 
   public static Stream<Path> sourceFiles(String root) throws IOException {
     var matcher = FileSystems.getDefault().getPathMatcher("glob:**/Flag.java");
-    return Files.walk(Path.of(root))
-      .filter(Files::isRegularFile)
-      .filter(matcher::matches);
+    return Files.walk(Path.of(root)).filter(Files::isRegularFile).filter(matcher::matches);
   }
 
   public static void main(String[] args) throws Exception {

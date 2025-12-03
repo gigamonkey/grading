@@ -9,6 +9,4 @@ public sealed interface Result permits Result.Good, Result.Error, Result.Timeout
   public record Error(Exception exception) implements Result {}
 
   public record Timeout() implements Result {}
-
-
 }

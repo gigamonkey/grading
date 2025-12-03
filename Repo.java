@@ -18,7 +18,8 @@ public record Repo(String dir) {
       }
       return commit.time().isAfter(end);
     }
-  };
+  }
+  ;
 
   public Commit commit(String treeish) throws IOException {
     var args = makeArgs("log", "-1", "--pretty=tformat:%H %at", treeish);
@@ -37,10 +38,7 @@ public record Repo(String dir) {
     var process = new ProcessBuilder(args).start();
     var reader = buffered(process.getInputStream());
 
-    return reader.lines()
-      .map(Commit::parse)
-      .takeWhile(inWindow)
-      .onClose(closer(process));
+    return reader.lines().map(Commit::parse).takeWhile(inWindow).onClose(closer(process));
   }
 
   public Stream<Commit> changes(String start, String end, String branch) throws IOException {
@@ -50,10 +48,7 @@ public record Repo(String dir) {
     var process = new ProcessBuilder(args).start();
     var reader = buffered(process.getInputStream());
 
-    return reader.lines()
-      .map(Commit::parse)
-      .takeWhile(inWindow)
-      .onClose(closer(process));
+    return reader.lines().map(Commit::parse).takeWhile(inWindow).onClose(closer(process));
   }
 
   public String fileContents(String treeish, String path) throws IOException {
@@ -90,7 +85,7 @@ public record Repo(String dir) {
         try (var err = buffered(process.getErrorStream())) {
           System.err.println("Error output:");
           err.lines().forEach(System.err::println);
-        }  catch (IOException e) {
+        } catch (IOException e) {
           System.err.println("Failed to read error stream: " + e.getMessage());
         }
       }
@@ -99,8 +94,4 @@ public record Repo(String dir) {
       Thread.currentThread().interrupt();
     }
   }
-
-
-
-
 }

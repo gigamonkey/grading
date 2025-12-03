@@ -8,7 +8,9 @@ public class WithTimeouts<R> {
 
   public sealed interface Result<R> permits Result.Good, Result.Error, Result.Timeout {
     public record Good<R>(R result, String emoji) implements Result<R> {}
+
     public record Error<R>(Exception exception, String emoji) implements Result<R> {}
+
     public record Timeout<R>(String emoji) implements Result<R> {}
 
     public String emoji();

@@ -1,12 +1,13 @@
-import module java.base;
-
 import static java.lang.Math.max;
+
+import module java.base;
 
 import com.gigamonkeys.bhs.testing.*;
 
 class Speedrun {
 
-  private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("hh:mm:ss M/d/yyyy");
+  private static final DateTimeFormatter dateFormat =
+      DateTimeFormatter.ofPattern("hh:mm:ss M/d/yyyy");
 
   private final Repo repo;
   private final String branch;
@@ -15,8 +16,7 @@ class Speedrun {
   private final TestRunner runner = new TestRunner();
 
   public Speedrun(String dir, String branch, String file, Optional<String> testerName)
-    throws ClassNotFoundException
-  {
+      throws ClassNotFoundException {
     this.repo = new Repo(dir);
     this.branch = branch;
     this.file = file;
@@ -57,23 +57,23 @@ class Speedrun {
     }
   }
 
-  private void withResults(long timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
+  private void withResults(long timeout, TimeUnit timeUnit)
+      throws IOException, InterruptedException {
     try (var lines = repo.log(branch, Duration.of(4, ChronoUnit.HOURS))) {
       showResults(lines, 0, timeout, timeUnit);
     }
   }
 
-  private void checkRange(String startSha, String endSha, int questions, long timeout, TimeUnit timeUnit)
-    throws IOException, InterruptedException
-  {
+  private void checkRange(
+      String startSha, String endSha, int questions, long timeout, TimeUnit timeUnit)
+      throws IOException, InterruptedException {
     try (var lines = repo.changes(startSha, endSha, branch)) {
       showResults(lines, questions, timeout, timeUnit);
     }
   }
 
   private void showResults(Stream<Commit> lines, int questions, long timeout, TimeUnit timeUnit)
-    throws IOException, InterruptedException
-  {
+      throws IOException, InterruptedException {
     ConcurrentTester tester = new ConcurrentTester(testerClass.get());
 
     List<Commit> commits = lines.toList();
@@ -84,23 +84,35 @@ class Speedrun {
       var c = commits.get(i);
       var shortSha = c.sha().substring(0, 8);
       var date = c.time().atZone(ZoneId.systemDefault()).format(dateFormat);
-      var elapsed = i < commits.size() - 1 ? Duration.between(commits.get(i + 1).time(), c.time()) : Duration.ZERO;
+      var elapsed =
+          i < commits.size() - 1
+              ? Duration.between(commits.get(i + 1).time(), c.time())
+              : Duration.ZERO;
       var r = results.get(i);
       mostPassed = max(mostPassed, numCorrect(r));
-      IO.println(shortSha + ": " + date + " (" + durationString(elapsed, TimeUnit.MINUTES) + ") - " + showResult(r));
+      IO.println(
+          shortSha
+              + ": "
+              + date
+              + " ("
+              + durationString(elapsed, TimeUnit.MINUTES)
+              + ") - "
+              + showResult(r));
     }
 
     var start = commits.getLast();
     var end = commits.getFirst();
     var elapsed = Duration.between(start.time(), end.time());
 
-    IO.println("Total time: %s; passed %d of %d".formatted(durationString(elapsed, TimeUnit.HOURS), mostPassed, questions));
+    IO.println(
+        "Total time: %s; passed %d of %d"
+            .formatted(durationString(elapsed, TimeUnit.HOURS), mostPassed, questions));
   }
 
-  private static final TimeUnit[] units = { TimeUnit.SECONDS, TimeUnit.MINUTES, TimeUnit.HOURS };
+  private static final TimeUnit[] units = {TimeUnit.SECONDS, TimeUnit.MINUTES, TimeUnit.HOURS};
 
   private TimeUnit maximumUnit(Duration d) {
-    for (int i = units.length - 1; i >=0; i--) {
+    for (int i = units.length - 1; i >= 0; i--) {
       if (toPart(d, units[i]) > 0) return units[i];
     }
     return TimeUnit.SECONDS;
@@ -122,8 +134,8 @@ class Speedrun {
     return sb.toString();
   }
 
-    public static long toPart(Duration duration, TimeUnit unit) {
-      switch (unit) {
+  public static long toPart(Duration duration, TimeUnit unit) {
+    switch (unit) {
       case TimeUnit.HOURS:
         return duration.toHoursPart();
       case TimeUnit.MINUTES:
@@ -131,23 +143,24 @@ class Speedrun {
       case TimeUnit.SECONDS:
         return duration.toSecondsPart();
       default:
-        throw new UnsupportedOperationException("Unit " + unit + " is not supported for part extraction");
-      }
+        throw new UnsupportedOperationException(
+            "Unit " + unit + " is not supported for part extraction");
     }
+  }
 
   private String showResult(Result r) {
     return switch (r) {
-    case Result.Good g -> "Passed: " + numPassed(g.results());
-    case Result.Error e -> shortString(e.exception().getMessage());
-    case Result.Timeout t -> "timeout";
+      case Result.Good g -> "Passed: " + numPassed(g.results());
+      case Result.Error e -> shortString(e.exception().getMessage());
+      case Result.Timeout t -> "timeout";
     };
   }
 
   private int numCorrect(Result r) {
     return switch (r) {
-    case Result.Good g -> numPassed(g.results());
-    case Result.Error e -> 0;
-    case Result.Timeout t -> 0;
+      case Result.Good g -> numPassed(g.results());
+      case Result.Error e -> 0;
+      case Result.Timeout t -> 0;
     };
   }
 
@@ -167,7 +180,8 @@ class Speedrun {
     return commits.stream().map(this::getSource).toList();
   }
 
-  static void doDumpLog(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
+  static void doDumpLog(List<String> args)
+      throws IOException, ClassNotFoundException, InterruptedException {
 
     var dir = args.get(0);
     var branch = args.get(1);
@@ -177,7 +191,8 @@ class Speedrun {
     speedrun.dumpLog();
   }
 
-  static void doWithResults(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
+  static void doWithResults(List<String> args)
+      throws IOException, ClassNotFoundException, InterruptedException {
 
     var dir = args.get(0);
     var branch = args.get(1);
@@ -188,7 +203,8 @@ class Speedrun {
     speedrun.withResults(2, TimeUnit.SECONDS);
   }
 
-  static void doCheck(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
+  static void doCheck(List<String> args)
+      throws IOException, ClassNotFoundException, InterruptedException {
 
     var dir = args.get(0);
     var branch = args.get(1);
@@ -202,7 +218,8 @@ class Speedrun {
     speedrun.checkRange(start, end, questions, 2, TimeUnit.SECONDS);
   }
 
-  static void doEmit(List<String> args) throws IOException, ClassNotFoundException, InterruptedException {
+  static void doEmit(List<String> args)
+      throws IOException, ClassNotFoundException, InterruptedException {
 
     var dir = args.get(0);
     var repo = new Repo(dir);
@@ -220,12 +237,14 @@ class Speedrun {
 
     var gitname = Path.of(dir).getFileName().toString();
 
-    IO.println("%s,%s,%s,%s,%d".formatted(
-                 gitname.substring(0, gitname.indexOf(".git")),
-                 date,
-                 start.sha(),
-                 end.sha(),
-                 elapsed.getSeconds()));
+    IO.println(
+        "%s,%s,%s,%s,%d"
+            .formatted(
+                gitname.substring(0, gitname.indexOf(".git")),
+                date,
+                start.sha(),
+                end.sha(),
+                elapsed.getSeconds()));
   }
 
   static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
@@ -243,24 +262,21 @@ class Speedrun {
     var rest = Arrays.asList(args).subList(1, args.length);
 
     switch (args[0]) {
-    case "check":
-      doCheck(rest);
-      break;
-    case "log":
-      doDumpLog(rest);
-      break;
-    case "results":
-      doWithResults(rest);
-      break;
-    case "emit":
-      doEmit(rest);
-      break;
-    default:
-      System.err.println("Don't understand command " + args[0]);
-      System.exit(1);
+      case "check":
+        doCheck(rest);
+        break;
+      case "log":
+        doDumpLog(rest);
+        break;
+      case "results":
+        doWithResults(rest);
+        break;
+      case "emit":
+        doEmit(rest);
+        break;
+      default:
+        System.err.println("Don't understand command " + args[0]);
+        System.exit(1);
     }
-
-
-
   }
 }

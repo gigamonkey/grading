@@ -2,8 +2,8 @@ import module java.base;
 
 public class DaemonThreads implements ThreadFactory {
 
-  private final static ThreadFactory defaultFactory = Executors.defaultThreadFactory();
-  private final static ThreadFactory factory = new DaemonThreads();
+  private static final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
+  private static final ThreadFactory factory = new DaemonThreads();
 
   private DaemonThreads() {}
 
