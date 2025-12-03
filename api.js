@@ -13,7 +13,7 @@ class API {
     return fetch(`${this.server}${url}`, {
       method: 'GET',
       headers: this.#headers(type),
-    }).then(jsonIfOk);
+    }).then(type === 'application/json' ? jsonIfOk : textIfOk);
   }
 
   post(url, body, type='application/json') {
@@ -64,6 +64,10 @@ class API {
     return this.get(`/api/speedrun/config${url}`);
   }
 
+  jsTestcases(url) {
+    return this.get(`/api/speedrun/js-testcases${url}`, 'text/plain');
+  }
+
   clearAssignmentGrades(assignmentId) {
     return this.delete(`/api/grades/${assignmentId}`);
   }
@@ -105,6 +109,13 @@ class API {
 const jsonIfOk = r => {
   if (r.ok) {
     return r.json();
+  }
+  throw r;
+};
+
+const textIfOk = r => {
+  if (r.ok) {
+    return r.text();
   }
   throw r;
 };
