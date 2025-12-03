@@ -60,8 +60,6 @@ const durationString = (duration, minUnit = 'second') => {
 
 const maxUnit = (d) => d.hours > 0 ? 'hour' : d.minutes > 0 ? 'minute' : 'second';
 
-//const show = (repo, path, file, testCases, firstSha, lastSha, questions) => {
-
 const showCommits = (repoDir, path, file, testcases, start, end, branch) => {
   const repo = new Repo(repoDir);
   repo.changes(start, end, branch).forEach((c, i, arr) => {
@@ -72,27 +70,5 @@ const showCommits = (repoDir, path, file, testcases, start, end, branch) => {
     showCommit(sha, timestamp, elapsed, results);
   });
 };
-
-// const main = async (github, assignmentId, start, opts) => {
-//   const api = new API(opts.server, opts.apiKey);
-//   const { url } = await api.assignmentJSON(assignmentId);
-//   const config = await api.codingConfig(url);
-//   const testcases = loadTestcases(await api.jsTestcases(url));
-
-//   const file = config.files[0];
-//   const repoDir = `../github/${github}.git/`;
-//   const path = url.slice(1);
-//   const fullfile = `${path}/${file}`;
-//   const branch = path;
-
-//   const repo = new Repo(repoDir);
-//   const end = repo.sha(path, fullfile);
-
-
-//   console.log({repo: repoDir, file, path, end});
-
-
-
-// };
 
 export { showCommits };
