@@ -373,7 +373,8 @@ CREATE TABLE IF NOT EXISTS speedrunnables (
   questions INTEGER
 );
 
--- Loaded from non-abandoned speedruns from the server
+-- Loaded from non-abandoned speedruns from the server but only those that have
+-- been recorded as finished.
 CREATE TABLE IF NOT EXISTS completed_speedruns (
   speedrun_id INTEGER PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -384,7 +385,10 @@ CREATE TABLE IF NOT EXISTS completed_speedruns (
   last_sha TEXT NULL
 );
 
--- Loaded from non-abandoned speedruns from the server
+-- Loaded from non-abandoned speedruns from the server including ones still in
+-- progress. This was needed at the beginning when the Javascript speedruns
+-- didn't mark themselves done. Now it is mainly useful for tracking down
+-- speedruns without having to touch the production database.
 CREATE TABLE IF NOT EXISTS started_speedruns (
   speedrun_id INTEGER PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -398,8 +402,9 @@ CREATE TABLE IF NOT EXISTS started_speedruns (
 -- Record whether speedrun was acceptable or not.
 CREATE TABLE IF NOT EXISTS graded_speedruns (
   speedrun_id INTEGER PRIMARY KEY,
-  ok INTEGER NOT NULL
-);
+  ok INTEGER NOT NULL,
+  FOREIGN KEY (speedrun_id) REFERENCES completed_speedruns(speedrun_id) ON DELETE CASCADE
+) WITHOUT ROWID;
 
 DROP VIEW IF EXISTS ungraded_speedruns;
 CREATE VIEW ungraded_speedruns AS
