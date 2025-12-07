@@ -18,11 +18,16 @@ const db = new DB('db.db')
 
 const ids = (rows, id) => new Set(rows.map(r => r[id]));
 
-const addSpeedrunnable = async (assignment) => {
+const addSpeedrunnable = async (assignment, dryRun) => {
   const { assignmentId, url } = assignment;
   const kind =  url.match(/itp/) ? 'javascript' : 'java';
   const questions = await countQuestions(url);
-  db.insertSpeedrunnable({assignmentId, kind, questions});
+  const record = {assignmentId, kind, questions};
+  if (dryRun) {
+    console.log(record);
+  } else {
+    db.insertSpeedrunnable(record);
+  }
 };
 
 const countQuestions = async (url) => {
@@ -38,29 +43,53 @@ const countQuestions = async (url) => {
   return questions;
 }
 
+const existing = async (api, opts) => {
+  if (opts.started) {
+    return {
+      onServer: await api.startedSpeedruns(),
+      inGradebook: ids(db.startedSpeedruns(), 'speedrun_id'),
+    };
+  } else {
+    return {
+      onServer: await api.completedSpeedruns(),
+      inGradebook: ids(db.completedSpeedruns(), 'speedrun_id'),
+    };
+  }
+};
 
 const main = async (opts) => {
   const api = new API(opts.server, opts.apiKey);
-  const onServer = await api.completedSpeedruns();
-  const inGradebook = ids(db.completedSpeedruns(), 'speedrun_id');
+  const { onServer, inGradebook } = await existing(api, opts);
   const speedrunnables = ids(db.speedrunnables(), 'assignment_id');
+
+  const label = opts.started ? 'started' : 'completed';
 
   for (const s of onServer) {
     if (!inGradebook.has(s.speedrun_id)) {
-      console.log(`Inserting completed speedrun ${s.speedrun_id}`);
-      db.insertCompletedSpeedrun(camelify(s));
+      console.log(`Inserting ${label} speedrun ${s.speedrun_id}`);
+      if (opts.dryRun) {
+        console.log(camelify(s));
+      } else {
+        if (opts.started) {
+          db.insertStartedSpeedrun(camelify(s));
+        } else {
+          db.insertCompletedSpeedrun(camelify(s));
+        }
+      }
     }
   }
   for (const id of ids(onServer, 'assignment_id')) {
     if (!speedrunnables.has(id)) {
       console.log(`Inserting speedrunnable for ${id}`);
-      addSpeedrunnable(camelify(await api.assignmentJSON(id)));
+      addSpeedrunnable(camelify(await api.assignmentJSON(id)), opts.dryRun);
     }
   }
 };
 
 new Command()
   .description('Sync speedruns recorded on server')
+  .option('-n, --dry-run', 'Dry run.')
+  .option('--started', 'Sync all started speedruns not just completed.')
   .option('-s, --server <url>', 'Server URL', env.BHS_CS_SERVER)
   .option('-k, --api-key <key>', 'API key', env.BHS_CS_API_KEY)
   .action(main)
