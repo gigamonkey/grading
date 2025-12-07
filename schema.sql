@@ -124,7 +124,7 @@ CREATE VIEW java_unit_tests_scores AS
 SELECT
   assignment_id,
   user_id,
-  (score * questions + sum(coalesce(hg.correct, 0))) / questions score
+  (round(score * questions) + sum(coalesce(hg.correct, 0))) / questions score
 FROM java_unit_tests
 LEFT JOIN hand_graded_questions hg using (assignment_id, github)
 JOIN scored_question_assignments USING (assignment_id)
@@ -384,9 +384,20 @@ CREATE TABLE IF NOT EXISTS completed_speedruns (
   last_sha TEXT NULL
 );
 
+-- Loaded from non-abandoned speedruns from the server
+CREATE TABLE IF NOT EXISTS started_speedruns (
+  speedrun_id INTEGER PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  started_at INTEGER NULL,
+  first_sha TEXT NULL,
+  finished_at INTEGER NULL,
+  last_sha TEXT NULL
+);
+
 -- Record whether speedrun was acceptable or not.
 CREATE TABLE IF NOT EXISTS graded_speedruns (
-  speedrun_id INTEGER PRIMARY_KEY,
+  speedrun_id INTEGER PRIMARY KEY,
   ok INTEGER NOT NULL
 );
 
@@ -402,6 +413,18 @@ JOIN roster r USING (user_id)
 JOIN speedrunnables USING (assignment_id)
 LEFT JOIN graded_speedruns USING (speedrun_id)
 WHERE graded_speedruns.speedrun_id IS NULL;
+
+DROP VIEW IF EXISTS open_speedruns;
+CREATE VIEW open_speedruns AS
+SELECT
+  s.*,
+  r.github,
+  kind,
+  questions
+FROM started_speedruns s
+JOIN roster r USING (user_id)
+JOIN speedrunnables USING (assignment_id)
+WHERE last_sha IS NULL;
 
 -- Count of number of successful speedruns per user and assignment
 DROP VIEW IF EXISTS speedrun_points;
@@ -440,7 +463,10 @@ SELECT
   coalesce(s.score, 0) raw_score,
   max(fps.grade) raw_grade,
   coalesce(speedrun_points.runs, 0) speedruns,
-  case when speedrun_points.runs > 0 then max(next_fps.minimum) else coalesce(s.score, 0) end score,
+  case
+    when speedrun_points.runs > 0 and max(fps.grade) < 4 then max(next_fps.minimum)
+    else coalesce(s.score, 0)
+  end score,
   max(next_fps.grade) grade
 FROM assignments
 JOIN roster using (course_id)

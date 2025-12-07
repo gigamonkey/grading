@@ -9,6 +9,8 @@ import path from 'node:path';
 import { camelify, exec } from './modules/util.js';
 import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
+import { showCommits } from './modules/speedruns.js';
+import { loadTestcases } from './modules/test-javascript.js';
 
 const { keys } = Object;
 
@@ -31,18 +33,23 @@ const main = async (opts) => {
     const repo = `../github/${s.github}.git/`;
     const path = url.slice(1);
 
+    console.log(s);
+
     if (s.kind === 'java') {
       const testClass = config.jobe.parameters.runargs[0];
       showJavaSpeedrun(repo, path, file, testClass, s.first_sha, s.last_sha, s.questions);
+    } else if (s.kind === 'javascript') {
+      const testcases = loadTestcases(await api.jsTestcases(url));
+      showJavascriptSpeedrun(repo, path, file, testcases, s.first_sha, s.last_sha, path, s.questions);
     } else {
-      console.log(`*** Don't know how to grade kind: ${s.kind}`);
+      console.log(`Unknown speedrun kind: ${s.kind}`);
     }
 
     const a = await rl.question('Looks good? [y/n/s]: ');
     if (a === 'y') {
-      db.insertGradedSpeedrun({speedrunId: s.speedrun_id, ok: 1});
+      insertGrade({speedrunId: s.speedrun_id, ok: 1}, opts.dryRun);
     } else if (a === 'n') {
-      db.insertGradedSpeedrun({speedrunId: s.speedrun_id, ok: 0});
+      insertGrade({speedrunId: s.speedrun_id, ok: 0}, opts.dryRun);
     } else {
       console.log('Skipping.');
     }
@@ -50,14 +57,28 @@ const main = async (opts) => {
   rl.close();
 };
 
+const insertGrade = (obj, dryRun) => {
+  if (dryRun) {
+    console.log(obj);
+  } else {
+    db.insertGradedSpeedrun(obj);
+  }
+};
+
 const showJavaSpeedrun = (repo, path, file, testClass, firstSha, lastSha, questions) => {
   const cmd = `java -cp classes:bhs-cs.jar Speedrun check ${repo} ${path} ${file} ${testClass} ${firstSha} ${lastSha} ${questions}`;
   console.log(exec(cmd, "."))
 };
 
+const showJavascriptSpeedrun = (repo, path, file, testcases, firstSha, lastSha, branch, questions) => {
+  showCommits(repo, path, file, testcases, firstSha, lastSha, branch, questions);
+};
+
+
 
 new Command()
   .description('Grade speedruns by dumping trace of progress.')
+  .option('-n, --dry-run', 'Dry run')
   .option('-s, --server <url>', 'Server URL', env.BHS_CS_SERVER)
   .option('-k, --api-key <key>', 'API key', env.BHS_CS_API_KEY)
   .action(main)

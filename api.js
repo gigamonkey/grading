@@ -60,6 +60,10 @@ class API {
     return this.put('/api/grades', grades);
   }
 
+  postGradedSpeedruns(gradedSpeedruns) {
+    return this.put('/api/graded-speedruns', gradedSpeedruns);
+  }
+
   codingConfig(url) {
     return this.get(`/api/speedrun/config${url}`);
   }
@@ -102,6 +106,10 @@ class API {
 
   completedSpeedruns() {
     return this.get('/api/completed-speedruns');
+  }
+
+  startedSpeedruns() {
+    return this.get('/api/started-speedruns');
   }
 
 }

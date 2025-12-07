@@ -202,11 +202,17 @@ select * from graded_speedruns;
 -- :name insertGradedSpeedrun :insert
 insert into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
 
+-- :name gradedSpeedrun :get
+select * from graded_speedruns where speedrun_id = $speedrunId;
+
+-- :name updateGradedSpeedrun :run
+update graded_speedruns set (ok) = ($ok) where speedrun_id = $speedrunId
+
 -- :name makeGradedSpeedrun :insert
-insert into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
+insert into graded_speedruns (ok) values ($ok);
 
 -- :name makeGradedSpeedrunWithDefaultValues :insert
-insert into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
+insert into graded_speedruns (ok) values ($ok);
 
 
 -- hand_graded ---------------------------------------------
@@ -623,6 +629,40 @@ insert into speedrunnables (kind, questions) values ($kind, $questions);
 
 -- :name makeSpeedrunnableWithDefaultValues :insert
 insert into speedrunnables (kind, questions) values ($kind, $questions);
+
+
+-- started_speedruns ---------------------------------------
+
+-- :name startedSpeedruns :all
+select * from started_speedruns;
+
+-- :name insertStartedSpeedrun :insert
+insert into started_speedruns
+  (speedrun_id, user_id, assignment_id, started_at, first_sha, finished_at, last_sha)
+values
+  ($speedrunId, $userId, $assignmentId, $startedAt, $firstSha, $finishedAt, $lastSha);
+
+-- :name startedSpeedrun :get
+select * from started_speedruns where speedrun_id = $speedrunId;
+
+-- :name updateStartedSpeedrun :run
+update started_speedruns set
+  (user_id, assignment_id, started_at, first_sha, finished_at, last_sha) =
+  ($userId, $assignmentId, $startedAt, $firstSha, $finishedAt, $lastSha)
+where
+  speedrun_id = $speedrunId
+
+-- :name makeStartedSpeedrun :insert
+insert into started_speedruns
+  (user_id, assignment_id, started_at, first_sha, finished_at, last_sha)
+values
+  ($userId, $assignmentId, $startedAt, $firstSha, $finishedAt, $lastSha);
+
+-- :name makeStartedSpeedrunWithDefaultValues :insert
+insert into started_speedruns
+  (user_id, assignment_id, started_at, first_sha, finished_at, last_sha)
+values
+  ($userId, $assignmentId, $startedAt, $firstSha, $finishedAt, $lastSha);
 
 
 -- student_answers -----------------------------------------
