@@ -36,7 +36,7 @@ const countQuestions = async (url) => {
 
   let questions = 0;
   for await (const line of file.readLines()) {
-    if (line.match(/data-name/)) {
+    if (line.match(/^\s*<div data-name/)) {
       questions++;
     }
   }
