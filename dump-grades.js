@@ -16,11 +16,12 @@ new Command()
   .description('Dump grades in JSON for a given assignment id.')
   .argument('[assignment]', 'Assignment', '*')
   .option('-u, --user <user>', 'User id')
+  .option('--updates', 'Updates where db is different from server')
   .option('-n, --dry-run', "Don't write to file.")
   .action((assignment, opts) => {
 
     const assignmentId = intOrStar(assignment);
-    const { user: userId } = opts;
+    const { user: userId, updates } = opts;
 
     let data;
     let filename;
@@ -34,6 +35,9 @@ new Command()
     } else if (userId) {
       data = db.gradesForUser({userId});
       filename = userId;
+    } else if (updates) {
+      data = db.gradeUpdates();
+      filename = "updates";
     } else {
       data = db.allGrades();
       filename = 'all';

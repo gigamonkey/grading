@@ -53,6 +53,7 @@ new Command()
             console.log({assignmentId, github, correct, score, timestamp, sha});
           }
         } catch (e) {
+          console.log(`Processing ${file}`);
           console.log(e);
         }
       });

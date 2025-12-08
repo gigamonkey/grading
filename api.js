@@ -60,6 +60,10 @@ class API {
     return this.put('/api/grades', grades);
   }
 
+  grades() {
+    return this.get('/api/grades');
+  }
+
   postGradedSpeedruns(gradedSpeedruns) {
     return this.put('/api/graded-speedruns', gradedSpeedruns);
   }

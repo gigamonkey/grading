@@ -25,6 +25,8 @@ const main = async (opts) => {
   const rl = readline.createInterface({ input, output });
   const ungraded = db.ungradedSpeedruns();
 
+  let num = ungraded.length;
+  let i = 1;
   for (const s of ungraded) {
     const { url } = await api.assignmentJSON(s.assignment_id);
     const config = await api.codingConfig(url);
@@ -45,7 +47,7 @@ const main = async (opts) => {
       console.log(`Unknown speedrun kind: ${s.kind}`);
     }
 
-    const a = await rl.question('Looks good? [y/n/s]: ');
+    const a = await rl.question(`[${i++}/${num}] Looks good? [y/n/s]: `);
     if (a === 'y') {
       insertGrade({speedrunId: s.speedrun_id, ok: 1}, opts.dryRun);
     } else if (a === 'n') {
