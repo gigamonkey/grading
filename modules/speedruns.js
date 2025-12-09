@@ -96,7 +96,8 @@ const analyzeSpeedrun = (repoDir, path, file, testcases, start, end, branch, que
     // will leave it pointing to the first commit that passed all the tests
     if (passed == questions) {
       finished = {
-        ...c,
+        sha,
+        timestamp,
         totalElapsed,
         perQuestion: {
           commits: (arr.length - i) / questions,
@@ -111,7 +112,5 @@ const analyzeSpeedrun = (repoDir, path, file, testcases, start, end, branch, que
   });
   return { finished, commits, maxPassed };
 };
-
-
 
 export { showCommits, analyzeSpeedrun };
