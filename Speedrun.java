@@ -215,7 +215,7 @@ class Speedrun {
     var questions = Integer.parseInt(args.get(6));
 
     var speedrun = new Speedrun(dir, branch, file, Optional.of(testerClass));
-    speedrun.checkRange(start, end, questions, 2, TimeUnit.SECONDS);
+    speedrun.checkRange(start, end, questions, 10, TimeUnit.SECONDS);
   }
 
   static void doEmit(List<String> args)
