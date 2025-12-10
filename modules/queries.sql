@@ -86,6 +86,17 @@ from assignment_grades
 join assignment_weights using (assignment_id)
 order by user_id, assignment_id, standard;
 
+-- :name gradeUpdates :all
+select
+  db_grades.user_id userId,
+  db_grades.assignment_id assignmentId,
+  db_grades.standard,
+  db_grades.score,
+  db_grades.grade
+from db_grades
+join server_grades using (assignment_id, user_id, standard)
+where db_grades.score <> server_grades.score;
+
 -- :name clearDirectScores :run
 delete from direct_scores where assignment_id = $assignmentId;
 
@@ -132,6 +143,9 @@ select * from ungraded_speedruns;
 -- :name openSpeedruns :all
 select * from open_speedruns;
 
+-- :name specificSpeedrun :get
+select * from hydrated_speedruns where speedrun_id = $speedrunId;
+
 -- :name githubForPeriod :list
 select github from roster where period = $period;
 
@@ -144,6 +158,11 @@ select github from roster where github = $user;
 -- :name findUser :all
 select * from roster where upper(github) like '%' || upper($q) || '%' or upper(sortable_name) like '%' || upper($q) || '%' or user_id = $q;
 
-
 -- :name github :one
 select github from roster where user_id = $userId;
+
+-- :name clearServerGrades :run
+delete from server_grades;
+
+-- :name ensureGradedSpeedrun :insert
+insert or replace into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);

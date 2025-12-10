@@ -406,16 +406,24 @@ CREATE TABLE IF NOT EXISTS graded_speedruns (
   FOREIGN KEY (speedrun_id) REFERENCES completed_speedruns(speedrun_id) ON DELETE CASCADE
 ) WITHOUT ROWID;
 
-DROP VIEW IF EXISTS ungraded_speedruns;
-CREATE VIEW ungraded_speedruns AS
+DROP VIEW IF EXISTS hydrated_speedruns;
+CREATE VIEW hydrated_speedruns AS
 SELECT
   s.*,
+  a.date,
+  a.course_id,
+  a.title,
   r.github,
   kind,
   questions
 FROM completed_speedruns s
 JOIN roster r USING (user_id)
 JOIN speedrunnables USING (assignment_id)
+JOIN assignments a using (assignment_id);
+
+DROP VIEW IF EXISTS ungraded_speedruns;
+CREATE VIEW ungraded_speedruns AS
+SELECT * from hydrated_speedruns
 LEFT JOIN graded_speedruns USING (speedrun_id)
 WHERE graded_speedruns.speedrun_id IS NULL;
 
@@ -626,3 +634,24 @@ JOIN normalized_answers USING (assignment_id, question_number, raw_answer)
 JOIN scored_answers USING (assignment_id, question_number, answer)
 WHERE score = 0
 GROUP BY assignment_id, question_number, answer;
+
+
+DROP VIEW IF EXISTS db_grades;
+CREATE VIEW db_grades AS
+SELECT
+  user_id,
+  assignment_id,
+  standard,
+  score,
+  grade
+FROM assignment_grades
+JOIN assignment_weights using (assignment_id)
+ORDER BY user_id, assignment_id, standard;
+
+CREATE TABLE IF NOT EXISTS server_grades (
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  standard TEXT NOT NULL,
+  score REAL NOT NULL,
+  grade INTEGER NOT NULL
+);

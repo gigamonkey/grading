@@ -208,11 +208,11 @@ select * from graded_speedruns where speedrun_id = $speedrunId;
 -- :name updateGradedSpeedrun :run
 update graded_speedruns set (ok) = ($ok) where speedrun_id = $speedrunId
 
--- :name makeGradedSpeedrun :insert
-insert into graded_speedruns (ok) values ($ok);
+-- :name gradedSpeedrunForCompletedSpeedrun :get
+select * from graded_speedruns where speedrun_id = $speedrunId;
 
--- :name makeGradedSpeedrunWithDefaultValues :insert
-insert into graded_speedruns (ok) values ($ok);
+-- :name gradedSpeedrunsForCompletedSpeedrun :all
+select * from graded_speedruns where speedrun_id = $speedrunId;
 
 
 -- hand_graded ---------------------------------------------
@@ -601,6 +601,30 @@ insert into secondary_weights (weight) values ($weight);
 
 -- :name makeSecondaryWeightWithDefaultValues :insert
 insert into secondary_weights (weight) values ($weight);
+
+
+-- server_grades -------------------------------------------
+
+-- :name serverGrades :all
+select * from server_grades;
+
+-- :name insertServerGrade :insert
+insert into server_grades
+  (user_id, assignment_id, standard, score, grade)
+values
+  ($userId, $assignmentId, $standard, $score, $grade);
+
+-- :name makeServerGrade :insert
+insert into server_grades
+  (user_id, assignment_id, standard, score, grade)
+values
+  ($userId, $assignmentId, $standard, $score, $grade);
+
+-- :name makeServerGradeWithDefaultValues :insert
+insert into server_grades
+  (user_id, assignment_id, standard, score, grade)
+values
+  ($userId, $assignmentId, $standard, $score, $grade);
 
 
 -- speedrunnables ------------------------------------------
