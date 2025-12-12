@@ -100,13 +100,17 @@ class Speedrun {
               + showResult(r));
     }
 
-    var start = commits.getLast();
-    var end = commits.getFirst();
-    var elapsed = Duration.between(start.time(), end.time());
+    if (!commits.isEmpty()) {
+      var start = commits.getLast();
+      var end = commits.getFirst();
+      var elapsed = Duration.between(start.time(), end.time());
 
-    IO.println(
+      IO.println(
         "Total time: %s; passed %d of %d"
-            .formatted(durationString(elapsed, TimeUnit.HOURS), mostPassed, questions));
+        .formatted(durationString(elapsed, TimeUnit.HOURS), mostPassed, questions));
+    } else {
+      IO.println("No commits!");
+    }
   }
 
   private static final TimeUnit[] units = {TimeUnit.SECONDS, TimeUnit.MINUTES, TimeUnit.HOURS};
@@ -151,7 +155,7 @@ class Speedrun {
   private String showResult(Result r) {
     return switch (r) {
       case Result.Good g -> "Passed: " + numPassed(g.results());
-      case Result.Error e -> shortString(e.exception().getMessage());
+      case Result.Error e -> exceptionMessage(e.exception());
       case Result.Timeout t -> "timeout";
     };
   }
@@ -164,8 +168,10 @@ class Speedrun {
     };
   }
 
-  private static String shortString(String s) {
-    return s.substring(0, Math.min(20, Math.max(s.length(), s.indexOf("\n"))));
+  private static String exceptionMessage(Exception e) {
+    String msg = e.getMessage();
+    if (msg == null) msg = e.toString();
+    return msg.substring(0, Math.min(20, Math.max(msg.length(), msg.indexOf("\n"))));
   }
 
   private String getSource(Commit commit) {
