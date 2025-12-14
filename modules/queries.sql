@@ -94,8 +94,8 @@ select
   db_grades.score,
   db_grades.grade
 from db_grades
-join server_grades using (assignment_id, user_id, standard)
-where db_grades.score <> server_grades.score;
+left join server_grades using (assignment_id, user_id, standard)
+where db_grades.score <> coalesce(server_grades.score, 0);
 
 -- :name clearDirectScores :run
 delete from direct_scores where assignment_id = $assignmentId;
@@ -182,3 +182,9 @@ values
 
 -- :name questionsForAssignment :one
 select questions from speedrunnables where assignment_id = $assignmentId;
+
+-- :name ensureHandScored :insert
+insert or replace into hand_scored
+  (assignment_id, github, score)
+values
+  ($assignmentId, $github, $score);

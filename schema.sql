@@ -140,11 +140,22 @@ GROUP BY assignment_id, github;
 -- produced in a Google sheet or some other system where we don't want to load
 -- the details into the database.
 
--- Whole assignment graded 0-4
+-- Whole assignment graded 0-4. Useful for assignments graded just on vibes in a
+-- spreadsheet. Translated to a score is the hand_graded_to_scores view.
 CREATE TABLE IF NOT EXISTS hand_graded(
   assignment_id INTEGER,
   github TEXT,
-  grade INTEGER
+  grade INTEGER,
+  PRIMARY KEY (assignment_id, github)
+) WITHOUT ROWID;
+
+-- Whole assignment scored 0.0 to 1.0. Useful for assignments scored by hand in
+-- a spreadsheet.
+CREATE TABLE IF NOT EXISTS hand_scored(
+  assignment_id INTEGER,
+  github TEXT,
+  score REAL,
+  PRIMARY KEY (assignment_id, github)
 );
 
 DROP VIEW IF EXISTS hand_graded_to_scores;
@@ -155,15 +166,16 @@ SELECT
   score
 FROM hand_graded
 JOIN fps USING (grade)
-JOIN roster USING (github);
+JOIN roster USING (github)
 
--- Whole assignment scored 0.0 to 1.0. Not sure I actually need this any more
--- since we can use hand_graded_questions for many such cases.
-CREATE TABLE IF NOT EXISTS hand_scored(
-  assignment_id INTEGER,
-  github TEXT,
-  score REAL
-);
+UNION
+
+SELECT
+  assignment_id,
+  user_id,
+  score
+FROM hand_scored
+JOIN roster using (github);
 
 -- Individual questions hand graded. At the moment this is used to augment
 -- autograded unit test questions when certain questions can't be autograded.
@@ -376,6 +388,17 @@ CREATE TABLE IF NOT EXISTS speedrunnables (
   questions INTEGER
 );
 
+DROP TABLE IF EXISTS speedrunnable_standards;
+CREATE TABLE IF NOT EXISTS speedrunnable_standards (
+  assignment_id INTEGER,
+  standard TEXT NOT NULL,
+  weight REAL NOT NULL DEFAULT 1.0,
+  decay REAL NOT NULL DEFAULT 0.8,
+  PRIMARY KEY (assignment_id, standard)
+);
+
+INSERT INTO speedrunnable_standards (assignment_id, standard) VALUES (65, 'Numbers');
+
 -- Loaded from non-abandoned speedruns from the server but only those that have
 -- been recorded as finished.
 CREATE TABLE IF NOT EXISTS completed_speedruns (
@@ -490,53 +513,80 @@ LEFT JOIN excused_assignments ex using (assignment_id, user_id)
 LEFT JOIN optional_assignments opt using (assignment_id)
 LEFT JOIN assignment_scores s using (assignment_id, user_id)
 LEFT JOIN speedrun_points using (user_id, assignment_id)
+LEFT JOIN assignment_weights using (assignment_id)
 JOIN fps on coalesce(s.score, 0) >= fps.minimum
 JOIN fps next_fps on next_fps.grade = min(fps.grade + coalesce(speedrun_points.runs, 0), 4)
 WHERE
   ex.assignment_id is null and
-  (opt.assignment_id is null or coalesce(s.score, 0) > 0)
+  (opt.assignment_id is null or coalesce(s.score, 0) > 0) and
+   assignment_weights.assignment_id not null
 GROUP BY user_id, assignment_id;
 
 
--- Weights for standards per assignment and student since secondary weights are
--- only applied for students whose performance is better than their current
--- standard grade.
--- DROP VIEW IF EXISTS per_student_assignment_weights;
--- CREATE VIEW per_student_assignment_weights AS
--- SELECT
---   assignment_id,
---   user_id,
---   standard,
---   weight
--- FROM assignments
--- JOIN roster USING (course_id)
--- JOIN assignment_weights USING (assignment_id)
+-- Speedruns that have been accepted
+DROP VIEW IF EXISTS good_speedruns;
+CREATE VIEW good_speedruns AS
+SELECT *
+FROM completed_speedruns
+JOIN graded_speedruns USING (speedrun_id)
+WHERE ok;
 
--- UNION
+-- Dynamic assignment weighting for speedruns of assignments that aren't otherwise graded.
+DROP VIEW IF EXISTS dynamic_weights;
+CREATE VIEW dynamic_weights AS
+SELECT
+  assignment_id,
+  user_id,
+  standard,
+  ss.weight * (1 - power(decay, count(*))) / (1 - decay) weight
+FROM good_speedruns
+JOIN speedrunnable_standards ss using (assignment_id)
+GROUP BY assignment_id, user_id, standard;
 
--- SELECT
---   assignment_id,
---   user_id,
---   standard,
---   weight
--- FROM assignments
--- JOIN roster USING (course_id)
--- JOIN secondary_weights USING (assignment_id)
--- JOIN assignment_grades USING (assignment_id, user_id)
--- JOIN standard_grades USING (user_id, standard)
--- WHERE standard_grades.grade < assignment_grades.grade;
+DROP VIEW IF EXISTS all_weights;
+CREATE VIEW all_weights AS
+SELECT
+  assignment_id,
+  user_id,
+  standard,
+  weight
+FROM assignment_weights
+JOIN roster
 
+UNION
+
+SELECT assignment_id, user_id, standard, weight
+FROM dynamic_weights;
 
 DROP VIEW IF EXISTS users_standards_summary;
 CREATE VIEW users_standards_summary AS
+WITH
+  with_speedruns AS (
+    -- normal grades
+    SELECT * FROM assignment_grades
+
+    UNION
+
+    -- freestanding speedruns as grades
+    SELECT
+      user_id,
+      assignment_id,
+      1.0 raw_score,
+      4 raw_grade,
+      0 speedruns,
+      1.0 score,
+      4 grade
+    FROM good_speedruns
+  )
 SELECT
   user_id,
   standard,
   group_concat(assignment_id order by assignment_id) assignments,
+  group_concat(weight order by assignment_id) weights,
   group_concat(printf("%.2f", score), ', ' order by assignment_id) scores,
   sum(score * weight) / sum(weight) score
-FROM assignment_grades g
-JOIN assignment_weights USING (assignment_id)
+FROM with_speedruns g
+JOIN all_weights USING (assignment_id, user_id)
 GROUP BY user_id, standard;
 
 -- The standards that exist.
