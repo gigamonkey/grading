@@ -388,7 +388,6 @@ CREATE TABLE IF NOT EXISTS speedrunnables (
   questions INTEGER
 );
 
-DROP TABLE IF EXISTS speedrunnable_standards;
 CREATE TABLE IF NOT EXISTS speedrunnable_standards (
   assignment_id INTEGER,
   standard TEXT NOT NULL,
@@ -396,8 +395,6 @@ CREATE TABLE IF NOT EXISTS speedrunnable_standards (
   decay REAL NOT NULL DEFAULT 0.8,
   PRIMARY KEY (assignment_id, standard)
 );
-
-INSERT INTO speedrunnable_standards (assignment_id, standard) VALUES (65, 'Numbers');
 
 -- Loaded from non-abandoned speedruns from the server but only those that have
 -- been recorded as finished.
