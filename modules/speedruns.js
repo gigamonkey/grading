@@ -62,7 +62,10 @@ const showCommits = (repoDir, path, file, testcases, start, end, branch, questio
   const repo = new Repo(repoDir);
   let maxPassed = 0;
   let finishedAt = null;
-  repo.changes(start, end, branch).forEach((c, i, arr) => {
+  const commits = repo.changes(start, end, branch);
+  // kludge to deal with my timing error on speedrun creation
+  const nextCommit = repo.nextChange(end, branch);
+  (nextCommit ? [nextCommit, ...commits] : commits).forEach((c, i, arr) => {
     const { sha, timestamp } = c;
     const totalElapsed = timestamp - arr[arr.length - 1].timestamp;
     const elapsed = i < arr.length - 1 ? timestamp - arr[i+1].timestamp : 0;
@@ -75,7 +78,10 @@ const showCommits = (repoDir, path, file, testcases, start, end, branch, questio
     maxPassed = Math.max(maxPassed, passed);
     showCommit(sha, timestamp, totalElapsed, elapsed, passed);
   });
-  console.log(`Max passed: ${maxPassed} of ${questions}`);
+
+  const totalTime = durationString(
+    Temporal.Duration.from({ seconds: commits[0].timestamp - commits[commits.length - 1].timestamp}));
+  console.log(`Total time: ${totalTime}; max passed: ${maxPassed} of ${questions}`);
   return finishedAt;
 };
 
