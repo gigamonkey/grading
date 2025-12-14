@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+#
+# Copy the latest db backup back to here
+#
+
+set -eou pipefail
+
+DB_DIR=.
+DB_FILE=db.db
+
+rm $DB_DIR/db.db*
+cp "$DB_DIR/db-backups/latest/db.db" "$DB_DIR/$DB_FILE"

@@ -30,6 +30,16 @@ const addSpeedrunnable = async (assignment, dryRun) => {
   }
 };
 
+const addAssignment = async (assignment, dryRun) => {
+  const { assignmentId, openDate: date, courseId, title } = assignment;
+  const record = { assignmentId, date, courseId, title };
+  if (dryRun) {
+    console.log(record);
+  } else {
+    db.insertAssignment(record);
+  }
+};
+
 const countQuestions = async (url) => {
   const filename = `${homedir()}/hacks/bhs-cs/views/pages/${url}/index.njk`;
   const file = await open(filename);
@@ -61,12 +71,14 @@ const main = async (opts) => {
   const api = new API(opts.server, opts.apiKey);
   const { onServer, inGradebook } = await existing(api, opts);
   const speedrunnables = ids(db.speedrunnables(), 'assignment_id');
+  const assignments = ids(db.assignments(), 'assignment_id');
 
   const label = opts.started ? 'started' : 'completed';
 
   for (const s of onServer) {
     if (!inGradebook.has(s.speedrun_id)) {
-      console.log(`Inserting ${label} speedrun ${s.speedrun_id}`);
+      const github = db.github({userId: s.user_id});
+      console.log(`Inserting ${label} speedrun ${s.speedrun_id} for ${github}`);
       if (opts.dryRun) {
         console.log(camelify(s));
       } else {
@@ -81,7 +93,11 @@ const main = async (opts) => {
   for (const id of ids(onServer, 'assignment_id')) {
     if (!speedrunnables.has(id)) {
       console.log(`Inserting speedrunnable for ${id}`);
-      addSpeedrunnable(camelify(await api.assignmentJSON(id)), opts.dryRun);
+      addSpeedrunnable(camelify(await api.assignment(id)), opts.dryRun);
+    }
+    if (!assignments.has(id)) {
+      console.log(`Inserting assignment for ${id}`);
+      addAssignment(camelify(await api.assignment(id)), opts.dryRun);
     }
   }
 };

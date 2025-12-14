@@ -25,7 +25,7 @@ Step 2. Load student answers from current with `./repos` and the `questions`
 script which puts them in a directory under `grading/<course_id>`
 
 Step 3. Load the answers into the database with `load-answers.js` which takes
-the name of thdirectory created in Step 2.
+the name of the directory created in Step 2.
 
 Step 3. Score all the answers with `score-answers.py` which for each question
 finds unique normalized answers that haven't been assigned a score and prompts

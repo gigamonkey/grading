@@ -29,3 +29,11 @@ db-backups/
 .junk/
 speedrun-logs/
 classes/
+
+# Output of compare-grades.js
+grades-only*.json
+
+# Files I source to point at localhost or prod server
+*-env.sh
+
+bhs-cs.jar

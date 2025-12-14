@@ -38,7 +38,8 @@ const main = async (speedrunId, opts) => {
       const testClass = config.jobe.parameters.runargs[0];
       showJavaSpeedrun(repo, path, file, testClass, s.first_sha, s.last_sha, s.questions);
     } else if (s.kind === 'javascript') {
-      const testcases = loadTestcases(await api.jsTestcases(url));
+      const testcasesCode = await api.jsTestcases(url);
+      const testcases = loadTestcases(testcasesCode);
       showJavascriptSpeedrun(repo, path, file, testcases, s.first_sha, s.last_sha, path, s.questions);
     } else {
       console.log(`Unknown speedrun kind: ${s.kind}`);

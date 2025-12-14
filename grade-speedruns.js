@@ -35,7 +35,7 @@ const main = async (opts) => {
     const repo = `../github/${s.github}.git/`;
     const path = url.slice(1);
 
-    console.log(s);
+    console.log({...s, url});
 
     if (s.kind === 'java') {
       const testClass = config.jobe.parameters.runargs[0];
@@ -47,7 +47,9 @@ const main = async (opts) => {
       console.log(`Unknown speedrun kind: ${s.kind}`);
     }
 
-    const a = await rl.question(`[${i++}/${num}] Looks good? [y/n/s]: `);
+    const { course_id, title, github } = s;
+    console.log(`${course_id.toUpperCase()}: ${title} - ${github}`);
+    const a = await rl.question(`[${i++} done; ${num - i} to go] Looks good? [y/n/s]: `);
     if (a === 'y') {
       insertGrade({speedrunId: s.speedrun_id, ok: 1}, opts.dryRun);
     } else if (a === 'n') {
@@ -69,6 +71,7 @@ const insertGrade = (obj, dryRun) => {
 
 const showJavaSpeedrun = (repo, path, file, testClass, firstSha, lastSha, questions) => {
   const cmd = `java -cp classes:bhs-cs.jar Speedrun check ${repo} ${path} ${file} ${testClass} ${firstSha} ${lastSha} ${questions}`;
+  console.log(`Running ${cmd}`);
   console.log(exec(cmd, "."))
 };
 

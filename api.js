@@ -104,7 +104,12 @@ class API {
     return this.put(`/api/outline/${course}`, text, 'text/plain; charset=UTF-8');
   }
 
+  // Prefer assignment. Need to rip out places using this
   assignmentJSON(assignmentId) {
+    return this.get(`/api/assignment/${assignmentId}`);
+  }
+
+  assignment(assignmentId) {
     return this.get(`/api/assignment/${assignmentId}`);
   }
 

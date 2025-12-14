@@ -1,10 +1,14 @@
 import static java.lang.Math.max;
+import static java.util.Arrays.stream;
 
 import module java.base;
 
 import com.gigamonkeys.bhs.testing.*;
 
 class Speedrun {
+
+  private static final int TIMEOUT = 10;
+  private static final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
 
   private static final DateTimeFormatter dateFormat =
       DateTimeFormatter.ofPattern("hh:mm:ss M/d/yyyy");
@@ -33,10 +37,10 @@ class Speedrun {
   }
 
   private boolean allPassed(TestResult[] results) {
-    return Arrays.stream(results).allMatch(TestResult::passed);
+    return stream(results).allMatch(TestResult::passed);
   }
 
-  private void dumpLog() throws IOException {
+  private void log() throws IOException {
 
     IO.println("-*- mode: markup; -*-");
     IO.println();
@@ -57,10 +61,10 @@ class Speedrun {
     }
   }
 
-  private void withResults(long timeout, TimeUnit timeUnit)
+  private void history(int questions, long timeout, TimeUnit timeUnit)
       throws IOException, InterruptedException {
-    try (var lines = repo.log(branch, Duration.of(4, ChronoUnit.HOURS))) {
-      showResults(lines, 0, timeout, timeUnit);
+    try (var lines = repo.branchChanges(branch)) {
+      showResults(lines, questions, timeout, timeUnit);
     }
   }
 
@@ -106,8 +110,8 @@ class Speedrun {
       var elapsed = Duration.between(start.time(), end.time());
 
       IO.println(
-        "Total time: %s; passed %d of %d"
-        .formatted(durationString(elapsed, TimeUnit.HOURS), mostPassed, questions));
+          "Total time: %s; passed %d of %d"
+              .formatted(durationString(elapsed, TimeUnit.HOURS), mostPassed, questions));
     } else {
       IO.println("No commits!");
     }
@@ -186,29 +190,6 @@ class Speedrun {
     return commits.stream().map(this::getSource).toList();
   }
 
-  static void doDumpLog(List<String> args)
-      throws IOException, ClassNotFoundException, InterruptedException {
-
-    var dir = args.get(0);
-    var branch = args.get(1);
-    var file = args.get(2);
-
-    var speedrun = new Speedrun(dir, branch, file, Optional.empty());
-    speedrun.dumpLog();
-  }
-
-  static void doWithResults(List<String> args)
-      throws IOException, ClassNotFoundException, InterruptedException {
-
-    var dir = args.get(0);
-    var branch = args.get(1);
-    var file = args.get(2);
-    var testerClass = args.get(3);
-
-    var speedrun = new Speedrun(dir, branch, file, Optional.of(testerClass));
-    speedrun.withResults(2, TimeUnit.SECONDS);
-  }
-
   static void doCheck(List<String> args)
       throws IOException, ClassNotFoundException, InterruptedException {
 
@@ -221,7 +202,31 @@ class Speedrun {
     var questions = Integer.parseInt(args.get(6));
 
     var speedrun = new Speedrun(dir, branch, file, Optional.of(testerClass));
-    speedrun.checkRange(start, end, questions, 10, TimeUnit.SECONDS);
+    speedrun.checkRange(start, end, questions, TIMEOUT, TIMEOUT_UNIT);
+  }
+
+  static void doHistory(List<String> args)
+      throws IOException, ClassNotFoundException, InterruptedException {
+
+    var dir = args.get(0);
+    var branch = args.get(1);
+    var file = args.get(2);
+    var testerClass = args.get(3);
+    var questions = Integer.parseInt(args.get(4));
+
+    var speedrun = new Speedrun(dir, branch, file, Optional.of(testerClass));
+    speedrun.history(questions, TIMEOUT, TIMEOUT_UNIT);
+  }
+
+  static void doLog(List<String> args)
+      throws IOException, ClassNotFoundException, InterruptedException {
+
+    var dir = args.get(0);
+    var branch = args.get(1);
+    var file = args.get(2);
+
+    var speedrun = new Speedrun(dir, branch, file, Optional.empty());
+    speedrun.log();
   }
 
   static void doEmit(List<String> args)
@@ -259,9 +264,10 @@ class Speedrun {
       System.err.println("args: command <args>");
       System.err.println("Commands:");
       System.err.println("  check   - emit a log of changes with scores for each commit in range");
+      System.err.println("  history - emit a log of changes with score for each commit");
+      System.err.println(
+          "  log     - emit a complete log of changes with content of file at each change");
       System.err.println("  emit    - emit a record with the date, shas, and elapsed seconds");
-      System.err.println("  log     - emit a log of changes");
-      System.err.println("  results - emit a log of changes with score for each commit");
       System.exit(1);
     }
 
@@ -271,11 +277,11 @@ class Speedrun {
       case "check":
         doCheck(rest);
         break;
-      case "log":
-        doDumpLog(rest);
+      case "history":
+        doHistory(rest);
         break;
-      case "results":
-        doWithResults(rest);
+      case "log":
+        doLog(rest);
         break;
       case "emit":
         doEmit(rest);

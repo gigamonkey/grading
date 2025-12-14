@@ -33,12 +33,21 @@ public record Repo(String dir) {
   }
 
   public Stream<Commit> log(String treeish, Duration window) throws IOException {
+    return log(treeish, new TimeWindow(window));
+  }
+
+  public Stream<Commit> log(String treeish, Predicate<Commit> takeWhile) throws IOException {
     var args = makeArgs("log", "--pretty=tformat:%H %at", treeish);
-    var inWindow = new TimeWindow(window);
     var process = new ProcessBuilder(args).start();
     var reader = buffered(process.getInputStream());
+    return reader.lines().map(Commit::parse).takeWhile(takeWhile).onClose(closer(process));
+  }
 
-    return reader.lines().map(Commit::parse).takeWhile(inWindow).onClose(closer(process));
+  public Stream<Commit> branchChanges(String branch) throws IOException {
+    var args = makeArgs("log", "--pretty=tformat:%H %at", branch, "--", branch);
+    var process = new ProcessBuilder(args).start();
+    var reader = buffered(process.getInputStream());
+    return reader.lines().map(Commit::parse).onClose(closer(process));
   }
 
   public Stream<Commit> changes(String start, String end, String branch) throws IOException {

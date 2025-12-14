@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS excused_assignments (
   PRIMARY KEY (assignment_id, user_id)
 );
 
+-- FIXME: combine this table with speedrunnables
+
 -- Assignments that are graded by scoring some number of individual questions.
 -- Store the number of questions so we can compute the assignment score as the
 -- average of the question scores.
@@ -116,8 +118,9 @@ CREATE TABLE IF NOT EXISTS java_unit_tests(
   correct INTEGER,
   score REAL,
   timestamp INTEGER,
-  sha TEXT
-);
+  sha TEXT,
+  PRIMARY KEY (assignment_id, github)
+) WITHOUT ROWID;
 
 DROP VIEW IF EXISTS java_unit_tests_scores;
 CREATE VIEW java_unit_tests_scores AS

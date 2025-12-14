@@ -107,6 +107,13 @@ delete from student_answers where assignment_id = $assignmentId;
 insert into ic_grades (student_number, standard, grade) values ($studentNumber, $standard, $grade)
 on conflict(student_number, standard) do update set grade = excluded.grade;
 
+-- :name ensureStudentAnswer :insert
+insert into student_answers
+  (github, assignment_id, question_number, answer_number, raw_answer)
+values
+  ($github, $assignmentId, $questionNumber, $answerNumber, $rawAnswer)
+on conflict (github, assignment_id, question_number, answer_number) do
+update set raw_answer = excluded.raw_answer;
 
 -- :name ensureNormalizedAnswer :insert
 insert into normalized_answers
@@ -166,3 +173,12 @@ delete from server_grades;
 
 -- :name ensureGradedSpeedrun :insert
 insert or replace into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
+
+-- :name ensureJavaUnitTest :insert
+insert or replace into java_unit_tests
+  (assignment_id, github, correct, score, timestamp, sha)
+values
+  ($assignmentId, $github, $correct, $score, $timestamp, $sha);
+
+-- :name questionsForAssignment :one
+select questions from speedrunnables where assignment_id = $assignmentId;

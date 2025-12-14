@@ -26,9 +26,7 @@ const normalize = (answer) => answer.trim();
 
 class DbSink {
   saveAnswer(github, assignmentId, questionNumber, answerNumber, rawAnswer) {
-    db.insertStudentAnswer({
-      github, assignmentId, questionNumber, answerNumber, rawAnswer
-    });
+    db.ensureStudentAnswer({github, assignmentId, questionNumber, answerNumber, rawAnswer});
     if (rawAnswer) {
       db.ensureNormalizedAnswer({
         assignmentId, questionNumber, rawAnswer, answer: rawAnswer.trim(),
@@ -74,7 +72,8 @@ new Command()
         // Maybe we just want to ensure the assignment exists. Clearing
         // everything deletes all the scored answers, etc.
         db.ensureFormAssessment({assignmentId});
-        db.clearStudentAnswers({assignmentId});
+
+        // db.clearStudentAnswers({assignmentId});
 
         // Clear first to delete everything via cascade.
         //db.clearFormAssessment({assignmentId});
