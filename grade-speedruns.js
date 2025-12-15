@@ -49,7 +49,7 @@ const main = async (opts) => {
 
     const { course_id, title, github } = s;
     console.log(`${course_id.toUpperCase()}: ${title} - ${github}`);
-    const a = await rl.question(`[${i++} done; ${num - i} to go] Looks good? [y/n/s]: `);
+    const a = await rl.question(`[${++i} done; ${num} to go] Looks good? [y/n/s]: `);
     if (a === 'y') {
       insertGrade({speedrunId: s.speedrun_id, ok: 1}, opts.dryRun);
     } else if (a === 'n') {
