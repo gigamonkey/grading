@@ -26,7 +26,7 @@ const main = async (opts) => {
   const ungraded = db.ungradedSpeedruns();
 
   let num = ungraded.length;
-  let i = 1;
+  let i = 0;
   for (const s of ungraded) {
     const { url } = await api.assignmentJSON(s.assignment_id);
     const config = await api.codingConfig(url);
