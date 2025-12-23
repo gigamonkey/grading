@@ -46,7 +46,7 @@ const main = async (assignmentId, directory, opts) => {
     mkdirSync(dir, { recursive: true });
 
     const repo = new Repo(`../github/${github}.git/`);
-    const sha = repo.sha(branch, filename, opts.before);
+    const sha = opts.sha || repo.sha(branch, filename, opts.before);
     if (sha) {
       const timestamp = repo.timestamp(sha);
       const contents = repo.contents(sha, filename);
@@ -67,6 +67,7 @@ new Command()
   .addOption(new Option('-p, --period <period>', 'Period').conflicts(['user', 'course']))
   .addOption(new Option('-c, --course <course>', 'Course').conflicts(['user', 'period']))
   .option('-b, --before <before>', 'Fetch latest version before this timestamp')
+  .option('--sha <sha>', 'Specific SHA')
   .option('-s, --server <url>', 'Server URL', env.BHS_CS_SERVER)
   .option('-k, --api-key <key>', 'API key', env.BHS_CS_API_KEY)
   .action(main)
