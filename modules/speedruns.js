@@ -16,10 +16,14 @@ const allPassed = (cases) => cases?.every(c => c.passed);
 
 const showCommit = (sha, timestamp, totalElapsed, elapsed, passed) => {
   const shortSha = sha.slice(0, 8);
-  const date = dateFormat(Temporal.Instant.fromEpochMilliseconds(timestamp * 1e3));
-  const totalTime = durationString(Temporal.Duration.from({ seconds: totalElapsed }))
-  const commitTime = durationString(Temporal.Duration.from({ seconds: elapsed }));
-  console.log(`${shortSha}: ${date} ${totalElapsed} (${totalTime} +${commitTime}) - Passed: ${passed}`);
+  try {
+    const date = dateFormat(Temporal.Instant.fromEpochMilliseconds(timestamp * 1e3));
+    const totalTime = durationString(Temporal.Duration.from({ seconds: totalElapsed }))
+    const commitTime = durationString(Temporal.Duration.from({ seconds: elapsed }));
+    console.log(`${shortSha}: ${date} ${totalElapsed} (${totalTime} +${commitTime}) - Passed: ${passed}`);
+  } catch (e) {
+    console.log(`${shortSha}: Problem: ${e}`);
+  }
 }
 
 const dateFormat = (instant) => {
@@ -67,8 +71,8 @@ const showCommits = (repoDir, path, file, testcases, start, end, branch, questio
   const nextCommit = repo.nextChange(end, branch);
   (nextCommit ? [nextCommit, ...commits] : commits).forEach((c, i, arr) => {
     const { sha, timestamp } = c;
-    const totalElapsed = timestamp - arr[arr.length - 1].timestamp;
-    const elapsed = i < arr.length - 1 ? timestamp - arr[i+1].timestamp : 0;
+    const totalElapsed = timestamp - arr[arr.length - 1]?.timestamp ?? 0;
+    const elapsed = i < arr.length - 1 ? timestamp - arr[i+1]?.timestamp : 0;
     const code = repo.contents(sha, `${path}/${file}`)
     const results = runTests(testcases, code)
     const passed = numPassed(results);
