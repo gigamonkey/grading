@@ -117,6 +117,10 @@ class API {
     return this.get(`/api/reflection-grade-data/${assignmentId}`);
   }
 
+  allReflectionGradeData() {
+    return this.get(`/api/reflection-grade-data`);
+  }
+
   completedSpeedruns() {
     return this.get('/api/completed-speedruns');
   }
