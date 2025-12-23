@@ -141,7 +141,7 @@ GROUP BY assignment_id, github;
 -- the details into the database.
 
 -- Whole assignment graded 0-4. Useful for assignments graded just on vibes in a
--- spreadsheet. Translated to a score is the hand_graded_to_scores view.
+-- spreadsheet. Translated to a score in the hand_graded_to_scores view.
 CREATE TABLE IF NOT EXISTS hand_graded(
   assignment_id INTEGER,
   github TEXT,
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS hand_graded(
 ) WITHOUT ROWID;
 
 -- Whole assignment scored 0.0 to 1.0. Useful for assignments scored by hand in
--- a spreadsheet.
+-- a spreadsheet or against a rubric.
 CREATE TABLE IF NOT EXISTS hand_scored(
   assignment_id INTEGER,
   github TEXT,
@@ -332,6 +332,20 @@ CREATE TABLE IF NOT EXISTS rubric_grades (
   PRIMARY KEY (user_id, assignment_id, rubric_item)
 );
 
+
+--------------------------------------------------------------------------------
+-- Per-user, per-assignment score overrides. Can be used to zero out scores in
+-- cases of cheating.
+
+CREATE TABLE IF NOT EXISTS score_overrides (
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  score REAL NOT NULL,
+  reason TEXT,
+  PRIMARY KEY (user_id, assignment_id)
+);
+
+
 --------------------------------------------------------------------------------
 -- Raw scores per user per assignment distilled from other tables. This could
 -- possibly be a view created as a union of a the computed scores from all the
@@ -476,17 +490,26 @@ GROUP BY user_id, assignment_id;
 -- an assignment they will have no entry in this table.
 DROP VIEW IF EXISTS assignment_scores;
 CREATE VIEW assignment_scores AS
-SELECT * FROM expressions_scores
-  UNION
-SELECT * FROM javascript_unit_tests_scores
-  UNION
-SELECT * FROM java_unit_tests_scores
-  UNION
-SELECT * FROM direct_scores
-  UNION
-SELECT * FROM form_assessment_scores
-  UNION
-SELECT * FROM hand_graded_to_scores;
+WITH recorded_scores AS (
+  SELECT *, 'expressions_scores' provenance FROM expressions_scores
+    UNION
+  SELECT *, 'javascript_unit_tests_scores' FROM javascript_unit_tests_scores
+    UNION
+  SELECT *, 'java_unit_tests_cores'  FROM java_unit_tests_scores
+    UNION
+  SELECT *, 'direct_scores' FROM direct_scores
+    UNION
+  SELECT *, 'form_assessment_scores' FROM form_assessment_scores
+    UNION
+  SELECT *, 'hand_graded_to_scores' FROM hand_graded_to_scores
+)
+SELECT
+  assignment_id,
+  user_id,
+  coalesce(o.score, rs.score) score,
+  o.score is not null override
+FROM recorded_scores rs
+LEFT JOIN score_overrides o using (user_id, assignment_id);
 
 -- This view adds the 0-4 grade but also fills in any missing assignments with a
 -- score of 0 and grade of 0 unless the assignment was optional for everyone or
@@ -574,6 +597,8 @@ WITH
       1.0 score,
       4 grade
     FROM good_speedruns
+    LEFT JOIN assignment_weights w using (assignment_id)
+    WHERE w.assignment_id IS NULL
   )
 SELECT
   user_id,
