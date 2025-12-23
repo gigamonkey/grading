@@ -9,6 +9,7 @@ import { API } from './api.js';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { camelify } from './modules/util.js';
+import { Repo } from './modules/repo.js';
 
 const { keys } = Object;
 
@@ -75,10 +76,13 @@ const main = async (opts) => {
 
   const label = opts.started ? 'started' : 'completed';
 
+  const toFetch = new Set();
+
   for (const s of onServer) {
     if (!inGradebook.has(s.speedrun_id)) {
       const github = db.github({userId: s.user_id});
       console.log(`Inserting ${label} speedrun ${s.speedrun_id} for ${github}`);
+      toFetch.add(github);
       if (opts.dryRun) {
         console.log(camelify(s));
       } else {
@@ -98,6 +102,14 @@ const main = async (opts) => {
     if (!assignments.has(id)) {
       console.log(`Inserting assignment for ${id}`);
       addAssignment(camelify(await api.assignment(id)), opts.dryRun);
+    }
+  }
+  for (const github of toFetch) {
+    if (opts.dryRun) {
+      console.log(`Need to fetch in ../github/${github}.git`);
+    } else {
+      console.log(`Fetching ${github}`);
+      new Repo(`../github/${github}.git`).fetch();
     }
   }
 };
