@@ -22,9 +22,15 @@ const dumpFields = (keys) => {
   };
 };
 
+const dumpNameAndNumber = (u) => {
+  console.log(`${u.firstName} ${u.lastName} (#${u.studentNumber})`);
+}
+
 const main = async (q, opts) => {
   const fields = keys(opts);
-  const dump = fields.length === 0
+  const dump = 'nameAndNumber' in opts
+        ? dumpNameAndNumber
+        : fields.length === 0
         ? dumpAll
         : fields.length === 1
         ? dumpOne(fields[0])
@@ -42,6 +48,7 @@ new Command()
   .option('-l, --last-name', 'Get last name')
   .option('-n, --name', 'Get name')
   .option('-s, --sortable-name', 'Get sortable name')
+  .option('--name-and-number', 'Get name and student number')
   .option('-u, --user-id', 'Get user ID')
   .action(main)
   .parse();
