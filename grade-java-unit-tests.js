@@ -15,6 +15,7 @@ const db = new DB('db.db')
 new Command()
   .description('Score results.json files from TestRunner')
   .argument('<dir>', 'Directory holding student code and results.json files')
+  .option('-u, --user <user>', 'Single user to grade.')
   .option('-n, --dry-run', "Don't write to database.")
   .action((dir, opts) => {
 
@@ -24,7 +25,7 @@ new Command()
 
     db.transaction(() => {
 
-      if (!opts.dryRun) {
+      if (!opts.dryRun && !opts.user) {
         db.ensureAssignment({ assignmentId, openDate, courseId, title });
         // FIXME: Not sure what's right here. If we want to just update one
         // student's grade, e.g. someone who did the test late, we want to leave
@@ -41,20 +42,24 @@ new Command()
       results.forEach((file) => {
         const d = dirname(file);
         const github = basename(d);
-        const timestamp = getTimestamp(d);
-        const sha = getSha(d);
-        try {
-          const results = statSync(file).size > 0 ? loadJSON(file) : [];
-          const correct = numCorrect(results);
-          const score = scoreTest(results, questions);
-          if (!opts.dryRun) {
-            db.insertJavaUnitTest({assignmentId, github, correct, score, timestamp, sha});
-          } else {
-            console.log({assignmentId, github, correct, score, timestamp, sha});
+
+        if (!opts.user || opts.user === github) {
+
+          const timestamp = getTimestamp(d);
+          const sha = getSha(d);
+          try {
+            const results = statSync(file).size > 0 ? loadJSON(file) : [];
+            const correct = numCorrect(results);
+            const score = scoreTest(results, questions);
+            if (!opts.dryRun) {
+              db.insertJavaUnitTest({assignmentId, github, correct, score, timestamp, sha});
+            } else {
+              console.log({assignmentId, github, correct, score, timestamp, sha});
+            }
+          } catch (e) {
+            console.log(`Processing ${file}`);
+            console.log(e);
           }
-        } catch (e) {
-          console.log(`Processing ${file}`);
-          console.log(e);
         }
       });
     });
