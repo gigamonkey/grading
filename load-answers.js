@@ -56,6 +56,7 @@ const saveAnswers = (sink, github, assignmentId, answers) => {
 new Command()
   .description('Load answers to form-based assessment into database.')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
+  .option('-u, --user <user>', 'Github handle to load.')
   .option('-n, --dry-run', "Don't write to database.")
   .action((dir, opts) => {
     const { assignmentId, openDate, questions, title, courseId } = loadSnakeCaseJSON(join(dir, 'assignment.json'));
@@ -83,15 +84,19 @@ new Command()
       results.forEach((file) => {
         const d = dirname(file);
         const github = basename(d);
-        const timestamp = getTimestamp(d);
-        const sha = getSha(d);
 
-        try {
-          const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
-          saveAnswers(sink, github, assignmentId, answers);
-        } catch (e) {
-          console.log(`Processing ${file}`);
-          console.log(e);
+        if (!opts.user || opts.user === github) {
+
+          const timestamp = getTimestamp(d);
+          const sha = getSha(d);
+
+          try {
+            const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
+            saveAnswers(sink, github, assignmentId, answers);
+          } catch (e) {
+            console.log(`Processing ${file}`);
+            console.log(e);
+          }
         }
       });
     });
