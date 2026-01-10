@@ -30,37 +30,56 @@ const saveFile = (filename, contents) => {
   writeFileSync(filename, contents);
 }
 
-
-const main = async (assignmentId, directory, opts) => {
-  const handles = getHandles(opts);
-
-  const api = new API(opts.server, opts.apiKey);
-  const { url, courseId } = camelify(await api.assignmentJSON(assignmentId));
-  const config = await api.codingConfig(url);
-  const branch = url.slice(1);
-  const file = config.files[0];
-  const filename = path.join(branch, file);
-
-  for (const github of handles) {
-    const dir = path.join(directory, github);
-    mkdirSync(dir, { recursive: true });
-
-    const repo = new Repo(`../github/${github}.git/`);
-    const sha = opts.sha || repo.sha(branch, filename, opts.before);
-    if (sha) {
-      const timestamp = repo.timestamp(sha);
-      const contents = repo.contents(sha, filename);
-      writeFileSync(path.join(dir, "timestamp.txt"), `${timestamp}\n`);
-      writeFileSync(path.join(dir, "sha.txt"), `${sha}\n`);
-      writeFileSync(path.join(dir, file), contents);
-    } else {
-      writeFileSync(path.join(dir, "missing.txt"), '');
-    }
+const getBranchAndFile = async (api, url, kind) => {
+  if (kind === 'coding') {
+    const config = await api.codingConfig(url);
+    return {
+      branch: url.slice(1),
+      dir: url.slice(1),
+      file: config.files[0],
+    };
+  } else if (kind == 'questions') {
+    return {
+      branch: 'main',
+      dir: url.slice(1),
+      file: 'answers.json',
+    };
   }
 };
 
+const main = async (assignmentId, directory, opts) => {
+  const handles = getHandles(opts);
+  const api = new API(opts.server, opts.apiKey);
+  const assignment = camelify(await api.assignment(assignmentId));
+  const { url, kind, courseId } = assignment;
+
+  try {
+    const { branch, dir, file } = await getBranchAndFile(api, url, kind);
+    const filename = path.join(dir, file);
+
+    for (const github of handles) {
+      const dir = path.join(directory, github);
+      mkdirSync(dir, { recursive: true });
+
+      const repo = new Repo(`../github/${github}.git/`);
+      const sha = opts.sha || repo.sha(branch, filename, opts.before);
+      if (sha) {
+        const timestamp = repo.timestamp(sha);
+        const contents = repo.contents(sha, filename);
+        writeFileSync(path.join(dir, "timestamp.txt"), `${timestamp}\n`);
+        writeFileSync(path.join(dir, "sha.txt"), `${sha}\n`);
+        writeFileSync(path.join(dir, file), contents);
+      } else {
+        writeFileSync(path.join(dir, "missing.txt"), '');
+      }
+    }
+  } catch (e) {
+    console.log(e);
+ }
+};
+
 new Command()
-  .description('Git file from git repo.')
+  .description('Get file for assignment from git repo.')
   .argument('assignmentId', 'Assignment id')
   .argument('dir', 'Directory to save files')
   .addOption(new Option('-u, --user <user>', 'Github handle').conflicts(['period', 'course']))
