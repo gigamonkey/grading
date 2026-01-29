@@ -172,7 +172,7 @@ class Speedrun {
     };
   }
 
-  private static String exceptionMessage(Exception e) {
+  private static String exceptionMessage(Throwable e) {
     String msg = e.getMessage();
     if (msg == null) msg = e.toString();
     return msg.substring(0, Math.min(20, Math.max(msg.length(), msg.indexOf("\n"))));
@@ -246,12 +246,10 @@ class Speedrun {
 
     var date = end.time().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE);
 
-    var gitname = Path.of(dir).getFileName().toString();
-
     IO.println(
         "%s,%s,%s,%s,%d"
             .formatted(
-                gitname.substring(0, gitname.indexOf(".git")),
+                repo.name(),
                 date,
                 start.sha(),
                 end.sha(),

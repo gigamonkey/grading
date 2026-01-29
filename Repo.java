@@ -19,7 +19,10 @@ public record Repo(String dir) {
       return commit.time().isAfter(end);
     }
   }
-  ;
+
+  public String name() {
+    return Path.of(dir).getFileName().toString().replaceFirst("\\.git$", "");
+  }
 
   public Commit commit(String treeish) throws IOException {
     var args = makeArgs("log", "-1", "--pretty=tformat:%H %at", treeish);

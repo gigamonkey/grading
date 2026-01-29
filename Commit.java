@@ -9,4 +9,8 @@ record Commit(String sha, Instant time) {
   public long timestamp() {
     return time.getEpochSecond();
   }
+
+  public String abbrev() {
+    return sha.substring(0, 8);
+  }
 }

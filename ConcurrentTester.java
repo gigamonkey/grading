@@ -39,7 +39,7 @@ public class ConcurrentTester {
       try {
         return new Result.Good(future.get());
       } catch (ExecutionException e) {
-        return new Result.Error((Exception) e.getCause());
+        return new Result.Error(e.getCause());
       } catch (InterruptedException ie) {
         return new Result.Error(ie);
       }
