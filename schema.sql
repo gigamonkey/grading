@@ -127,7 +127,10 @@ CREATE VIEW java_unit_tests_scores AS
 SELECT
   assignment_id,
   user_id,
-  (round(score * questions) + sum(coalesce(hg.correct, 0))) / questions score
+  case
+    when hg.correct is not null then (round(score * questions) + sum(coalesce(hg.correct, 0))) / questions
+    else score
+  end score
 FROM java_unit_tests
 LEFT JOIN hand_graded_questions hg using (assignment_id, github)
 JOIN scored_question_assignments USING (assignment_id)
@@ -677,6 +680,7 @@ ORDER by sortable_name, date;
 DROP VIEW IF EXISTS to_update;
 CREATE VIEW to_update AS
 SELECT
+  user_id,
   period,
   sortable_name,
   standard,
@@ -730,3 +734,109 @@ CREATE TABLE IF NOT EXISTS server_grades (
   score REAL NOT NULL,
   grade INTEGER NOT NULL
 );
+
+-- Information about required assignments that give assignment points. Each of
+-- these should have an entry in IC.
+CREATE TABLE IF NOT EXISTS graded_assignments (
+  assignment_id INTEGER NOT NULL,
+  standard TEXT NOT NULL,
+  ic_name TEXT NOT NULL,
+  points INTEGER NOT NULL,
+  PRIMARY KEY (assignment_id, standard)
+);
+
+CREATE TABLE IF NOT EXISTS mastery_assignments (
+  assignment_id INTEGER NOT NULL,
+  standard TEXT NOT NULL,
+  points INTEGER NOT NULL,
+  PRIMARY KEY (assignment_id, standard)
+);
+
+CREATE TABLE IF NOT EXISTS ad_hoc_mastery_points (
+  user_id TEXT NOT NULL,
+  date TEXT NOT NULL,
+  standard TEXT NOT NULL,
+  points INTEGER NOT NULL,
+  reason TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mastery_speedruns (
+  assignment_id INTEGER NOT NULL,
+  standard TEXT NOT NULL,
+  base_points INTEGER NOT NULL
+);
+
+DROP VIEW IF EXISTS assigned;
+CREATE VIEW assigned AS
+SELECT * FROM roster JOIN assignments USING (course_id);
+
+DROP VIEW IF EXISTS assignment_points;
+CREATE VIEW assignment_points AS
+SELECT
+  user_id,
+  assignment_id,
+  sortable_name,
+  title,
+  ic_name,
+  ga.points max_points,
+  score,
+  cast(round(score * ga.points) as integer) points
+FROM assigned
+JOIN graded_assignments ga using (assignment_id)
+LEFT JOIN assignment_scores USING (user_id, assignment_id);
+
+DROP VIEW IF EXISTS mastery_assignment_points;
+CREATE VIEW mastery_assignment_points AS
+SELECT
+  user_id,
+  assignment_id,
+  standard,
+  sortable_name,
+  title,
+  ma.points max_points,
+  score,
+  cast(round(score * ma.points) as integer) points
+FROM assigned
+JOIN mastery_assignments ma using (assignment_id)
+LEFT JOIN assignment_scores USING (user_id, assignment_id);
+
+-- Speedrun mastery points decay according to a power law.
+DROP VIEW IF EXISTS speedrun_mastery_points;
+CREATE VIEW speedrun_mastery_points AS
+WITH runs AS (
+  SELECT
+    user_id,
+    assignment_id,
+    row_number() over (partition by user_id, assignment_id order by finished_at) attempt
+  FROM completed_speedruns
+  JOIN graded_speedruns USING (speedrun_id)
+  WHERE ok = 1
+)
+SELECT
+  user_id,
+  standard,
+  assignment_id,
+  base_points / 10.0 * sum(pow(attempt, -1.5)) raw_points,
+  cast(round(base_points / 10.0 * sum(pow(attempt, -1.5))) as integer) points
+FROM runs
+JOIN mastery_speedruns USING (assignment_id)
+GROUP BY user_id, assignment_id;
+
+DROP VIEW IF EXISTS mastery_points;
+CREATE VIEW mastery_points AS
+WITH all_points AS (
+  SELECT user_id, standard, points FROM mastery_assignment_points
+  UNION ALL
+  SELECT user_id, standard, points FROM ad_hoc_mastery_points
+  UNION ALL
+  SELECT user_id, standard, points FROM speedrun_mastery_points
+)
+SELECT
+  user_id,
+  sortable_name,
+  period,
+  standard,
+  sum(points) points
+FROM roster
+JOIN all_points USING (user_id)
+GROUP BY user_id, standard;
