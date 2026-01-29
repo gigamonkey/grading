@@ -99,7 +99,7 @@ class Speedrun {
               + ": "
               + date
               + " ("
-              + durationString(elapsed, TimeUnit.MINUTES)
+              + durationString(elapsed, ChronoUnit.MINUTES)
               + ") - "
               + showResult(r));
     }
@@ -111,24 +111,26 @@ class Speedrun {
 
       IO.println(
           "Total time: %s; passed %d of %d"
-              .formatted(durationString(elapsed, TimeUnit.HOURS), mostPassed, questions));
+              .formatted(durationString(elapsed, ChronoUnit.HOURS), mostPassed, questions));
     } else {
       IO.println("No commits!");
     }
   }
 
-  private static final TimeUnit[] units = {TimeUnit.SECONDS, TimeUnit.MINUTES, TimeUnit.HOURS};
+  private static final ChronoUnit[] units = {ChronoUnit.SECONDS, ChronoUnit.MINUTES, ChronoUnit.HOURS};
 
-  private TimeUnit maximumUnit(Duration d) {
+  private ChronoUnit maximumUnit(Duration d) {
     for (int i = units.length - 1; i >= 0; i--) {
-      if (toPart(d, units[i]) > 0) return units[i];
+      if (d.compareTo(Duration.of(1, units[i])) >= 0) {
+        return units[i];
+      }
     }
-    return TimeUnit.SECONDS;
+    return ChronoUnit.SECONDS;
   }
 
-  private String durationString(Duration d, TimeUnit minUnit) {
-    TimeUnit maxUnit = maximumUnit(d);
-    TimeUnit firstUnit = maxUnit.compareTo(minUnit) > 0 ? maxUnit : minUnit;
+  private String durationString(Duration d, ChronoUnit minUnit) {
+    ChronoUnit maxUnit = maximumUnit(d);
+    ChronoUnit firstUnit = maxUnit.compareTo(minUnit) > 0 ? maxUnit : minUnit;
 
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < units.length; i++) {
@@ -142,13 +144,13 @@ class Speedrun {
     return sb.toString();
   }
 
-  public static long toPart(Duration duration, TimeUnit unit) {
+  public static long toPart(Duration duration, ChronoUnit unit) {
     switch (unit) {
-      case TimeUnit.HOURS:
-        return duration.toHoursPart();
-      case TimeUnit.MINUTES:
+      case ChronoUnit.HOURS:
+        return duration.toHours();
+      case ChronoUnit.MINUTES:
         return duration.toMinutesPart();
-      case TimeUnit.SECONDS:
+      case ChronoUnit.SECONDS:
         return duration.toSecondsPart();
       default:
         throw new UnsupportedOperationException(
