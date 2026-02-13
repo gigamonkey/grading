@@ -5,7 +5,7 @@ import { DB } from 'pugsql';
 import { env } from 'node:process';
 import { Command, Option } from 'commander';
 import { API } from './api.js';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 import { camelify, exec } from './modules/util.js';
 
@@ -69,6 +69,9 @@ const main = async (assignmentId, directory, opts) => {
         writeFileSync(path.join(dir, "timestamp.txt"), `${timestamp}\n`);
         writeFileSync(path.join(dir, "sha.txt"), `${sha}\n`);
         writeFileSync(path.join(dir, file), contents);
+        if (existsSync(path.join(dir, "missing.txt"))) {
+          unlinkSync(path.join(dir, "missing.txt"));
+        }
       } else {
         writeFileSync(path.join(dir, "missing.txt"), '');
       }
