@@ -4,16 +4,19 @@
  * Load answers to a form-based assessment into database.
  */
 
-import { DB } from 'pugsql';
 import child_process from 'node:child_process';
 import fs from 'node:fs';
-import { basename, dirname, join } from 'node:path';
-import { promisify } from 'node:util';
-import { Command } from 'commander';
 import glob from 'fast-glob';
-import { getSha, getTimestamp } from './modules/grading.js';
-import { average, count, loadJSON, loadSnakeCaseJSON, mapValues, values } from './modules/util.js';
 import process from 'node:process';
+import { API } from './api.js';
+import { Command } from 'commander';
+import { DB } from 'pugsql';
+import { average, camelify, count, loadJSON, loadSnakeCaseJSON, mapValues, values } from './modules/util.js';
+import { basename, dirname, join } from 'node:path';
+import { env } from 'node:process';
+import { getSha, getTimestamp } from './modules/grading.js';
+import { promisify } from 'node:util';
+
 
 const { entries, groupBy } = Object;
 
@@ -55,11 +58,16 @@ const saveAnswers = (sink, github, assignmentId, answers) => {
 
 new Command()
   .description('Load answers to form-based assessment into database.')
+  .argument('<assignmentId>', 'Assignment id')
   .argument('<dir>', 'Directory holding the answer files extracted from git')
   .option('-u, --user <user>', 'Github handle to load.')
   .option('-n, --dry-run', "Don't write to database.")
-  .action((dir, opts) => {
-    const { assignmentId, openDate, questions, title, courseId } = loadSnakeCaseJSON(join(dir, 'assignment.json'));
+  .option('-s, --server <url>', 'Server URL', env.BHS_CS_SERVER)
+  .option('-k, --api-key <key>', 'API key', env.BHS_CS_API_KEY)
+  .action(async (assignmentId, dir, opts) => {
+
+    const api = new API(opts.server, opts.apiKey);
+    const { openDate, title, courseId } = camelify(await api.assignment(assignmentId));
 
     const results = glob.sync(`${dir}/**/answers.json`);
 
@@ -74,7 +82,7 @@ new Command()
         // everything deletes all the scored answers, etc.
         db.ensureFormAssessment({assignmentId});
 
-        // db.clearStudentAnswers({assignmentId});
+        db.clearStudentAnswers({assignmentId});
 
         // Clear first to delete everything via cascade.
         //db.clearFormAssessment({assignmentId});
