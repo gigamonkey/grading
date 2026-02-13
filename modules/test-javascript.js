@@ -12,10 +12,9 @@ const { entries, fromEntries, keys } = Object;
 const SIGNIFICANT_DIGITS = 10;
 
 const get = (name, context) => {
-  //console.log(`Getting function ${name}`);
   try {
     const script = new vm.Script(name);
-    return script.runInContext(context);
+    return script.runInContext(context, { timeout: 100 });
   } catch {
     return undefined;
   }
@@ -135,26 +134,19 @@ const fnResults = (fn, cases) => {
   if (fn) {
     return cases.map((test) => runTestCase(fn, test));
   } else {
-    //console.log('No fn');
     return null; // i.e. function doesn't exist.
   }
 };
 
-const runTests = (testcases, code) => {
+const runTestsWithError = (testcases, code) => {
   const { referenceImpls, allCases, sideEffects, extraChecks } = testcases;
 
   const context = {};
   try {
     const script = new vm.Script(code);
-    script.runInNewContext(context);
 
-    //console.log('allCases', allCases);
-
+    script.runInNewContext(context, { timeout: 5 * 1000 });
     const e = entries(allCases);
-
-    //console.log('e', e);
-
-    //console.log('mapped', fromEntries(e.map(([name, cases]) => { return [name, cases.length]; })));
 
     const foo = e.map(([name, cases]) => {
       return [
@@ -175,25 +167,27 @@ const runTests = (testcases, code) => {
       ];
     });
 
-    //console.log('foo', foo);
-
     const actualCases = fromEntries(foo);
 
-    //console.log('here');
-
-    //console.log('actualCases', actualCases);
-
-    return fromEntries(
-      entries(actualCases).map(([name, cases]) => {
-        const fnR = fnResults(get(name, context), cases);
-        //console.log('function results:', fnR);
-        return [name, fnR];
-      }),
-    );
-  } catch {
-    return {};
+    return {
+      results: fromEntries(
+        entries(actualCases).map(([name, cases]) => {
+          const fnR = fnResults(get(name, context), cases);
+          return [name, fnR];
+        }),
+      ),
+    };
+  } catch (e) {
+    return {
+      error: e
+    };
   };
 };
+
+const runTests = (testcases, code) => {
+  return runTestsWithError(testcases, code).results;
+}
+
 
 const fetchTestcases = async (url, server='https://bhs-cs.gigamonkeys.com') => {
   const code = await fetch(`${server}/${url}/testcases.js`).then(textIfOk);
@@ -210,4 +204,4 @@ const loadTestcases = (code) => {
   return get('testcases', ctx);
 };
 
-export { runTests, fetchTestcases, loadTestcases };
+export { runTests, runTestsWithError, fetchTestcases, loadTestcases };
