@@ -31,6 +31,8 @@ const camelify = (data) => mapKeys(data, snakeToCamel);
 
 const snakeToCamel = (s) => s.replace(/_(.)/g, (_, c) => c.toUpperCase());
 
+const camelToKebab = (s) => s.replace(/([a-z])([A-Z])/g, (...p) => `${p[1]}-${p[2]}`).toLowerCase();
+
 const readLines = (filename) => readFileSync(filename, { encoding: 'utf-8' }).split(/\n/);
 
 const dumpTSV = (objs) => {
@@ -122,6 +124,7 @@ const execFilter = async (command, args, stdin) => {
 export {
   argv,
   average,
+  camelToKebab,
   camelify,
   count,
   dumpJSON,

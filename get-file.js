@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { homedir } from 'node:os';
+import { open } from 'node:fs/promises';
 import { Repo } from './modules/repo.js';
 import { DB } from 'pugsql';
 import { env } from 'node:process';
@@ -7,13 +9,28 @@ import { Command, Option } from 'commander';
 import { API } from './api.js';
 import { writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
-import { camelify, exec } from './modules/util.js';
+import { camelify, camelToKebab, exec } from './modules/util.js';
 
 const { keys } = Object;
 
 const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+      .addQueries('modules/pugly.sql')
+      .addQueries('modules/queries.sql');
+
+const slug = (s) => camelToKebab(s).replace(' ', '-');
+
+const countQuestions = async (url) => {
+  const filename = `${homedir()}/hacks/bhs-cs/views/pages/${url}/index.njk`;
+  const file = await open(filename);
+
+  let questions = 0;
+  for await (const line of file.readLines()) {
+    if (line.match(/^\s*<div data-name/)) {
+      questions++;
+    }
+  }
+  return questions;
+}
 
 const getHandles = ({user, period, course}) => {
   if (user) {
@@ -50,8 +67,22 @@ const getBranchAndFile = async (api, url, kind) => {
 const main = async (assignmentId, directory, opts) => {
   const handles = getHandles(opts);
   const api = new API(opts.server, opts.apiKey);
-  const assignment = camelify(await api.assignment(assignmentId));
-  const { url, kind, courseId } = assignment;
+  const data = await api.assignment(assignmentId);
+  const assignment = camelify(data);
+
+  const { url, kind, courseId, title } = assignment;
+
+  if (!directory) {
+    directory = `${courseId}/${assignmentId}-${slug(title)}`;
+  }
+
+  const assignmentFile = path.join(directory, "assignment.json")
+
+  if (kind === 'coding' && !existsSync(assignmentFile)) {
+    data.questions = await countQuestions(url);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(assignmentFile, JSON.stringify(data, null, 2));
+  }
 
   try {
     const { branch, dir, file } = await getBranchAndFile(api, url, kind);
@@ -84,7 +115,7 @@ const main = async (assignmentId, directory, opts) => {
 new Command()
   .description('Get file for assignment from git repo.')
   .argument('assignmentId', 'Assignment id')
-  .argument('dir', 'Directory to save files')
+  .argument('[dir]', 'Directory to save files')
   .addOption(new Option('-u, --user <user>', 'Github handle').conflicts(['period', 'course']))
   .addOption(new Option('-p, --period <period>', 'Period').conflicts(['user', 'course']))
   .addOption(new Option('-c, --course <course>', 'Course').conflicts(['user', 'period']))

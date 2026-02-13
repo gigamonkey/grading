@@ -1,15 +1,34 @@
 #!/usr/bin/env node
 
-import { env } from 'node:process';
-import { Command } from 'commander';
-import { API } from './api.js';
-import { writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { API } from './api.js';
+import { Command } from 'commander';
+import { env } from 'node:process';
+import { homedir } from 'node:os';
+import { open } from 'node:fs/promises';
+import { writeFileSync } from 'node:fs';
+
+const countQuestions = async (url) => {
+  const filename = `${homedir()}/hacks/bhs-cs/views/pages/${url}/index.njk`;
+  const file = await open(filename);
+
+  let questions = 0;
+  for await (const line of file.readLines()) {
+    if (line.match(/^\s*<div data-name/)) {
+      console.log(line);
+      questions++;
+    }
+  }
+  return questions;
+}
 
 const main = async (assignment, dir, opts) => {
   const api = new API(opts.server, opts.apiKey);
-  const json = JSON.stringify(await api.assignment(assignment), null, 2);
-  writeFileSync(path.join(dir, "assignment.json"), json, 'utf-8');
+  const data = await api.assignment(assignment);
+  if (data.kind === 'coding') {
+    data.questions = await countQuestions(data.url);
+  }
+  writeFileSync(path.join(dir, "assignment.json"), JSON.stringify(data, null, 2), 'utf-8');
 };
 
 new Command()
