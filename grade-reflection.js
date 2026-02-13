@@ -47,7 +47,7 @@ new Command()
   .action(async (assignmentId, opts) => {
 
     const api = new API(opts.server, opts.apiKey);
-    const { openDate, courseId, title } = camelify(await api.assignmentJSON(assignmentId));
+    const { openDate, courseId, title } = camelify(await api.assignment(assignmentId));
     const { minimumWords, data } = await api.reflectionGradeData(assignmentId);
 
     db.transaction(() => {
