@@ -63,4 +63,44 @@ public class ConcurrentTester {
   private Map<String, TestResult[]> testSource(String source) throws Exception {
     return runner.results(testerClass, TestRunner.classFromSource(source));
   }
+
+
+  public static void main(String[] args) throws Exception {
+
+    Class<? extends Tester> testerClass = Class.forName("com.gigamonkeys.bhs.assignments." + args[0]).asSubclass(Tester.class);
+
+    List<Path> paths = Arrays.asList(args).subList(1, args.length).stream().map(Path::of).toList();
+    List<String> sources = paths.stream().map(ConcurrentTester::getSource).toList();
+    List<Result> results = new ConcurrentTester(testerClass).testSources(sources, 10L, TimeUnit.SECONDS);
+
+    for (int i = 0; i < paths.size(); i++) {
+      Path p = paths.get(i);
+      saveResults(p.getParent(), results.get(i));
+      IO.println("%s - %s".formatted(paths.get(i), results.get(i)));
+    }
+  }
+
+  private static void saveResults(Path dir, Result r) throws IOException {
+    switch (r) {
+      case Result.Good(var results) -> {
+        Files.writeString(dir.resolve("results.json"), TestRunner.resultsJson(results));
+      }
+      case Result.Error(var exception) -> {
+        Files.writeString(dir.resolve("exception.txt"), String.valueOf(exception));
+      }
+      case Result.Timeout() -> {
+        Files.writeString(dir.resolve("timeout.txt"), "");
+      }
+    }
+  }
+
+  private static String getSource(Path p) {
+    try {
+      return Files.readString(p);
+    } catch (IOException ioe) {
+      return "";
+    }
+  }
+
+
 }
