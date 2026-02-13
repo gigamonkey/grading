@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { argv } from 'node:process';
 import fs from 'node:fs';
@@ -88,6 +88,37 @@ const exec = (command, cwd) => {
   return execSync(command, { cwd, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] });
 };
 
+// Run a command that reads stdin from provided string
+const execFilter = async (command, args, stdin) => {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args);
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+
+    child.stdout.on('data', (chunk) => stdout += chunk);
+    child.stderr.on('data', (chunk) => stderr += chunk);
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout);
+      } else {
+        reject(new Error(`Process exited with code ${code}\nError: ${stderr}`));
+      }
+    });
+
+    // Errors running external program
+    child.on('error', (err) => reject(err));
+
+    child.stdin.write(stdin);
+    child.stdin.end();
+  });
+}
+
+
 export {
   argv,
   average,
@@ -97,6 +128,7 @@ export {
   dumpTSV,
   entries,
   exec,
+  execFilter,
   fps,
   fromEntries,
   groupBy,

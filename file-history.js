@@ -43,7 +43,6 @@ const main = async (assignmentId, repoDir, opts) => {
 
   const repo = new Repo(repoDir);
 
-
   let prev = 0;
 
   repo.branchChanges(branch).reverse().forEach(c => {
