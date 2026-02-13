@@ -264,7 +264,7 @@ CREATE TABLE IF NOT EXISTS student_answers (
 
 -- Compute per question scores for each student. Question score is computed
 -- differently depending on the kind of question. Currently handled are choices,
--- freeanswer, ad mchoices.
+-- freeanswer, and mchoices.
 DROP VIEW IF EXISTS question_scores;
 CREATE VIEW question_scores AS
 WITH mchoices AS (
@@ -393,8 +393,8 @@ CREATE TABLE IF NOT EXISTS roster (
 
 CREATE TABLE IF NOT EXISTS ic_grades (
   student_number TEXT,
-  standard TEXT,
-  grade INTEGER,
+  ic_name TEXT,
+  points INTEGER,
   PRIMARY KEY (student_number, standard)
 );
 
@@ -498,7 +498,7 @@ WITH recorded_scores AS (
     UNION
   SELECT *, 'javascript_unit_tests_scores' FROM javascript_unit_tests_scores
     UNION
-  SELECT *, 'java_unit_tests_cores'  FROM java_unit_tests_scores
+  SELECT *, 'java_unit_tests_scores' FROM java_unit_tests_scores
     UNION
   SELECT *, 'direct_scores' FROM direct_scores
     UNION
@@ -714,7 +714,6 @@ JOIN scored_answers USING (assignment_id, question_number, answer)
 WHERE score = 0
 GROUP BY assignment_id, question_number, answer;
 
-
 DROP VIEW IF EXISTS db_grades;
 CREATE VIEW db_grades AS
 SELECT
@@ -776,6 +775,7 @@ SELECT
   user_id,
   assignment_id,
   sortable_name,
+  period,
   title,
   ic_name,
   ga.points max_points,
@@ -822,15 +822,16 @@ FROM runs
 JOIN mastery_speedruns USING (assignment_id)
 GROUP BY user_id, assignment_id;
 
+DROP VIEW IF EXISTS all_mastery_points;
+CREATE VIEW all_mastery_points AS
+  SELECT user_id, standard, points, 'assignment' reason FROM mastery_assignment_points
+  UNION ALL
+  SELECT user_id, standard, points, reason FROM ad_hoc_mastery_points
+  UNION ALL
+  SELECT user_id, standard, points, 'speedrun' FROM speedrun_mastery_points;
+
 DROP VIEW IF EXISTS mastery_points;
 CREATE VIEW mastery_points AS
-WITH all_points AS (
-  SELECT user_id, standard, points FROM mastery_assignment_points
-  UNION ALL
-  SELECT user_id, standard, points FROM ad_hoc_mastery_points
-  UNION ALL
-  SELECT user_id, standard, points FROM speedrun_mastery_points
-)
 SELECT
   user_id,
   sortable_name,
@@ -838,5 +839,5 @@ SELECT
   standard,
   sum(points) points
 FROM roster
-JOIN all_points USING (user_id)
+JOIN all_mastery_points USING (user_id)
 GROUP BY user_id, standard;
