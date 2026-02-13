@@ -21,11 +21,11 @@ Step 1. Load the questions for a given assignment with `markup-to-questions.py`
 which takes the assignment id and the path to the Markup file. Also loads the
 choices and mchoices answers into `normalized_answers` all with scores of 0.0.
 
-Step 2. Load student answers from current with `./repos` and the `questions`
-script which puts them in a directory under `grading/<course_id>`
+Step 2. Load student answers from current with `./get-file.js` passing the
+assignment ID which will create a directory under `<courseID>/<assignmentID>-stuff`
 
 Step 3. Load the answers into the database with `load-answers.js` which takes
-the name of the directory created in Step 2.
+the assignment id and the name of the directory created in Step 2.
 
 Step 3. Score all the answers with `score-answers.py` which for each question
 finds unique normalized answers that haven't been assigned a score and prompts
@@ -57,26 +57,21 @@ course db.
 
 ## Java unit test assignments
 
-Step 1. Export student code to directory named for the assignment. With `repo
-coding`.
+Step 1. Export student code to directory named for the assignment with
+`./get-file.js`. Run with just the assignment ID will create a directory based
+on the course, id, and title. Will also create the assignments.json file with
+the number of questions added.
 
-Step 2. Get the `assignment.json` file via the API
-https://bhs-cs.gigamonkeys.com/api/assignment/$assignentId and save it in the
-directory. (Should automate this in `java-unit-tests-questions.js`.) Need to add
-`questions` property with the number of questions to answers file. In theory we
-should be able to extract that automatically from the index.njk for the
-assignment.
-
-Step 3. Run the unit tests with `./test-java-files.sh` specifying the tester
+Step 2. Run the unit tests with `./test-java-files.sh` specifying the tester
 class and a list of files. Something like:
 
   ./test-java-files.sh LoopIdiomsTester csa/loop-idioms/*/LoopIdioms.java
 
-Step 4. (Optional) find any directories with `broken.txt` in them and make
+Step 3. (Optional) find any directories with `broken.txt` in them and make
 minimal fixes necessary to get the code to compile. Then rerun
 `test-java-files.sh`.
 
-Step 5. Load scores with `./grade-java-unittest.sh` run from grading e.g.
+Step 4. Load scores with `./grade-java-unittest.sh` run from grading e.g.
 `./grade-javascript-unittest.sh itp/geometric-functions/`. That fills a `db.db`
 in the assignment directory with scores that are then loaded into the main
 course db.
