@@ -25,7 +25,7 @@ const main = async (speedrunId, opts) => {
 
   if (s) {
     const api = new API(opts.server, opts.apiKey);
-    const { url } = await api.assignmentJSON(s.assignment_id);
+    const { url } = await api.assignment(s.assignment_id);
     const config = await api.codingConfig(url);
 
     const file = config.files[0];

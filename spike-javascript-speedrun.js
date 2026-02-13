@@ -22,7 +22,7 @@ const db = new DB('db.db')
 
 const main = async (github, assignmentId, start, opts) => {
   const api = new API(opts.server, opts.apiKey);
-  const { url } = await api.assignmentJSON(assignmentId);
+  const { url } = await api.assignment(assignmentId);
   const config = await api.codingConfig(url);
   const testcases = loadTestcases(await api.jsTestcases(url));
 

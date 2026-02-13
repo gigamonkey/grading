@@ -22,7 +22,7 @@ const countQuestions = async (url) => {
 
 const main = async (assignmentId, opts) => {
   const api = new API(opts.server, opts.apiKey);
-  const assignment = camelify(await api.assignmentJSON(assignmentId));
+  const assignment = camelify(await api.assignment(assignmentId));
   const questions = await countQuestions(assignment.url);
   console.log({ assignmentId, questions });
 };

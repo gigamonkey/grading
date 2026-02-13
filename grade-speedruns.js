@@ -28,7 +28,7 @@ const main = async (opts) => {
   let num = ungraded.length;
   let i = 0;
   for (const s of ungraded) {
-    const { url } = await api.assignmentJSON(s.assignment_id);
+    const { url } = await api.assignment(s.assignment_id);
     const config = await api.codingConfig(url);
 
     const file = config.files[0];

@@ -8,7 +8,7 @@ import path from 'node:path';
 
 const main = async (assignment, dir, opts) => {
   const api = new API(opts.server, opts.apiKey);
-  const json = JSON.stringify(await api.assignmentJSON(assignment), null, 2);
+  const json = JSON.stringify(await api.assignment(assignment), null, 2);
   writeFileSync(path.join(dir, "assignment.json"), json, 'utf-8');
 };
 
