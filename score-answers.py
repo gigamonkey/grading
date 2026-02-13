@@ -33,7 +33,7 @@ if __name__ == "__main__":
         if answers:
             print(f"Question:\n\n{question}\n")
 
-            if kind == "choices":
+            if kind in { "choices", "ochices", "tf", "yn" }:
                 for i, a in enumerate(answers):
                     print(f"[{i}] {a}")
                 print()
@@ -46,7 +46,7 @@ if __name__ == "__main__":
                         score = 1.0 if i == n else 0.0
                     )
 
-            elif kind == "mchoices":
+            elif kind in { "mchoices", "omchoices" }:
                 for i, a in enumerate(answers):
                     print(f"[{i}] {a}")
                 print()
