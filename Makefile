@@ -7,6 +7,9 @@ all: java
 java:
 	javac $(JAVAC_OPTS) -d classes *.java
 
+bhs-cs.jar: /Users/peter/hacks/bhs-cs/java/target/bhs-cs.jar
+	cp $< $@
+
 old_all:
 	modules/pugly.sql db.db
 
