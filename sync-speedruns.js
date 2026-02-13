@@ -81,15 +81,17 @@ const main = async (opts) => {
   for (const s of onServer) {
     if (!inGradebook.has(s.speedrun_id)) {
       const github = db.github({userId: s.user_id});
-      console.log(`Inserting ${label} speedrun ${s.speedrun_id} for ${github}`);
-      toFetch.add(github);
-      if (opts.dryRun) {
-        console.log(camelify(s));
-      } else {
-        if (opts.started) {
-          db.insertStartedSpeedrun(camelify(s));
+      if (github) { // I think the only way this is not defined is when I do one
+        console.log(`Inserting ${label} speedrun ${s.speedrun_id} for ${github}`);
+        toFetch.add(github);
+        if (opts.dryRun) {
+          console.log(camelify(s));
         } else {
-          db.insertCompletedSpeedrun(camelify(s));
+          if (opts.started) {
+            db.insertStartedSpeedrun(camelify(s));
+          } else {
+            db.insertCompletedSpeedrun(camelify(s));
+          }
         }
       }
     }
