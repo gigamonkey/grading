@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { DB } from 'pugsql';
-import { statSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
-import { Command } from 'commander';
 import glob from 'fast-glob';
+import { Command } from 'commander';
+import { DB } from 'pugsql';
+import { basename, dirname, join } from 'node:path';
 import { getSha, getTimestamp, numCorrect, scoreTest } from './modules/grading.js';
 import { loadJSON, loadSnakeCaseJSON } from './modules/util.js';
+import { statSync } from 'node:fs';
 
 const db = new DB('db.db')
   .addQueries('modules/pugly.sql')
@@ -20,6 +20,11 @@ new Command()
   .action((dir, opts) => {
 
     const { assignmentId, openDate, questions, title, courseId } = loadSnakeCaseJSON(join(dir, 'assignment.json'));
+
+    if (!assignmentId) {
+      console.log('No assignment id!');
+      process.exit();
+    }
 
     const results = glob.sync(`${dir}/**/results.json`);
 
@@ -52,6 +57,7 @@ new Command()
             const correct = numCorrect(results);
             const score = scoreTest(results, questions);
             if (!opts.dryRun) {
+              console.log(`Inserting ${github} ${score}`);
               db.insertJavaUnitTest({assignmentId, github, correct, score, timestamp, sha});
             } else {
               console.log({assignmentId, github, correct, score, timestamp, sha});
