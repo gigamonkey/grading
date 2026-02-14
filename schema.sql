@@ -516,8 +516,8 @@ SELECT
   period,
   sortable_name,
   ic_name,
-  ic.points old,
-  ap.points new
+  ic.points ic,
+  ap.points db
 FROM assignment_points ap
 LEFT JOIN ic_grades ic USING (student_number, ic_name)
 WHERE ic.points is null and ap.points is not null or ic.points <> ap.points
@@ -582,7 +582,7 @@ SELECT
   ic_name,
   apv.points max_points,
   score,
-  cast(round(score * ga.points) as integer) points
+  cast(round(score * apv.points) as integer) points
 FROM assigned
 JOIN assignment_point_values apv using (assignment_id)
 LEFT JOIN assignment_scores USING (user_id, assignment_id);
