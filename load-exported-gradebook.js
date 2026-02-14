@@ -17,17 +17,17 @@ new Command()
 
       const data = loadTSV(file);
 
-      const standards = data[0].slice(1);
+      const names = data[0].slice(1);
       const rows = data.slice(3);
 
       const numberOrNull = (s) => s ? Number(s) : null;
 
       const records = rows.flatMap(row => {
-        const [ name, ...grades ] = row;
+        const [ name, ...points ] = row;
         const studentNumber = name.match(/#(\d+)/)[1];
-        return standards.flatMap((standard, i) => {
-          if (grades[i]) {
-            return [ { studentNumber, standard, grade: Number(grades[i]) } ];
+        return names.flatMap((icName, i) => {
+          if (points[i]) {
+            return [ { studentNumber, icName, points: Number(points[i]) } ];
           } else {
             return [];
           }
