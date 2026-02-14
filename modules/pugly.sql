@@ -1,32 +1,56 @@
 -- Generated with pugilify v0.0.23.
 
--- assignment_weights --------------------------------------
+-- ad_hoc_mastery_points -----------------------------------
 
--- :name assignmentWeights :all
-select * from assignment_weights;
+-- :name adHocMasteryPoints :all
+select * from ad_hoc_mastery_points;
 
--- :name insertAssignmentWeight :insert
-insert into assignment_weights
-  (assignment_id, standard, weight)
+-- :name insertAdHocMasteryPoint :insert
+insert into ad_hoc_mastery_points
+  (user_id, date, standard, points, reason)
 values
-  ($assignmentId, $standard, $weight);
+  ($userId, $date, $standard, $points, $reason);
 
--- :name assignmentWeight :get
-select * from assignment_weights where assignment_id = $assignmentId and standard = $standard;
+-- :name makeAdHocMasteryPoint :insert
+insert into ad_hoc_mastery_points
+  (user_id, date, standard, points, reason)
+values
+  ($userId, $date, $standard, $points, $reason);
 
--- :name updateAssignmentWeight :run
-update assignment_weights set
-  (weight) =
-  ($weight)
+-- :name makeAdHocMasteryPointWithDefaultValues :insert
+insert into ad_hoc_mastery_points
+  (user_id, date, standard, points, reason)
+values
+  ($userId, $date, $standard, $points, $reason);
+
+
+-- assignment_point_values ---------------------------------
+
+-- :name assignmentPointValues :all
+select * from assignment_point_values;
+
+-- :name insertAssignmentPointValue :insert
+insert into assignment_point_values
+  (assignment_id, standard, ic_name, points)
+values
+  ($assignmentId, $standard, $icName, $points);
+
+-- :name assignmentPointValue :get
+select * from assignment_point_values where assignment_id = $assignmentId and standard = $standard;
+
+-- :name updateAssignmentPointValue :run
+update assignment_point_values set
+  (ic_name, points) =
+  ($icName, $points)
 where
   assignment_id = $assignmentId and
   standard = $standard
 
--- :name makeAssignmentWeight :insert
-insert into assignment_weights (weight) values ($weight);
+-- :name makeAssignmentPointValue :insert
+insert into assignment_point_values (ic_name, points) values ($icName, $points);
 
--- :name makeAssignmentWeightWithDefaultValues :insert
-insert into assignment_weights (weight) values ($weight);
+-- :name makeAssignmentPointValueWithDefaultValues :insert
+insert into assignment_point_values (ic_name, points) values ($icName, $points);
 
 
 -- assignments ---------------------------------------------
@@ -179,21 +203,6 @@ select * from form_assessments;
 insert into form_assessments (assignment_id) values ($assignmentId);
 
 
--- fps -----------------------------------------------------
-
--- :name fps :all
-select * from fps;
-
--- :name insertFp :insert
-insert into fps (grade, minimum, score) values ($grade, $minimum, $score);
-
--- :name fp :get
-select * from fps where grade = $grade;
-
--- :name updateFp :run
-update fps set (minimum, score) = ($minimum, $score) where grade = $grade
-
-
 -- graded_speedruns ----------------------------------------
 
 -- :name gradedSpeedruns :all
@@ -213,21 +222,6 @@ select * from graded_speedruns where speedrun_id = $speedrunId;
 
 -- :name gradedSpeedrunsForCompletedSpeedrun :all
 select * from graded_speedruns where speedrun_id = $speedrunId;
-
-
--- hand_graded ---------------------------------------------
-
--- :name handGraded :all
-select * from hand_graded;
-
--- :name insertHandGraded :insert
-insert into hand_graded (assignment_id, github, grade) values ($assignmentId, $github, $grade);
-
--- :name makeHandGraded :insert
-insert into hand_graded (assignment_id, github, grade) values ($assignmentId, $github, $grade);
-
--- :name makeHandGradedWithDefaultValues :insert
-insert into hand_graded (assignment_id, github, grade) values ($assignmentId, $github, $grade);
 
 
 -- hand_graded_questions -----------------------------------
@@ -254,45 +248,30 @@ values
   ($assignmentId, $github, $question, $correct);
 
 
--- hand_scored ---------------------------------------------
-
--- :name handScored :all
-select * from hand_scored;
-
--- :name insertHandScored :insert
-insert into hand_scored (assignment_id, github, score) values ($assignmentId, $github, $score);
-
--- :name makeHandScored :insert
-insert into hand_scored (assignment_id, github, score) values ($assignmentId, $github, $score);
-
--- :name makeHandScoredWithDefaultValues :insert
-insert into hand_scored (assignment_id, github, score) values ($assignmentId, $github, $score);
-
-
 -- ic_grades -----------------------------------------------
 
 -- :name icGrades :all
 select * from ic_grades;
 
 -- :name insertIcGrade :insert
-insert into ic_grades (student_number, standard, grade) values ($studentNumber, $standard, $grade);
+insert into ic_grades (student_number, ic_name, points) values ($studentNumber, $icName, $points);
 
 -- :name icGrade :get
-select * from ic_grades where student_number = $studentNumber and standard = $standard;
+select * from ic_grades where student_number = $studentNumber and ic_name = $icName;
 
 -- :name updateIcGrade :run
 update ic_grades set
-  (grade) =
-  ($grade)
+  (points) =
+  ($points)
 where
   student_number = $studentNumber and
-  standard = $standard
+  ic_name = $icName
 
 -- :name makeIcGrade :insert
-insert into ic_grades (grade) values ($grade);
+insert into ic_grades (points) values ($points);
 
 -- :name makeIcGradeWithDefaultValues :insert
-insert into ic_grades (grade) values ($grade);
+insert into ic_grades (points) values ($points);
 
 
 -- java_unit_tests -----------------------------------------
@@ -306,17 +285,16 @@ insert into java_unit_tests
 values
   ($assignmentId, $github, $correct, $score, $timestamp, $sha);
 
--- :name makeJavaUnitTest :insert
-insert into java_unit_tests
-  (assignment_id, github, correct, score, timestamp, sha)
-values
-  ($assignmentId, $github, $correct, $score, $timestamp, $sha);
+-- :name javaUnitTest :get
+select * from java_unit_tests where assignment_id = $assignmentId and github = $github;
 
--- :name makeJavaUnitTestWithDefaultValues :insert
-insert into java_unit_tests
-  (assignment_id, github, correct, score, timestamp, sha)
-values
-  ($assignmentId, $github, $correct, $score, $timestamp, $sha);
+-- :name updateJavaUnitTest :run
+update java_unit_tests set
+  (correct, score, timestamp, sha) =
+  ($correct, $score, $timestamp, $sha)
+where
+  assignment_id = $assignmentId and
+  github = $github
 
 
 -- javascript_unit_tests -----------------------------------
@@ -341,6 +319,59 @@ insert into javascript_unit_tests
   (assignment_id, github, question, answered, correct, timestamp, sha)
 values
   ($assignmentId, $github, $question, $answered, $correct, $timestamp, $sha);
+
+
+-- mastery_assignments -------------------------------------
+
+-- :name masteryAssignments :all
+select * from mastery_assignments;
+
+-- :name insertMasteryAssignment :insert
+insert into mastery_assignments
+  (assignment_id, standard, points)
+values
+  ($assignmentId, $standard, $points);
+
+-- :name masteryAssignment :get
+select * from mastery_assignments where assignment_id = $assignmentId and standard = $standard;
+
+-- :name updateMasteryAssignment :run
+update mastery_assignments set
+  (points) =
+  ($points)
+where
+  assignment_id = $assignmentId and
+  standard = $standard
+
+-- :name makeMasteryAssignment :insert
+insert into mastery_assignments (points) values ($points);
+
+-- :name makeMasteryAssignmentWithDefaultValues :insert
+insert into mastery_assignments (points) values ($points);
+
+
+-- mastery_speedruns ---------------------------------------
+
+-- :name masterySpeedruns :all
+select * from mastery_speedruns;
+
+-- :name insertMasterySpeedrun :insert
+insert into mastery_speedruns
+  (assignment_id, standard, base_points)
+values
+  ($assignmentId, $standard, $basePoints);
+
+-- :name makeMasterySpeedrun :insert
+insert into mastery_speedruns
+  (assignment_id, standard, base_points)
+values
+  ($assignmentId, $standard, $basePoints);
+
+-- :name makeMasterySpeedrunWithDefaultValues :insert
+insert into mastery_speedruns
+  (assignment_id, standard, base_points)
+values
+  ($assignmentId, $standard, $basePoints);
 
 
 -- normalized_answers --------------------------------------
@@ -390,27 +421,6 @@ select * from optional_assignments;
 
 -- :name insertOptionalAssignment :insert
 insert into optional_assignments (assignment_id) values ($assignmentId);
-
-
--- prompt_response_grades ----------------------------------
-
--- :name promptResponseGrades :all
-select * from prompt_response_grades;
-
--- :name insertPromptResponseGrade :insert
-insert into prompt_response_grades (user_id, posted, grade) values ($userId, $posted, $grade);
-
--- :name promptResponseGrade :get
-select * from prompt_response_grades where user_id = $userId and posted = $posted;
-
--- :name updatePromptResponseGrade :run
-update prompt_response_grades set (grade) = ($grade) where user_id = $userId and posted = $posted
-
--- :name makePromptResponseGrade :insert
-insert into prompt_response_grades (grade) values ($grade);
-
--- :name makePromptResponseGradeWithDefaultValues :insert
-insert into prompt_response_grades (grade) values ($grade);
 
 
 -- questions -----------------------------------------------
@@ -506,6 +516,35 @@ insert into rubric_grades (score) values ($score);
 insert into rubric_grades (score) values ($score);
 
 
+-- score_overrides -----------------------------------------
+
+-- :name scoreOverrides :all
+select * from score_overrides;
+
+-- :name insertScoreOverride :insert
+insert into score_overrides
+  (user_id, assignment_id, score, reason)
+values
+  ($userId, $assignmentId, $score, $reason);
+
+-- :name scoreOverride :get
+select * from score_overrides where user_id = $userId and assignment_id = $assignmentId;
+
+-- :name updateScoreOverride :run
+update score_overrides set
+  (score, reason) =
+  ($score, $reason)
+where
+  user_id = $userId and
+  assignment_id = $assignmentId
+
+-- :name makeScoreOverride :insert
+insert into score_overrides (score, reason) values ($score, $reason);
+
+-- :name makeScoreOverrideWithDefaultValues :insert
+insert into score_overrides (score, reason) values ($score, $reason);
+
+
 -- scored_answers ------------------------------------------
 
 -- :name scoredAnswers :all
@@ -574,35 +613,6 @@ insert into scored_question_assignments (questions) values ($questions);
 insert into scored_question_assignments (questions) values ($questions);
 
 
--- secondary_weights ---------------------------------------
-
--- :name secondaryWeights :all
-select * from secondary_weights;
-
--- :name insertSecondaryWeight :insert
-insert into secondary_weights
-  (assignment_id, standard, weight)
-values
-  ($assignmentId, $standard, $weight);
-
--- :name secondaryWeight :get
-select * from secondary_weights where assignment_id = $assignmentId and standard = $standard;
-
--- :name updateSecondaryWeight :run
-update secondary_weights set
-  (weight) =
-  ($weight)
-where
-  assignment_id = $assignmentId and
-  standard = $standard
-
--- :name makeSecondaryWeight :insert
-insert into secondary_weights (weight) values ($weight);
-
--- :name makeSecondaryWeightWithDefaultValues :insert
-insert into secondary_weights (weight) values ($weight);
-
-
 -- server_grades -------------------------------------------
 
 -- :name serverGrades :all
@@ -625,6 +635,47 @@ insert into server_grades
   (user_id, assignment_id, standard, score, grade)
 values
   ($userId, $assignmentId, $standard, $score, $grade);
+
+
+-- speedrunnable_standards ---------------------------------
+
+-- :name speedrunnableStandards :all
+select * from speedrunnable_standards;
+
+-- :name insertSpeedrunnableStandard :insert
+insert into speedrunnable_standards
+  (assignment_id, standard, weight, decay)
+values
+  ($assignmentId, $standard, $weight, $decay);
+
+-- :name speedrunnableStandard :get
+select * from speedrunnable_standards where assignment_id = $assignmentId and standard = $standard;
+
+-- :name updateSpeedrunnableStandard :run
+update speedrunnable_standards set
+  (weight, decay) =
+  ($weight, $decay)
+where
+  assignment_id = $assignmentId and
+  standard = $standard
+
+-- :name insertSpeedrunnableStandardWithDefaultValues :insert
+insert into speedrunnable_standards (assignment_id, standard) values ($assignmentId, $standard);
+
+-- :name updateSpeedrunnableStandardWeight :run
+update speedrunnable_standards set weight = $weight
+where
+  assignment_id = $assignmentId and
+  standard = $standard
+
+-- :name updateSpeedrunnableStandardDecay :run
+update speedrunnable_standards set decay = $decay
+where
+  assignment_id = $assignmentId and
+  standard = $standard
+
+-- :name makeSpeedrunnableStandard :insert
+insert into speedrunnable_standards (weight, decay) values ($weight, $decay);
 
 
 -- speedrunnables ------------------------------------------

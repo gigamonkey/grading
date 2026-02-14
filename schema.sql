@@ -10,12 +10,7 @@ CREATE TABLE IF NOT EXISTS assignments (
 );
 
 -- Weights for any standard an assignment affects
-CREATE TABLE IF NOT EXISTS assignment_weights (
-  assignment_id INTEGER,
-  standard TEXT,
-  weight REAL,
-  PRIMARY KEY (assignment_id, standard)
-);
+DROP TABLE IF EXISTS assignment_weights;
 
 -- Weights for any standard that will be increased by an assignment if a student
 -- did better on the assignment than their current grade for that standard. So a
@@ -25,12 +20,7 @@ CREATE TABLE IF NOT EXISTS assignment_weights (
 -- does worse won't have their grade lowered. This allows students to
 -- demonstrate improved mastery of old standards without penalizing them on old
 -- standards due to poor performance on new material.
-CREATE TABLE IF NOT EXISTS secondary_weights (
-  assignment_id INTEGER,
-  standard TEXT,
-  weight REAL,
-  PRIMARY KEY (assignment_id, standard)
-);
+DROP TABLE IF EXISTS secondary_weights;
 
 -- Assignments that I don't expect every student in a class to have done.
 CREATE TABLE IF NOT EXISTS optional_assignments (
@@ -137,49 +127,6 @@ JOIN scored_question_assignments USING (assignment_id)
 JOIN roster USING (github)
 GROUP BY assignment_id, github;
 
-
---------------------------------------------------------------------------------
--- Completely hand graded stuff. These are filled by importing data that is
--- produced in a Google sheet or some other system where we don't want to load
--- the details into the database.
-
--- Whole assignment graded 0-4. Useful for assignments graded just on vibes in a
--- spreadsheet. Translated to a score in the hand_graded_to_scores view.
-CREATE TABLE IF NOT EXISTS hand_graded(
-  assignment_id INTEGER,
-  github TEXT,
-  grade INTEGER,
-  PRIMARY KEY (assignment_id, github)
-) WITHOUT ROWID;
-
--- Whole assignment scored 0.0 to 1.0. Useful for assignments scored by hand in
--- a spreadsheet or against a rubric.
-CREATE TABLE IF NOT EXISTS hand_scored(
-  assignment_id INTEGER,
-  github TEXT,
-  score REAL,
-  PRIMARY KEY (assignment_id, github)
-);
-
-DROP VIEW IF EXISTS hand_graded_to_scores;
-CREATE VIEW hand_graded_to_scores as
-SELECT
-  assignment_id,
-  user_id,
-  score
-FROM hand_graded
-JOIN fps USING (grade)
-JOIN roster USING (github)
-
-UNION
-
-SELECT
-  assignment_id,
-  user_id,
-  score
-FROM hand_scored
-JOIN roster using (github);
-
 -- Individual questions hand graded. At the moment this is used to augment
 -- autograded unit test questions when certain questions can't be autograded.
 -- But could also be used to grade all the questions on something.
@@ -189,6 +136,10 @@ CREATE TABLE IF NOT EXISTS hand_graded_questions(
   question TEXT,
   correct INTEGER
 );
+
+DROP TABLE IF EXISTS hand_grade;
+DROP TABLE IF EXISTS hand_scored;
+DROP VIEW IF EXISTS hand_graded_to_scores;
 
 --------------------------------------------------------------------------------
 -- Directly scored
@@ -262,6 +213,22 @@ CREATE TABLE IF NOT EXISTS student_answers (
   FOREIGN KEY (assignment_id) REFERENCES form_assessments(assignment_id) ON DELETE CASCADE
 );
 
+DROP VIEW IF EXISTS wrong_answers;
+CREATE VIEW wrong_answers as
+select
+  assignment_id,
+  question_number + 1 n,
+  question,
+  answer,
+  count(*) num,
+  group_concat(github, ', ') who
+FROM questions
+JOIN student_answers USING (assignment_id, question_number)
+JOIN normalized_answers USING (assignment_id, question_number, raw_answer)
+JOIN scored_answers USING (assignment_id, question_number, answer)
+WHERE score = 0
+GROUP BY assignment_id, question_number, answer;
+
 -- Compute per question scores for each student. Question score is computed
 -- differently depending on the kind of question. Currently handled are choices,
 -- freeanswer, and mchoices.
@@ -314,13 +281,7 @@ GROUP BY assignment_id, github;
 --------------------------------------------------------------------------------
 -- Responses to prompts. Just graded on a 0-4 scale.
 
--- FIXME: seems like this should have the assignment_id?
-CREATE TABLE IF NOT EXISTS prompt_response_grades (
-  user_id TEXT,
-  posted INTEGER,
-  grade INTEGER,
-  PRIMARY KEY (user_id, posted)
-);
+DROP TABLE IF EXISTS prompt_response_grades;
 
 --------------------------------------------------------------------------------
 -- Graded by rubric. For each student we compare their work against a rubric and
@@ -335,7 +296,6 @@ CREATE TABLE IF NOT EXISTS rubric_grades (
   PRIMARY KEY (user_id, assignment_id, rubric_item)
 );
 
-
 --------------------------------------------------------------------------------
 -- Per-user, per-assignment score overrides. Can be used to zero out scores in
 -- cases of cheating.
@@ -348,31 +308,7 @@ CREATE TABLE IF NOT EXISTS score_overrides (
   PRIMARY KEY (user_id, assignment_id)
 );
 
-
---------------------------------------------------------------------------------
--- Raw scores per user per assignment distilled from other tables. This could
--- possibly be a view created as a union of a the computed scores from all the
--- different specific ways of grading an assignment. For assignments that are
--- just graded on 0-4 we fill this table with the maximum score that would
--- achieve that grade, e.g. 1.0 for a 4, 0.84 for a 3, etc.
-
--- Mapping from percentages to four point scale grade
-CREATE TABLE IF NOT EXISTS fps (
-  grade INTEGER,
-  minimum REAL, -- threshold for this grade
-  score REAL,   -- score we use if mapping from a grade
-  PRIMARY KEY (grade)
-)
-WITHOUT ROWID;
-
-INSERT OR IGNORE INTO fps
-  (grade, minimum, score)
-VALUES
-  (4, 0.85, 1.0),
-  (3, 0.70, 0.84),
-  (2, 0.45, 0.69),
-  (1, 0.20, 0.44),
-  (0, 0.0, 0.0);
+DROP TABLE IF EXISTS fps;
 
 -- Filled in from ../roster.json
 CREATE TABLE IF NOT EXISTS roster (
@@ -391,12 +327,18 @@ CREATE TABLE IF NOT EXISTS roster (
   course_id TEXT
 );
 
+-- Grades loaded from IC grade export so we can compare what's in IC to what we
+-- think it should be.
 CREATE TABLE IF NOT EXISTS ic_grades (
   student_number TEXT,
   ic_name TEXT,
   points INTEGER,
-  PRIMARY KEY (student_number, standard)
+  PRIMARY KEY (student_number, ic_name)
 );
+
+--------------------------------------------------------------------------------
+--- Speedruns: we need to pull speedrun info from the class webserver and then
+--- record here if they were accepted.
 
 -- Information needed to grade speedruns
 CREATE TABLE IF NOT EXISTS speedrunnables (
@@ -405,6 +347,7 @@ CREATE TABLE IF NOT EXISTS speedrunnables (
   questions INTEGER
 );
 
+-- What standards is a given assignment speedrunnable for.
 CREATE TABLE IF NOT EXISTS speedrunnable_standards (
   assignment_id INTEGER,
   standard TEXT NOT NULL,
@@ -488,6 +431,14 @@ JOIN graded_speedruns USING (speedrun_id)
 WHERE ok
 GROUP BY user_id, assignment_id;
 
+-- Speedruns that have been accepted
+DROP VIEW IF EXISTS good_speedruns;
+CREATE VIEW good_speedruns AS
+SELECT *
+FROM completed_speedruns
+JOIN graded_speedruns USING (speedrun_id)
+WHERE ok;
+
 
 -- This view only contains scores that actually exist. If a student hasn't done
 -- an assignment they will have no entry in this table.
@@ -503,8 +454,6 @@ WITH recorded_scores AS (
   SELECT *, 'direct_scores' FROM direct_scores
     UNION
   SELECT *, 'form_assessment_scores' FROM form_assessment_scores
-    UNION
-  SELECT *, 'hand_graded_to_scores' FROM hand_graded_to_scores
 )
 SELECT
   assignment_id,
@@ -514,131 +463,14 @@ SELECT
 FROM recorded_scores rs
 LEFT JOIN score_overrides o using (user_id, assignment_id);
 
--- This view adds the 0-4 grade but also fills in any missing assignments with a
--- score of 0 and grade of 0 unless the assignment was optional for everyone or
--- excused for an individual.
 DROP VIEW IF EXISTS assignment_grades;
-CREATE VIEW assignment_grades as
-SELECT
-  user_id,
-  assignment_id,
-  coalesce(s.score, 0) raw_score,
-  max(fps.grade) raw_grade,
-  coalesce(speedrun_points.runs, 0) speedruns,
-  case
-    when speedrun_points.runs > 0 and max(fps.grade) < 4 then max(next_fps.minimum)
-    else coalesce(s.score, 0)
-  end score,
-  max(next_fps.grade) grade
-FROM assignments
-JOIN roster using (course_id)
-LEFT JOIN excused_assignments ex using (assignment_id, user_id)
-LEFT JOIN optional_assignments opt using (assignment_id)
-LEFT JOIN assignment_scores s using (assignment_id, user_id)
-LEFT JOIN speedrun_points using (user_id, assignment_id)
-LEFT JOIN assignment_weights using (assignment_id)
-JOIN fps on coalesce(s.score, 0) >= fps.minimum
-JOIN fps next_fps on next_fps.grade = min(fps.grade + coalesce(speedrun_points.runs, 0), 4)
-WHERE
-  ex.assignment_id is null and
-  (opt.assignment_id is null or coalesce(s.score, 0) > 0) and
-   assignment_weights.assignment_id not null
-GROUP BY user_id, assignment_id;
-
-
--- Speedruns that have been accepted
-DROP VIEW IF EXISTS good_speedruns;
-CREATE VIEW good_speedruns AS
-SELECT *
-FROM completed_speedruns
-JOIN graded_speedruns USING (speedrun_id)
-WHERE ok;
-
--- Dynamic assignment weighting for speedruns of assignments that aren't otherwise graded.
 DROP VIEW IF EXISTS dynamic_weights;
-CREATE VIEW dynamic_weights AS
-SELECT
-  assignment_id,
-  user_id,
-  standard,
-  ss.weight * (1 - power(decay, count(*))) / (1 - decay) weight
-FROM good_speedruns
-JOIN speedrunnable_standards ss using (assignment_id)
-GROUP BY assignment_id, user_id, standard;
-
 DROP VIEW IF EXISTS all_weights;
-CREATE VIEW all_weights AS
-SELECT
-  assignment_id,
-  user_id,
-  standard,
-  weight
-FROM assignment_weights
-JOIN roster
-
-UNION
-
-SELECT assignment_id, user_id, standard, weight
-FROM dynamic_weights;
-
 DROP VIEW IF EXISTS users_standards_summary;
-CREATE VIEW users_standards_summary AS
-WITH
-  with_speedruns AS (
-    -- normal grades
-    SELECT * FROM assignment_grades
-
-    UNION
-
-    -- freestanding speedruns as grades
-    SELECT
-      user_id,
-      assignment_id,
-      1.0 raw_score,
-      4 raw_grade,
-      0 speedruns,
-      1.0 score,
-      4 grade
-    FROM good_speedruns
-    LEFT JOIN assignment_weights w using (assignment_id)
-    WHERE w.assignment_id IS NULL
-  )
-SELECT
-  user_id,
-  standard,
-  group_concat(assignment_id order by assignment_id) assignments,
-  group_concat(weight order by assignment_id) weights,
-  group_concat(printf("%.2f", score), ', ' order by assignment_id) scores,
-  sum(score * weight) / sum(weight) score
-FROM with_speedruns g
-JOIN all_weights USING (assignment_id, user_id)
-GROUP BY user_id, standard;
+DROP VIEW IF EXISTS standard_grades;
 
 -- The standards that exist.
 DROP VIEW IF EXISTS standards;
-CREATE VIEW standards AS
-SELECT DISTINCT period, standard
-FROM assignment_scores
-JOIN assignment_weights w USING (assignment_id)
-JOIN roster USING (user_id)
-ORDER BY period, standard;
-
--- Standard grades derived from assignment grades and assignment weights
-DROP VIEW IF EXISTS standard_grades;
-CREATE VIEW standard_grades AS
-SELECT
-  period,
-  user_id,
-  student_number,
-  sortable_name,
-  standard,
-  max(grade) grade
-FROM standards
-JOIN roster using (period)
-LEFT JOIN users_standards_summary uss USING (user_id, standard)
-JOIN fps ON coalesce(uss.score, 0) >= minimum
-GROUP BY user_id, standard
-ORDER BY sortable_name;
 
 DROP VIEW IF EXISTS missing_assignments;
 CREATE VIEW missing_assignments AS
@@ -683,48 +515,17 @@ SELECT
   user_id,
   period,
   sortable_name,
-  standard,
-  ic.grade old,
-  s.grade new
-FROM standard_grades s
-LEFT JOIN ic_grades ic USING (student_number, standard)
-WHERE ic.grade is null or ic.grade <> s.grade
+  ic_name,
+  ic.points old,
+  ap.points new
+FROM assignment_points ap
+LEFT JOIN ic_grades ic USING (student_number, ic_name)
+WHERE ic.points is null and ap.points is not null or ic.points <> ap.points
 ORDER BY period, sortable_name;
 
 DROP VIEW IF EXISTS unweighted;
-CREATE VIEW unweighted AS
-SELECT distinct assignment_id
-FROM assignment_scores
-LEFT JOIN assignment_weights w using (assignment_id)
-WHERE w.assignment_id IS NULL;
-
-DROP VIEW IF EXISTS wrong_answers;
-CREATE VIEW wrong_answers as
-select
-  assignment_id,
-  question_number + 1 n,
-  question,
-  answer,
-  count(*) num,
-  group_concat(github, ', ') who
-FROM questions
-JOIN student_answers USING (assignment_id, question_number)
-JOIN normalized_answers USING (assignment_id, question_number, raw_answer)
-JOIN scored_answers USING (assignment_id, question_number, answer)
-WHERE score = 0
-GROUP BY assignment_id, question_number, answer;
 
 DROP VIEW IF EXISTS db_grades;
-CREATE VIEW db_grades AS
-SELECT
-  user_id,
-  assignment_id,
-  standard,
-  score,
-  grade
-FROM assignment_grades
-JOIN assignment_weights using (assignment_id)
-ORDER BY user_id, assignment_id, standard;
 
 CREATE TABLE IF NOT EXISTS server_grades (
   user_id TEXT NOT NULL,
@@ -736,7 +537,7 @@ CREATE TABLE IF NOT EXISTS server_grades (
 
 -- Information about required assignments that give assignment points. Each of
 -- these should have an entry in IC.
-CREATE TABLE IF NOT EXISTS graded_assignments (
+CREATE TABLE IF NOT EXISTS assignment_point_values (
   assignment_id INTEGER NOT NULL,
   standard TEXT NOT NULL,
   ic_name TEXT NOT NULL,
@@ -773,16 +574,17 @@ DROP VIEW IF EXISTS assignment_points;
 CREATE VIEW assignment_points AS
 SELECT
   user_id,
+  student_number,
   assignment_id,
   sortable_name,
   period,
   title,
   ic_name,
-  ga.points max_points,
+  apv.points max_points,
   score,
   cast(round(score * ga.points) as integer) points
 FROM assigned
-JOIN graded_assignments ga using (assignment_id)
+JOIN assignment_point_values apv using (assignment_id)
 LEFT JOIN assignment_scores USING (user_id, assignment_id);
 
 DROP VIEW IF EXISTS mastery_assignment_points;

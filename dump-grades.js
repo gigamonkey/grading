@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// OBSOLETE given new grading structure.
+
 import { DB } from 'pugsql';
 import { env } from 'node:process';
 import { Command } from 'commander';

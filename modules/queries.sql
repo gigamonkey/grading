@@ -4,19 +4,6 @@ insert or replace into assignments
 values
   ($assignmentId, $openDate, $courseId, $title);
 
--- :name ensureAssignmentWeight :insert
-insert or replace into assignment_weights
-  (assignment_id, standard, weight)
-values
-  ($assignmentId, $standard, $weight);
-
--- :name postPromptResponseGrade :insert
-insert into prompt_response_grades (user_id, posted, grade) values ($userId, $posted, $grade)
-on conflict(user_id, posted) do update set grade=excluded.grade;
-
--- :name orderedPromptResponseGrades :all
-select * from prompt_response_grades order by grade asc;
-
 -- :name studentsForPeriod :all
 select * from roster where period = $period;
 
@@ -39,64 +26,6 @@ on conflict(assignment_id) do nothing;
 -- :name clearFormAssessment :run
 delete from form_assessments where assignment_id = $assignmentId;
 
--- :name gradesForAssignment :all
-select
-  user_id userId,
-  assignment_id assignmentId,
-  standard,
-  score,
-  grade
-from assignment_grades
-join assignment_weights using (assignment_id)
-where assignment_id = $assignmentId
-order by user_id, standard;
-
--- :name gradesForUser :all
-select
-  user_id userId,
-  assignment_id assignmentId,
-  standard,
-  score,
-  grade
-from assignment_grades
-join assignment_weights using (assignment_id)
-where user_id = $userId
-order by assignment_id, standard;
-
--- :name gradesForUserAndAssignment :all
-select
-  user_id userId,
-  assignment_id assignmentId,
-  standard,
-  score,
-  grade
-from assignment_grades
-join assignment_weights using (assignment_id)
-where user_id = $userId and assignment_id = $assignmentId
-order by standard;
-
--- :name allGrades :all
-select
-  user_id userId,
-  assignment_id assignmentId,
-  standard,
-  score,
-  grade
-from assignment_grades
-join assignment_weights using (assignment_id)
-order by user_id, assignment_id, standard;
-
--- :name gradeUpdates :all
-select
-  db_grades.user_id userId,
-  db_grades.assignment_id assignmentId,
-  db_grades.standard,
-  db_grades.score,
-  db_grades.grade
-from db_grades
-left join server_grades using (assignment_id, user_id, standard)
-where db_grades.score <> coalesce(server_grades.score, 0);
-
 -- :name clearDirectScores :run
 delete from direct_scores where assignment_id = $assignmentId;
 
@@ -104,8 +33,8 @@ delete from direct_scores where assignment_id = $assignmentId;
 delete from student_answers where assignment_id = $assignmentId;
 
 -- :name ensureIcGrade :insert
-insert into ic_grades (student_number, standard, grade) values ($studentNumber, $standard, $grade)
-on conflict(student_number, standard) do update set grade = excluded.grade;
+insert into ic_grades (student_number, ic_name, points) values ($studentNumber, $icName, $points)
+on conflict(student_number, ic_name) do update set points = excluded.points;
 
 -- :name ensureStudentAnswer :insert
 insert into student_answers
@@ -128,21 +57,12 @@ SELECT question_number, answer FROM scored_answers WHERE score = 1.0 and assignm
 
 
 -- :name courseStandards :list
-SELECT DISTINCT standard FROM assignment_weights
+SELECT DISTINCT standard FROM assignment_point_values
 JOIN assignments USING (assignment_id)
 WHERE course_id = (
   SELECT course_id FROM assignments WHERE assignment_id = $assignmentId
 )
 ORDER BY standard;
-
--- :name weightedAssignmentsForStandard :all
-SELECT date, title, weight
-FROM assignment_weights
-JOIN assignments USING (assignment_id)
-WHERE
-  course_id = $courseId AND
-  standard = $standard
-ORDER BY date;
 
 -- :name ungradedSpeedruns :all
 select * from ungraded_speedruns;
@@ -183,8 +103,8 @@ values
 -- :name questionsForAssignment :one
 select questions from speedrunnables where assignment_id = $assignmentId;
 
--- :name ensureHandScored :insert
-insert or replace into hand_scored
-  (assignment_id, github, score)
+-- :name ensureDirectScore :insert
+insert or replace into direct_scores
+  (assignment_id, user_id, score)
 values
-  ($assignmentId, $github, $score);
+  ($assignmentId, $userId, $score);
