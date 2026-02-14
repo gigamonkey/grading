@@ -17,7 +17,7 @@ const db = new DB('db.db')
       .addQueries('modules/pugly.sql')
       .addQueries('modules/queries.sql');
 
-const slug = (s) => camelToKebab(s).replace(' ', '-');
+const slug = (s) => camelToKebab(s).replaceAll(/\s+/g, '-').replaceAll(/[^-\w]/g, '');
 
 const countQuestions = async (url) => {
   const filename = `${homedir()}/hacks/bhs-cs/views/pages/${url}/index.njk`;
@@ -106,6 +106,7 @@ const main = async (assignmentId, directory, opts) => {
       } else {
         writeFileSync(path.join(dir, "missing.txt"), '');
       }
+      console.log(`Wrote files in ${dir}`);
     }
   } catch (e) {
     console.log(e);
