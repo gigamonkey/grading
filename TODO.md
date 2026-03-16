@@ -2,6 +2,13 @@
 
 ## Small
 
+- [ ] Write a plan for creating a HTMX based web app for managing the gradebook
+      database. Some initial functionality would be simple things like providing
+      a web interface for the functionality provided by scripts like
+      `add-assignment.js` and `add-override.js` and also web based view of
+      grades to be updated in IC. Basically various kinds of queries and
+      reports.
+
 ## Medium
 
 ## Large
@@ -22,6 +29,7 @@
       has earned for each standard available from the `mastery_points` view.
       This will probably require adding a table to store the mapping between IC
       assignments and standards; you should add that definition to.
+
 - [x] Please write an add-overide.js script that prompts the user for the name
       of a student, an assignment identifier which can be either an
       `assignment_id` or part of the assignment title, the score, and the reason
