@@ -2,7 +2,10 @@
 
 ## Small
 
-- [ ] Show existing mappings on `/mastery-ic-names` page in `app.js` and make them editable.
+- [ ] Implement [checklist-grader](plans/checklist-grader.md).
+
+- [ ] Show existing mappings on `/mastery-ic-names` page in `app.js` and make
+      them editable.
 
 ## Medium
 
