@@ -704,3 +704,20 @@ CREATE TABLE IF NOT EXISTS checklist_marks (
   value TEXT NOT NULL,
   PRIMARY KEY (user_id, assignment_id, seq)
 );
+
+DROP VIEW IF EXISTS checklist_scores;
+CREATE VIEW checklist_scores AS
+WITH total AS (
+  SELECT assignment_id, sum(points) total_points
+  FROM checklist_criteria
+  GROUP BY assignment_id
+)
+SELECT
+  m.assignment_id,
+  m.user_id,
+  sum(CASE WHEN m.value = 'check' THEN c.points ELSE 0 END) /
+    cast(t.total_points AS REAL) score
+FROM checklist_marks m
+JOIN checklist_criteria c USING (assignment_id, seq)
+JOIN total t USING (assignment_id)
+GROUP BY m.assignment_id, m.user_id;

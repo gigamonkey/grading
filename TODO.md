@@ -24,6 +24,8 @@
 
 ## Done
 
+- [x] Add a `checklist_scores` view to `schema.sql` providing `(assignment_id, user_id, score)` triples computed from `checklist_criteria` and `checklist_marks`.
+
 - [x] Implement [checklist-grader](plans/checklist-grader.md).
 
 - [x] Add a VIEW to schema.sql `mastery_to_update` which compares the grades in
