@@ -470,6 +470,7 @@ WHERE
 
 DROP VIEW IF EXISTS zeros;
 CREATE VIEW zeros AS
+WITH scored as (select distinct assignment_id from assignment_scores)
 SELECT
   sortable_name,
   period,
@@ -479,6 +480,7 @@ SELECT
   title
 FROM roster
 JOIN assignments USING (course_id)
+JOIN scored using (assignment_id)
 LEFT JOIN optional_assignments opt USING (assignment_id)
 LEFT JOIN excused_assignments ex USING (assignment_id, user_id)
 LEFT JOIN assignment_scores scores USING (user_id, assignment_id)
