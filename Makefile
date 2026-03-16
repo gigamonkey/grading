@@ -26,5 +26,5 @@ check:
 modules/pugly.sql: schema.sql
 	npx puglify schema.sql > $@
 
-clean:
-	rm -f db.db*
+#clean:
+#	rm -f db.db*
