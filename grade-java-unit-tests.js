@@ -26,7 +26,7 @@ new Command()
     const scoring = loadJSON(join(dir, 'scoring.json'));
     const questions = count(values(scoring), w => w > 0);
 
-    console.log(`questions: ${questions}`);
+    // console.log(`questions: ${questions}`);
 
     if (!assignmentId) {
       console.log('No assignment id!');
