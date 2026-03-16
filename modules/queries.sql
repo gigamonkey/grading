@@ -91,6 +91,13 @@ select github from roster where github = $user;
 -- :name findUser :all
 select * from roster where upper(github) like '%' || upper($q) || '%' or upper(sortable_name) like '%' || upper($q) || '%' or user_id = $q;
 
+-- :name findAssignment :all
+select * from assignments where assignment_id = cast($q as integer) or upper(title) like '%' || upper($q) || '%';
+
+-- :name ensureScoreOverride :insert
+insert or replace into score_overrides (user_id, assignment_id, score, reason)
+values ($userId, $assignmentId, $score, $reason);
+
 -- :name github :one
 select github from roster where user_id = $userId;
 
