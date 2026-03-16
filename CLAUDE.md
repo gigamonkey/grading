@@ -78,3 +78,30 @@ npx puglify schema.sql > modules/pugly.sql
 - `BHS_CS_SERVER` — server URL (https://bhs-cs.gigamonkeys.com)
 
 Java CLASSPATH must include `/Users/peter/hacks/bhs-cs/java/target/bhs-cs.jar`. Student repo mirrors are expected at `../github/`.
+
+## Plans Directory
+
+The `plans/` directory contains implementation plans. The `plans/done/`
+subdirectory holds plans that have already been implemented — **do not read
+files in `plans/done/` unless explicitly asked to**. Those plans describe the
+codebase as it was when they were written; the code has likely changed since
+then and the plans may be misleading. If you need context from a completed
+plan, the user will tell you.
+
+## Git Worktree Workflow
+
+When creating a worktree (via `EnterWorktree` or manually), the new branch is
+named `worktree-<name>` and automatically tracks `origin/main` as its upstream.
+**Always unset the upstream immediately** so that a plain `git push` doesn't
+accidentally push to main:
+
+```bash
+git branch --unset-upstream
+```
+
+When ready to push, use `-u` so the local branch tracks the new remote branch
+for all subsequent pushes:
+
+```bash
+git push -u origin HEAD
+```
