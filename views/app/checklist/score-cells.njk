@@ -1,0 +1,2 @@
+<span id="score-{{ userId }}" hx-swap-oob="true">{% if totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span>
+<span id="points-{{ userId }}" hx-swap-oob="true">{{ earned }}/{{ totalPoints }}</span>

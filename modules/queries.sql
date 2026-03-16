@@ -239,3 +239,46 @@ SELECT DISTINCT course_id FROM roster ORDER BY course_id;
 
 -- :name distinctPeriods :list
 SELECT DISTINCT period FROM roster ORDER BY period;
+
+-- :name studentsByCourse :all
+SELECT user_id, github, sortable_name, period
+FROM roster WHERE course_id = $courseId
+ORDER BY period, sortable_name;
+
+-- :name checklistCriteria :all
+SELECT seq, label, points FROM checklist_criteria
+WHERE assignment_id = $assignmentId ORDER BY seq;
+
+-- :name addChecklistCriterion :run
+INSERT INTO checklist_criteria (assignment_id, seq, label, points)
+VALUES ($assignmentId, (SELECT COALESCE(MAX(seq), 0) + 1 FROM checklist_criteria WHERE assignment_id = $assignmentId), $criteriaLabel, 1);
+
+-- :name checklistMarks :all
+SELECT user_id, seq, value FROM checklist_marks
+WHERE assignment_id = $assignmentId;
+
+-- :name getChecklistMark :get
+SELECT value FROM checklist_marks
+WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
+
+-- :name upsertChecklistMark :insert
+INSERT OR REPLACE INTO checklist_marks (user_id, assignment_id, seq, value)
+VALUES ($userId, $assignmentId, $seq, $value);
+
+-- :name deleteChecklistMark :run
+DELETE FROM checklist_marks
+WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
+
+-- :name updateChecklistCriterionLabel :run
+UPDATE checklist_criteria SET label = $criteriaLabel
+WHERE assignment_id = $assignmentId AND seq = $seq;
+
+-- :name updateChecklistCriterionPoints :run
+UPDATE checklist_criteria SET points = $points
+WHERE assignment_id = $assignmentId AND seq = $seq;
+
+-- :name deleteChecklistCriterion :run
+DELETE FROM checklist_criteria WHERE assignment_id = $assignmentId AND seq = $seq;
+
+-- :name deleteChecklistMarksForCriterion :run
+DELETE FROM checklist_marks WHERE assignment_id = $assignmentId AND seq = $seq;

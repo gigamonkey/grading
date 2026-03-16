@@ -1,0 +1,5 @@
+{% for s in students %}
+{% set earned = studentPoints[s.user_id] %}
+<span id="score-{{ s.user_id }}" hx-swap-oob="true">{% if totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span>
+<span id="points-{{ s.user_id }}" hx-swap-oob="true">{{ earned }}/{{ totalPoints }}</span>
+{% endfor %}

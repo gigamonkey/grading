@@ -1,0 +1,53 @@
+<table class="checklist">
+  <thead>
+    <tr>
+      <th rowspan="2">
+        <a href="/checklist/{{ assignment.assignment_id }}?sort=name" class="{{ 'sort-active' if sort == 'name' }}">Name</a>
+        /
+        <a href="/checklist/{{ assignment.assignment_id }}?sort=github" class="{{ 'sort-active' if sort == 'github' }}">Github</a>
+      </th>
+      <th rowspan="2">Score</th>
+      <th rowspan="2">Points</th>
+      {% for c in criteria %}
+        {% set assignmentId = assignment.assignment_id %}
+        {% set seq = c.seq %}
+        {% set criteriaLabel = c.label %}
+        {% set editing = false %}
+        {% include "app/checklist/label-cell.njk" %}
+      {% endfor %}
+      <th rowspan="2">
+        <button hx-post="/checklist/{{ assignment.assignment_id }}/criteria"
+                hx-vals='{"criteriaLabel": "-"}'
+                hx-target="#checklist-table"
+                hx-swap="innerHTML">+</button>
+      </th>
+    </tr>
+    <tr>
+      {% for c in criteria %}
+        {% set assignmentId = assignment.assignment_id %}
+        {% set seq = c.seq %}
+        {% set points = c.points %}
+        {% set editing = false %}
+        {% include "app/checklist/points-cell.njk" %}
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in students %}
+    {% set earned = studentPoints[s.user_id] %}
+    <tr>
+      <td>{{ s.sortable_name }} ({{ s.github }})</td>
+      <td class="checklist-score"><span id="score-{{ s.user_id }}">{% if totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span></td>
+      <td class="checklist-score"><span id="points-{{ s.user_id }}">{{ earned }}/{{ totalPoints }}</span></td>
+      {% for c in criteria %}
+        {% set assignmentId = assignment.assignment_id %}
+        {% set userId = s.user_id %}
+        {% set seq = c.seq %}
+        {% set value = markMap[s.user_id][c.seq] if markMap[s.user_id] else null %}
+        {% include "app/checklist/cell.njk" %}
+      {% endfor %}
+      <td></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

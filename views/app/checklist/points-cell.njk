@@ -1,0 +1,17 @@
+{% if editing %}
+<td class="checklist-points editing">
+  <input type="number" name="points" value="{{ points }}" min="0" step="1"
+         hx-put="/checklist/{{ assignmentId }}/criteria/{{ seq }}/points"
+         hx-trigger="change, keyup[key=='Enter']"
+         hx-target="#checklist-table"
+         hx-swap="innerHTML"
+         style="width:100%;margin:0"
+         autofocus onfocus="this.select()">
+</td>
+{% else %}
+<td class="checklist-points"
+    hx-get="/checklist/{{ assignmentId }}/criteria/{{ seq }}/points/edit"
+    hx-trigger="click"
+    hx-target="this"
+    hx-swap="outerHTML">{{ points }}</td>
+{% endif %}

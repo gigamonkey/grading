@@ -2,7 +2,11 @@
 
 ## Small
 
-- [ ] Implement [checklist-grader](plans/checklist-grader.md).
+- [x] Implement [checklist-grader](plans/checklist-grader.md).
+
+- [ ] Make assignment sorting on `/checklist` page in `app.js` only show
+      assignments that haven't already been graded. And show them all in a table
+      and use the searchbox to limit what rows are shown.
 
 - [ ] Show existing mappings on `/mastery-ic-names` page in `app.js` and make
       them editable.

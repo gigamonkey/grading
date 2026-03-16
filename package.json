@@ -7,7 +7,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch views --watch public --ext js,njk,css app.js",
+    "dev": "nodemon --watch views --watch public --watch modules --watch app.js --ext js,njk,css app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

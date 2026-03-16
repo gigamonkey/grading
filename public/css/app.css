@@ -51,6 +51,10 @@ th {
 
 tr:hover { background: #f5f5f5; }
 
+table.checklist tbody tr:nth-child(odd) { background: #fff; }
+table.checklist tbody tr:nth-child(even) { background: #f2f2f2; }
+table.checklist tbody tr:hover { background: #e8e8e8; }
+
 input[type="search"], input[type="text"], input[type="number"], select {
   padding: 0.4rem 0.6rem;
   border: 1px solid #ccc;
@@ -124,3 +128,59 @@ a { color: #1a1a2e; }
 
 .error { color: #c00; }
 .info { color: #060; }
+
+table.checklist {
+  width: auto;
+  table-layout: auto;
+}
+
+table.checklist th, table.checklist td { text-align: center; }
+
+table.checklist th:first-child, table.checklist td:first-child { text-align: left; white-space: nowrap; }
+table.checklist td.checklist-points:first-child { text-align: center; }
+
+table.checklist th:not(:first-child), table.checklist td:not(:first-child) { width: 5rem; }
+
+td.checklist-cell {
+  cursor: pointer;
+  min-width: 2.5rem;
+  font-size: 1.1rem;
+  user-select: none;
+}
+td.checklist-cell.check { color: #090; }
+td.checklist-cell.x { color: #c00; }
+td.checklist-cell.empty { color: #ccc; }
+
+a.sort-active { font-weight: 700; text-decoration: underline; }
+
+td.checklist-score { text-align: center; font-size: 0.85rem; color: #555; white-space: nowrap; }
+
+th.checklist-label { cursor: pointer; position: relative; }
+th.checklist-label:hover { background: #ddd; }
+th.checklist-label.editing { background: #fff; font-weight: normal; }
+
+button.checklist-delete-criterion {
+  display: none;
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  padding: 0 3px;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  background: #c00;
+  color: #fff;
+  border-radius: 3px;
+  cursor: pointer;
+}
+th.checklist-label:hover button.checklist-delete-criterion { display: block; }
+
+td.checklist-points {
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #555;
+  background: #eee;
+}
+td.checklist-points:hover { background: #ddd; }
+td.checklist-points.editing { background: #fff; padding: 0; }
+td.checklist-points.editing input { padding: 0.1rem 0.25rem; font-size: 0.85rem; border-radius: 2px; margin: 0; }

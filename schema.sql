@@ -688,3 +688,19 @@ CREATE VIEW needs_assignment_point_values AS
 SELECT * FROM ic_assignments
 LEFT JOIN assignment_point_values USING (ic_name)
 WHERE assignment_point_values.ic_name IS NULL;
+
+CREATE TABLE IF NOT EXISTS checklist_criteria (
+  assignment_id INTEGER NOT NULL,
+  seq INTEGER NOT NULL,
+  label TEXT NOT NULL,
+  points INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (assignment_id, seq)
+);
+
+CREATE TABLE IF NOT EXISTS checklist_marks (
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  seq INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (user_id, assignment_id, seq)
+);

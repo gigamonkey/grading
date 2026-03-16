@@ -1,0 +1,25 @@
+{% if editing %}
+<th class="checklist-label editing">
+  <input type="text" name="criteriaLabel" value="{{ criteriaLabel }}"
+         hx-put="/checklist/{{ assignmentId }}/criteria/{{ seq }}/label"
+         hx-trigger="change, keyup[key=='Enter']"
+         hx-target="closest th"
+         hx-swap="outerHTML"
+         style="width:100%;margin:0"
+         autofocus onfocus="this.select()">
+</th>
+{% else %}
+<th class="checklist-label"
+    hx-get="/checklist/{{ assignmentId }}/criteria/{{ seq }}/label/edit"
+    hx-trigger="click"
+    hx-target="this"
+    hx-swap="outerHTML">
+  {{ criteriaLabel }}
+  <button class="checklist-delete-criterion"
+          hx-delete="/checklist/{{ assignmentId }}/criteria/{{ seq }}"
+          hx-target="#checklist-table"
+          hx-swap="innerHTML"
+          hx-trigger="click consume"
+          hx-on:htmx:before-request="const th=this.closest('th');const idx=th.cellIndex;const table=th.closest('table');th.closest('tr').deleteCell(idx);table.querySelector('thead tr:nth-child(2)').deleteCell(idx-3);table.querySelectorAll('tbody tr').forEach(tr=>tr.deleteCell(idx))">×</button>
+</th>
+{% endif %}

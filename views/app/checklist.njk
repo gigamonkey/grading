@@ -1,0 +1,20 @@
+{% extends "app/layout.njk" %}
+{% block title %}Checklist Grader - Gradebook{% endblock %}
+{% block content %}
+<h1>Checklist Grader</h1>
+<form action="/checklist" method="get">
+  <input type="search" name="search" placeholder="Search assignments..." value="{{ search or '' }}" autofocus>
+  <button type="submit">Go</button>
+</form>
+{% if search %}
+  {% if assignments.length %}
+  <ul>
+    {% for a in assignments %}
+    <li><a href="/checklist/{{ a.assignment_id }}">{{ a.assignment_id }} — {{ a.title }} ({{ a.course_id }})</a></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No assignments found.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}
