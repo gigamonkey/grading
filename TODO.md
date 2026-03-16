@@ -21,9 +21,6 @@
 
 ## Done
 
-- [x] On the `/checklists` page, deleting a criterion column should update the
-      points and scores for the whole table.
-
 - [x] Implement [checklist-grader](plans/checklist-grader.md).
 
 - [x] Add a VIEW to schema.sql `mastery_to_update` which compares the grades in
@@ -88,3 +85,6 @@
 
 - [x] Show existing mappings on `/mastery-ic-names` page in `app.js` and make
       them editable.
+
+- [x] On the `/checklists` page, deleting a criterion column should update the
+      points and scores for the whole table.
