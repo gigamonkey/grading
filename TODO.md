@@ -2,14 +2,6 @@
 
 ## Small
 
-- [ ] Analyze all the .js scripts in this directory that are meant to be run
-      from the command line and write a plan for cleaning them up in
-      `plans/scipt-cleanup.md`. Descibe each script briefly and try to group
-      them by related functionality. Then write a section about how to factor
-      out duplicate functionality and delete dead code. There may be scripts
-      aren't useful any longer, for instance if they are be designed to work
-      with tables or view in the db that no lonnger exist.
-
 ## Medium
 
 ## Large
@@ -22,6 +14,8 @@
       the elapsed time, number of tests passed at each change, etc.)
 
 ## Plans
+
+- [ ] Implement the plan in [plans/script-cleanup.md](plans/script-cleanup.md)
 
 ## Done
 
@@ -68,3 +62,12 @@
       everything else. Do not delete any files; just write the report.
 
 - [x] Implement the plan in [plans/gradebook-web-app.md](plans/gradebook-web-app.md)
+
+- [x] Analyze all the .js scripts in this directory that are meant to be run
+      from the command line and write a plan for cleaning them up in
+      `plans/scipt-cleanup.md`. Descibe each script briefly and try to group
+      them by related functionality. Then write a section about how to factor
+      out duplicate functionality and delete dead code. There may be scripts
+      aren't useful any longer, for instance if they are be designed to work
+      with tables or view in the db that no lonnger exist.
+      (plan: [script-cleanup.md](plans/script-cleanup.md))

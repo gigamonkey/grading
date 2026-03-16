@@ -22,6 +22,6 @@ new Command()
   .name('similarity')
   .description('Compare two files and report their similarity.')
   .argument('<file1>', 'First file')
-  .argument('<file1>', 'Second file')
+  .argument('<file2>', 'Second file')
   .action(reportSimilarity)
   .parse();
