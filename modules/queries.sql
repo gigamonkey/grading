@@ -143,38 +143,6 @@ insert or replace into direct_scores
 values
   ($assignmentId, $userId, $score);
 
--- :name findAssignment :all
-SELECT assignment_id, course_id, title, date
-FROM assignments
-WHERE upper(title) LIKE '%' || upper($q) || '%'
-   OR cast(assignment_id as text) LIKE '%' || $q || '%'
-ORDER BY assignment_id DESC
-LIMIT 20;
-
--- :name ensureScoreOverride :insert
-INSERT OR REPLACE INTO score_overrides (user_id, assignment_id, score, reason)
-VALUES ($userId, $assignmentId, $score, $reason);
-
--- :name standardsWithoutMasteryIcNames :list
-SELECT DISTINCT standard FROM assignment_point_values
-JOIN assignments USING (assignment_id)
-WHERE course_id = $courseId
-  AND standard NOT IN (
-    SELECT standard FROM mastery_ic_names WHERE course_id = $courseId
-  )
-ORDER BY standard;
-
--- :name availableMasteryIcNames :list
-SELECT DISTINCT ic_name FROM ic_grades
-WHERE ic_name NOT IN (
-  SELECT ic_name FROM mastery_ic_names WHERE course_id = $courseId
-)
-ORDER BY ic_name;
-
--- :name ensureMasteryIcName :insert
-INSERT OR REPLACE INTO mastery_ic_names (course_id, standard, ic_name)
-VALUES ($courseId, $standard, $icName);
-
 -- :name allAssignments :all
 SELECT a.assignment_id, a.date, a.course_id, a.title,
        apv.standard, apv.ic_name, apv.points
