@@ -2,6 +2,14 @@
 
 ## Small
 
+- [ ] Analyze all the .js scripts in this directory that are meant to be run
+      from the command line and write a plan for cleaning them up in
+      `plans/scipt-cleanup.md`. Descibe each script briefly and try to group
+      them by related functionality. Then write a section about how to factor
+      out duplicate functionality and delete dead code. There may be scripts
+      aren't useful any longer, for instance if they are be designed to work
+      with tables or view in the db that no lonnger exist.
+
 ## Medium
 
 ## Large
