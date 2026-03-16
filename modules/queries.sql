@@ -113,6 +113,15 @@ insert or replace into java_unit_tests
 values
   ($assignmentId, $github, $correct, $score, $timestamp, $sha);
 
+-- :name masteryIcNamesByCourse :all
+SELECT standard, ic_name
+FROM mastery_ic_names
+WHERE course_id = $courseId
+ORDER BY standard;
+
+-- :name deleteMasteryIcName :run
+DELETE FROM mastery_ic_names WHERE course_id = $courseId AND standard = $standard;
+
 -- :name standardsWithoutMasteryIcNames :list
 SELECT DISTINCT ma.standard
 FROM mastery_assignments ma

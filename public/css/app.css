@@ -129,6 +129,11 @@ a { color: #1a1a2e; }
 .error { color: #c00; }
 .info { color: #060; }
 
+td.min-ic-name { cursor: pointer; }
+td.min-ic-name:hover { background: #eee; }
+td.min-ic-empty { color: #aaa; }
+td.min-ic-editing { padding: 0.25rem; }
+
 table.checklist {
   width: auto;
   table-layout: auto;

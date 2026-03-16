@@ -183,15 +183,44 @@ app.get('/mastery-ic-names', (req, res) => {
   const courses = db.distinctCourses();
   const course = req.query.course || courses[0] || null;
   const standards = course ? db.standardsWithoutMasteryIcNames({ courseId: course }) : [];
+  const mappings = course ? db.masteryIcNamesByCourse({ courseId: course }) : [];
   const icNames = course ? db.availableMasteryIcNames({ courseId: course }) : [];
-  res.render('app/mastery-ic-names.njk', { courses, course, standards, icNames });
+  res.render('app/mastery-ic-names.njk', { courses, course, standards, mappings, icNames });
 });
 
 app.get('/mastery-ic-names/options', (req, res) => {
   const { course } = req.query;
   const standards = db.standardsWithoutMasteryIcNames({ courseId: course });
+  const mappings = db.masteryIcNamesByCourse({ courseId: course });
   const icNames = db.availableMasteryIcNames({ courseId: course });
-  res.render('app/mastery-ic-names/options.njk', { standards, icNames });
+  res.render('app/mastery-ic-names/options.njk', { standards, mappings, icNames, course });
+});
+
+app.put('/mastery-ic-names/:courseId/:standard', (req, res) => {
+  const courseId = req.params.courseId;
+  const standard = req.params.standard;
+  const icName = req.body.icName?.trim();
+  if (icName) db.ensureMasteryIcName({ courseId, standard, icName });
+  const icNames = db.availableMasteryIcNames({ courseId });
+  res.render('app/mastery-ic-names/mapping-cell.njk', { courseId, standard, icName: icName || null, icNames, editing: false });
+});
+
+app.delete('/mastery-ic-names/:courseId/:standard', (req, res) => {
+  const courseId = req.params.courseId;
+  const standard = req.params.standard;
+  db.deleteMasteryIcName({ courseId, standard });
+  const icNames = db.availableMasteryIcNames({ courseId });
+  res.render('app/mastery-ic-names/mapping-cell.njk', { courseId, standard, icName: null, icNames, editing: false });
+});
+
+app.get('/mastery-ic-names/:courseId/:standard/edit', (req, res) => {
+  const courseId = req.params.courseId;
+  const standard = req.params.standard;
+  const mapping = db.masteryIcNamesByCourse({ courseId }).find(m => m.standard === standard);
+  const icName = mapping?.ic_name ?? null;
+  const icNames = db.availableMasteryIcNames({ courseId });
+  if (icName && !icNames.includes(icName)) icNames.unshift(icName);
+  res.render('app/mastery-ic-names/mapping-cell.njk', { courseId, standard, icName, icNames, editing: true });
 });
 
 app.post('/mastery-ic-names', (req, res) => {

@@ -1,22 +1,29 @@
-{% if standards.length == 0 %}
-<p>All standards are mapped for this course.</p>
+{% if mappings.length == 0 and standards.length == 0 %}
+<p>No standards found for this course.</p>
 {% else %}
 <table>
   <thead>
     <tr><th>Standard</th><th>IC Name</th></tr>
   </thead>
   <tbody>
+    {% for m in mappings %}
+    <tr>
+      <td>{{ m.standard }}</td>
+      {% set courseId = course %}
+      {% set standard = m.standard %}
+      {% set icName = m.ic_name %}
+      {% set editing = false %}
+      {% include "app/mastery-ic-names/mapping-cell.njk" %}
+    </tr>
+    {% endfor %}
     {% for s in standards %}
     <tr>
       <td>{{ s }}</td>
-      <td>
-        <select name="standard_{{ s }}">
-          <option value="">-- select --</option>
-          {% for ic in icNames %}
-          <option value="{{ ic }}">{{ ic }}</option>
-          {% endfor %}
-        </select>
-      </td>
+      {% set courseId = course %}
+      {% set standard = s %}
+      {% set icName = null %}
+      {% set editing = false %}
+      {% include "app/mastery-ic-names/mapping-cell.njk" %}
     </tr>
     {% endfor %}
   </tbody>
