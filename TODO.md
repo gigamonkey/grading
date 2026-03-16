@@ -2,8 +2,6 @@
 
 ## Small
 
-- [x] Implement [checklist-grader](plans/checklist-grader.md).
-
 - [ ] Make assignment sorting on `/checklist` page in `app.js` only show
       assignments that haven't already been graded. And show them all in a table
       and use the searchbox to limit what rows are shown.
@@ -25,6 +23,8 @@
 ## Plans
 
 ## Done
+
+- [x] Implement [checklist-grader](plans/checklist-grader.md).
 
 - [x] Add a VIEW to schema.sql `mastery_to_update` which compares the grades in
       IC for the mastery point assignments to the mastery points each students
