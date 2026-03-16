@@ -79,3 +79,6 @@ npx puglify schema.sql > modules/pugly.sql
 
 Java CLASSPATH must include `/Users/peter/hacks/bhs-cs/java/target/bhs-cs.jar`. Student repo mirrors are expected at `../github/`.
 
+## pugsql.js
+
+This codebase uses pugsql.js to access the SQLite database. pugsql.js is a wrapper around `better-sqlite3` but exposes its own API which we use. In particular in `pugsql` the `db.transaction` method takes a function to run in the transactions and any args that need to be passed to the function. This is different than the `better-sqlite3` transaction method which takes a function and returns a function which is then called whith whatever args the passed in function needs.
