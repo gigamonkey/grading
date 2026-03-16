@@ -256,6 +256,23 @@ app.get('/speedruns', (_req, res) => {
 });
 
 // Checklist grader
+function renderChecklistTable(res, assignmentId, sort = 'github', dir = 'asc', prevSort = null, prevDir = 'asc') {
+  const data = checklistData(assignmentId);
+  const byGithub = (a, b) => (a.github || '').localeCompare(b.github || '');
+  const byName   = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
+  const byPoints = (a, b) => (data.studentPoints[a.user_id] ?? -1) - (data.studentPoints[b.user_id] ?? -1);
+  const makeCmp = (s, d) => {
+    const r = d === 'desc' ? -1 : 1;
+    if (s === 'github') return (a, b) => r * byGithub(a, b);
+    if (s === 'name')   return (a, b) => r * byName(a, b);
+    if (s === 'score' || s === 'points') return (a, b) => r * byPoints(a, b);
+    return () => 0;
+  };
+  const secondary = prevSort ? makeCmp(prevSort, prevDir) : byGithub;
+  data.students.sort((a, b) => makeCmp(sort, dir)(a, b) || secondary(a, b));
+  res.render('app/checklist/_table.njk', { ...data, sort, dir, prevSort, prevDir });
+}
+
 function checklistData(assignmentId) {
   const assignment = db.assignmentById({ assignmentId });
   const criteria = db.checklistCriteria({ assignmentId });
@@ -322,9 +339,7 @@ app.post('/checklist/:assignmentId/criteria', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const label = req.body.criteriaLabel?.trim();
   if (label) db.addChecklistCriterion({ assignmentId, criteriaLabel: label });
-  const data = checklistData(assignmentId);
-  data.students.sort((a, b) => (a.github || '').localeCompare(b.github || ''));
-  res.render('app/checklist/_table.njk', { ...data, sort: 'github' });
+  renderChecklistTable(res, assignmentId);
 });
 
 app.put('/checklist/:assignmentId/mark/:userId/:seq', (req, res) => {
@@ -377,9 +392,7 @@ app.put('/checklist/:assignmentId/criteria/:seq/points', (req, res) => {
   const seq = Number(req.params.seq);
   const points = Number(req.body.points) || 1;
   db.updateChecklistCriterionPoints({ assignmentId, seq, points });
-  const data = checklistData(assignmentId);
-  data.students.sort((a, b) => (a.github || '').localeCompare(b.github || ''));
-  res.render('app/checklist/_table.njk', { ...data, sort: 'github' });
+  renderChecklistTable(res, assignmentId);
 });
 
 app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
@@ -389,9 +402,7 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
     db.deleteChecklistCriterion({ assignmentId, seq });
     db.deleteChecklistMarksForCriterion({ assignmentId, seq });
   })();
-  const data = checklistData(assignmentId);
-  data.students.sort((a, b) => (a.github || '').localeCompare(b.github || ''));
-  res.render('app/checklist/_table.njk', { ...data, sort: 'github' });
+  renderChecklistTable(res, assignmentId);
 });
 
 app.listen(port, () => {

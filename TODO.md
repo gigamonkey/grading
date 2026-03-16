@@ -2,9 +2,6 @@
 
 ## Small
 
-- [ ] On the `/checklists` page, deleting a criterion column should update the
-      points and scores for the whole table.
-
 - [ ] Make assignment sorting on `/checklist` page in `app.js` only show
       assignments that haven't already been graded. And show them all in a table
       and use the searchbox to limit what rows are shown.
@@ -23,6 +20,9 @@
 ## Plans
 
 ## Done
+
+- [x] On the `/checklists` page, deleting a criterion column should update the
+      points and scores for the whole table.
 
 - [x] Implement [checklist-grader](plans/checklist-grader.md).
 
