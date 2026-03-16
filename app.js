@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
-import API from './api.js';
+import { API } from './api.js';
 
 dotenv.config({ path: 'local.env' });
 
