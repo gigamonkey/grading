@@ -20,6 +20,8 @@ const db = new DB('db.db')
 
 const ids = (speedruns) => new Set(speedruns.map(s => s.speedrun_id));
 
+const className = (n) => n.includes('.') ? n : `com.gigamonkeys.bhs.assignments.${n}`;
+
 const main = async (opts) => {
   const api = new API(opts.server, opts.apiKey);
   const rl = readline.createInterface({ input, output });
@@ -38,7 +40,7 @@ const main = async (opts) => {
     console.log({...s, url});
 
     if (s.kind === 'java') {
-      const testClass = config.jobe.parameters.runargs[0];
+      const testClass = className(config.server.testClass);
       showJavaSpeedrun(repo, path, file, testClass, s.first_sha, s.last_sha, s.questions);
     } else if (s.kind === 'javascript') {
       const testcases = loadTestcases(await api.jsTestcases(url));
