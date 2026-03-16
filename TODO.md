@@ -15,8 +15,6 @@
 
 ## Plans
 
-- [ ] Implement the plan in [plans/gradebook-web-app.md](plans/gradebook-web-app.md)
-
 ## Done
 
 - [x] Add a VIEW to schema.sql `mastery_to_update` which compares the grades in
@@ -60,3 +58,5 @@
       on by anything but seem useful given the current state of things (e.g. the
       work with the current database schema, etc.) or "Probably trash" for
       everything else. Do not delete any files; just write the report.
+
+- [x] Implement the plan in [plans/gradebook-web-app.md](plans/gradebook-web-app.md)
