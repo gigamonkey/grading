@@ -1,5 +1,7 @@
 # Schema Cleanup Analysis
 
+Done 2026-03-15
+
 Things defined in `schema.sql` that may no longer be needed, plus orphaned tables
 found in `actual-schema.sql` that are not defined in `schema.sql` at all.
 
