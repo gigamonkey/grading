@@ -401,7 +401,7 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
   db.transaction(() => {
     db.deleteChecklistCriterion({ assignmentId, seq });
     db.deleteChecklistMarksForCriterion({ assignmentId, seq });
-  })();
+  });
   renderChecklistTable(res, assignmentId);
 });
 
