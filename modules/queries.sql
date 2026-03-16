@@ -143,11 +143,55 @@ insert or replace into direct_scores
 values
   ($assignmentId, $userId, $score);
 
--- :name allAssignments :all
+-- :name masteryIcNameForStandard :get
+SELECT min.ic_name
+FROM mastery_ic_names min
+JOIN assignments a ON a.course_id = min.course_id
+WHERE a.assignment_id = $assignmentId AND min.standard = $standard;
+
+-- :name clearAssignmentPointValue :run
+DELETE FROM assignment_point_values WHERE assignment_id = $assignmentId;
+
+-- :name ensureMasteryAssignment :insert
+INSERT OR REPLACE INTO mastery_assignments (assignment_id, standard, points)
+VALUES ($assignmentId, $standard, $points);
+
+-- :name deleteMasteryAssignmentStandard :run
+DELETE FROM mastery_assignments WHERE assignment_id = $assignmentId AND standard = $standard;
+
+-- :name masteryDefaults :get
+SELECT ma.standard, ma.points, min.ic_name
+FROM mastery_assignments ma
+JOIN assignments a USING (assignment_id)
+LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
+WHERE ma.assignment_id = $assignmentId;
+
+-- Note: the assignment type column below is named assignment_type rather than
+-- type. When it was named type, the value was not accessible via result.type in
+-- JavaScript for reasons that are not fully understood.
+
+-- :name assignmentById :get
 SELECT a.assignment_id, a.date, a.course_id, a.title,
-       apv.standard, apv.ic_name, apv.points
+       CASE WHEN ma.assignment_id IS NOT NULL THEN 'M' WHEN apv.assignment_id IS NOT NULL THEN 'A' ELSE '?' END as assignment_type,
+       COALESCE(apv.standard, ma.standard) as standard,
+       COALESCE(apv.ic_name, min.ic_name) as ic_name,
+       COALESCE(apv.points, ma.points) as points
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
+LEFT JOIN mastery_assignments ma USING (assignment_id)
+LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
+WHERE a.assignment_id = $assignmentId;
+
+-- :name allAssignments :all
+SELECT a.assignment_id, a.date, a.course_id, a.title,
+       CASE WHEN ma.assignment_id IS NOT NULL THEN 'M' WHEN apv.assignment_id IS NOT NULL THEN 'A' ELSE '?' END as assignment_type,
+       COALESCE(apv.standard, ma.standard) as standard,
+       COALESCE(apv.ic_name, min.ic_name) as ic_name,
+       COALESCE(apv.points, ma.points) as points
+FROM assignments a
+LEFT JOIN assignment_point_values apv USING (assignment_id)
+LEFT JOIN mastery_assignments ma USING (assignment_id)
+LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
 WHERE ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
        OR upper(a.course_id) LIKE '%' || upper($search) || '%')
 ORDER BY a.assignment_id DESC;

@@ -2,6 +2,8 @@
 
 ## Small
 
+- [ ] Show existing mappings on `/mastery-ic-names` page in `app.js` and make them editable.
+
 ## Medium
 
 ## Large
@@ -69,3 +71,6 @@
       aren't useful any longer, for instance if they are be designed to work
       with tables or view in the db that no lonnger exist.
       (plan: [script-cleanup.md](plans/script-cleanup.md))
+
+- [x] Add the ability to edit individual Standard, IC name, and Points values on
+      the `/assignments` page in `app.js`.

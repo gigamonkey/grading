@@ -56,6 +56,48 @@ app.get('/assignments/lookup', async (req, res) => {
   }
 });
 
+app.get('/assignments/:assignmentId/edit-row', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const a = db.assignmentById({ assignmentId });
+  if (req.query.assignment_type) a.assignment_type = req.query.assignment_type;
+  const standards = db.courseStandards({ assignmentId });
+  res.render('app/assignments/edit-row.njk', { a, standards });
+});
+
+app.get('/assignments/:assignmentId/mastery-ic-name', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const { standard } = req.query;
+  const icName = db.masteryIcNameForStandard({ assignmentId, standard }) || '';
+  res.render('app/assignments/mastery-ic-name.njk', { icName });
+});
+
+app.get('/assignments/:assignmentId/view-row', (req, res) => {
+  const a = db.assignmentById({ assignmentId: Number(req.params.assignmentId) });
+  res.render('app/assignments/view-row.njk', { a });
+});
+
+app.put('/assignments/:assignmentId/point-value', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const { standard, points, assignment_type } = req.body;
+  let { icName } = req.body;
+  const current = db.assignmentById({ assignmentId });
+  if (assignment_type === 'M') {
+    if (current.assignment_type !== 'M') db.clearAssignmentPointValue({ assignmentId });
+    if (current.standard && current.standard !== standard) {
+      db.deleteMasteryAssignmentStandard({ assignmentId, standard: current.standard });
+    }
+    db.ensureMasteryAssignment({ assignmentId, standard, points: Number(points) });
+  } else {
+    if (current.assignment_type === 'M') {
+      db.deleteMasteryAssignmentStandard({ assignmentId, standard: current.standard });
+    }
+    db.clearAssignmentPointValue({ assignmentId });
+    db.ensureAssignmentPointValue({ assignmentId, standard, icName, points: Number(points) });
+  }
+  const a = db.assignmentById({ assignmentId });
+  res.render('app/assignments/view-row.njk', { a });
+});
+
 app.post('/assignments', async (req, res) => {
   const { assignmentId, standard, icName, points } = req.body;
   try {

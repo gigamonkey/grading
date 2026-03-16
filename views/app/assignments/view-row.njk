@@ -1,0 +1,13 @@
+<tr id="apv-row-{{ a.assignment_id }}">
+  <td>{{ a.assignment_id }}</td>
+  <td>{{ a.title }}</td>
+  <td>{{ a.course_id }}</td>
+  <td>{{ a.date }}</td>
+  <td>{{ a.assignment_type }}</td>
+  <td>{{ a.standard }}</td>
+  <td>{{ a.ic_name }}</td>
+  <td>{{ a.points }}</td>
+  <td><button hx-get="/assignments/{{ a.assignment_id }}/edit-row"
+              hx-target="#apv-row-{{ a.assignment_id }}"
+              hx-swap="outerHTML">Edit</button></td>
+</tr>

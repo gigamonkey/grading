@@ -1,13 +1,5 @@
 {% for a in assignments %}
-<tr>
-  <td>{{ a.assignment_id }}</td>
-  <td>{{ a.title }}</td>
-  <td>{{ a.course_id }}</td>
-  <td>{{ a.date }}</td>
-  <td>{{ a.standard }}</td>
-  <td>{{ a.ic_name }}</td>
-  <td>{{ a.points }}</td>
-</tr>
+{% include "app/assignments/view-row.njk" %}
 {% else %}
-<tr><td colspan="7">No assignments found.</td></tr>
+<tr><td colspan="9">No assignments found.</td></tr>
 {% endfor %}

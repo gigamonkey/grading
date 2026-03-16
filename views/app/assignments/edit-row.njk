@@ -1,0 +1,50 @@
+<tr id="apv-row-{{ a.assignment_id }}">
+  <td>{{ a.assignment_id }}</td>
+  <td>{{ a.title }}</td>
+  <td>{{ a.course_id }}</td>
+  <td>{{ a.date }}</td>
+  <td>
+    <select name="assignment_type"
+            hx-get="/assignments/{{ a.assignment_id }}/edit-row"
+            hx-trigger="change"
+            hx-target="#apv-row-{{ a.assignment_id }}"
+            hx-swap="outerHTML"
+            hx-include="this">
+      <option value="A" {% if a.assignment_type == 'A' %}selected{% endif %}>A</option>
+      <option value="M" {% if a.assignment_type == 'M' %}selected{% endif %}>M</option>
+    </select>
+  </td>
+  <td>
+    <select name="standard"
+      {% if a.assignment_type == 'M' %}
+        hx-get="/assignments/{{ a.assignment_id }}/mastery-ic-name"
+        hx-trigger="change"
+        hx-target="#ic-name-cell-{{ a.assignment_id }}"
+        hx-include="this"
+      {% endif %}>
+      {% if a.standard and a.standard not in standards %}
+      <option value="{{ a.standard }}" selected>{{ a.standard }}</option>
+      {% endif %}
+      {% for s in standards %}
+      <option value="{{ s }}" {% if s == a.standard %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </td>
+  <td id="ic-name-cell-{{ a.assignment_id }}">
+    {% if a.assignment_type == 'M' %}
+      {{ a.ic_name }}<input type="hidden" name="icName" value="{{ a.ic_name or '' }}">
+    {% else %}
+      <input type="text" name="icName" value="{{ a.ic_name or '' }}">
+    {% endif %}
+  </td>
+  <td><input type="number" name="points" value="{{ a.points or '' }}" step="1" style="width:5rem"></td>
+  <td>
+    <button hx-put="/assignments/{{ a.assignment_id }}/point-value"
+            hx-target="#apv-row-{{ a.assignment_id }}"
+            hx-swap="outerHTML"
+            hx-include="closest tr">Save</button>
+    <button hx-get="/assignments/{{ a.assignment_id }}/view-row"
+            hx-target="#apv-row-{{ a.assignment_id }}"
+            hx-swap="outerHTML">Cancel</button>
+  </td>
+</tr>
