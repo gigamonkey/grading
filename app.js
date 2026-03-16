@@ -262,12 +262,30 @@ app.get('/checklist', (req, res) => {
 app.get('/checklist/:assignmentId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   ensureChecklistCriterion(assignmentId, 'Turned in');
-  const sort = req.query.sort === 'name' ? 'name' : 'github';
+  const sort = ['name', 'github', 'score', 'points'].includes(req.query.sort) ? req.query.sort : 'github';
+  const defaultDir = (sort === 'score' || sort === 'points') ? 'desc' : 'asc';
+  const dir = ['asc', 'desc'].includes(req.query.dir) ? req.query.dir : defaultDir;
+  const prevSort = ['name', 'github', 'score', 'points'].includes(req.query.prevSort) ? req.query.prevSort : null;
+  const prevDir = ['asc', 'desc'].includes(req.query.prevDir) ? req.query.prevDir : 'asc';
   const data = checklistData(assignmentId);
-  if (sort === 'github') {
-    data.students.sort((a, b) => (a.github || '').localeCompare(b.github || ''));
-  }
-  res.render('app/checklist/table.njk', { ...data, sort });
+
+  const byGithub = (a, b) => (a.github || '').localeCompare(b.github || '');
+  const byName   = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
+  const byPoints = (a, b) => (data.studentPoints[a.user_id] ?? -1) - (data.studentPoints[b.user_id] ?? -1);
+
+  const makeCmp = (s, d) => {
+    const r = d === 'desc' ? -1 : 1;
+    if (s === 'github') return (a, b) => r * byGithub(a, b);
+    if (s === 'name')   return (a, b) => r * byName(a, b);
+    if (s === 'score' || s === 'points') return (a, b) => r * byPoints(a, b);
+    return () => 0;
+  };
+
+  const primary   = makeCmp(sort, dir);
+  const secondary = prevSort ? makeCmp(prevSort, prevDir) : byGithub;
+  data.students.sort((a, b) => primary(a, b) || secondary(a, b));
+
+  res.render('app/checklist/table.njk', { ...data, sort, dir, prevSort, prevDir });
 });
 
 app.post('/checklist/:assignmentId/criteria', (req, res) => {

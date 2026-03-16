@@ -1,13 +1,22 @@
 <table class="checklist">
   <thead>
     <tr>
-      <th rowspan="2">
-        <a href="/checklist/{{ assignment.assignment_id }}?sort=name" class="{{ 'sort-active' if sort == 'name' }}">Name</a>
-        /
-        <a href="/checklist/{{ assignment.assignment_id }}?sort=github" class="{{ 'sort-active' if sort == 'github' }}">Github</a>
-      </th>
-      <th rowspan="2">Score</th>
-      <th rowspan="2">Points</th>
+      {% set base = '/checklist/' + assignment.assignment_id %}
+      {# When switching to a new column, current sort becomes the tiebreaker.
+         When toggling direction on the active column, keep existing tiebreaker. #}
+      {% macro sortLink(key, label, defaultSortDir) %}
+        {% if sort == key %}
+          {% set toggledDir = 'desc' if dir == 'asc' else 'asc' %}
+          {% set href = base + '?sort=' + key + '&dir=' + toggledDir + ('&prevSort=' + prevSort + '&prevDir=' + prevDir if prevSort else '') %}
+          <a href="{{ href }}" class="sort-active">{{ label }} {{ '↑' if dir == 'asc' else '↓' }}</a>
+        {% else %}
+          {% set href = base + '?sort=' + key + '&dir=' + defaultSortDir + '&prevSort=' + sort + '&prevDir=' + dir %}
+          <a href="{{ href }}">{{ label }}</a>
+        {% endif %}
+      {% endmacro %}
+      <th rowspan="2">{{ sortLink('name', 'Name', 'asc') }} / {{ sortLink('github', 'Github', 'asc') }}</th>
+      <th rowspan="2">{{ sortLink('score', 'Score', 'desc') }}</th>
+      <th rowspan="2">{{ sortLink('points', 'Points', 'desc') }}</th>
       {% for c in criteria %}
         {% set assignmentId = assignment.assignment_id %}
         {% set seq = c.seq %}
