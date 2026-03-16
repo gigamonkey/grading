@@ -4,6 +4,12 @@ insert or replace into assignments
 values
   ($assignmentId, $openDate, $courseId, $title);
 
+-- :name ensureAssignmentPointValue :insert
+insert or replace into assignment_point_values
+  (assignment_id, standard, ic_name, points)
+values
+  ($assignmentId, $standard, $icName, $points);
+
 -- :name studentsForPeriod :all
 select * from roster where period = $period;
 

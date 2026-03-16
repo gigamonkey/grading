@@ -471,6 +471,15 @@ DROP VIEW IF EXISTS standard_grades;
 
 -- The standards that exist.
 DROP VIEW IF EXISTS standards;
+CREATE VIEW standards AS
+SELECT
+  course_id,
+  standard,
+  sum(points) assignment_points,
+  cast(ceiling(sum(points) * (1 / 0.85 - 1)) AS INTEGER) mastery_points
+FROM assignment_point_values
+JOIN assignments USING (assignment_id)
+GROUP BY course_id, standard;
 
 DROP VIEW IF EXISTS missing_assignments;
 CREATE VIEW missing_assignments AS
@@ -643,3 +652,44 @@ SELECT
 FROM roster
 JOIN all_mastery_points USING (user_id)
 GROUP BY user_id, standard;
+
+
+DROP VIEW IF EXISTS ic_names;
+CREATE VIEW ic_names AS
+WITH
+  in_ic as (select distinct ic_name from ic_grades),
+  in_db as (select distinct ic_name from assignment_point_values)
+
+SELECT ic_name, 'ic' only_in
+FROM in_ic
+LEFT JOIN in_db USING (ic_name)
+WHERE in_db.ic_name IS NULL
+
+UNION
+
+SELECT ic_name, 'db' only_in
+FROM in_db
+LEFT JOIN in_ic USING (ic_name)
+WHERE in_ic.ic_name IS NULL;
+
+DROP VIEW IF EXISTS grades;
+CREATE VIEW grades AS
+SELECT
+  assignment_id,
+  sortable_name,
+  period,
+  points
+FROM assignment_points
+JOIN roster using (user_id);
+
+DROP VIEW IF EXISTS ic_assignments;
+CREATE VIEW ic_assignments AS
+SELECT ic_name, course_id, max(points) points FROM ic_grades
+JOIN roster USING (student_number)
+GROUP BY ic_name, course_id;
+
+DROP VIEW IF EXISTS needs_assignment_point_values;
+CREATE VIEW needs_assignment_point_values AS
+SELECT * FROM ic_assignments
+LEFT JOIN assignment_point_values USING (ic_name)
+WHERE assignment_point_values.ic_name IS NULL;
