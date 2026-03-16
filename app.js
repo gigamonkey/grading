@@ -9,7 +9,7 @@ import { API } from './api.js';
 
 dotenv.config();
 
-const port = process.env.HTTP_PORT ?? 3000;
+const port = process.env.HTTP_PORT ?? 3001;
 const app = express();
 
 const db = new DB('db.db')
