@@ -2,11 +2,18 @@
 
 ## Small
 
+Items here can be done directly in the current branch. The user will tell you
+when to commit.
+
 - [ ] Make assignment sorting on `/checklist` page in `app.js` only show
       assignments that haven't already been graded. And show them all in a table
       and use the searchbox to limit what rows are shown.
 
-## Medium
+## Needs plan
+
+Items in here should result in a new plan file in `plans/`. Feel free to ask
+questions about requirements if the item is not clear enough about what is
+wanted.
 
 ## Large
 
@@ -19,9 +26,13 @@
 
 ## Plans
 
+This is where you put new items to actually implement a plan, after you have
+written the plan.
+
 ## Done
 
-- [x] Implement [checklist-grader](plans/checklist-grader.md).
+Move newly done items to the **bottom** of this list so is is kept in
+chronological order from oldest to newest.
 
 - [x] Add a VIEW to schema.sql `mastery_to_update` which compares the grades in
       IC for the mastery point assignments to the mastery points each students
@@ -75,6 +86,8 @@
       aren't useful any longer, for instance if they are be designed to work
       with tables or view in the db that no lonnger exist.
       (plan: [script-cleanup.md](plans/script-cleanup.md))
+
+- [x] Implement [checklist-grader](plans/checklist-grader.md).
 
 - [x] Add the ability to edit individual Standard, IC name, and Points values on
       the `/assignments` page in `app.js`.
