@@ -1,0 +1,14 @@
+{% extends "app/layout.njk" %}
+{% block title %}Score Overrides - Gradebook{% endblock %}
+{% block content %}
+<h1>Score Overrides</h1>
+<p><a href="/overrides/new">+ New Override</a></p>
+<table>
+  <thead>
+    <tr><th>Student</th><th>Period</th><th>Course</th><th>Assignment</th><th>Score</th><th>Reason</th></tr>
+  </thead>
+  <tbody id="overrides-tbody">
+    {% include "app/overrides/tbody.njk" %}
+  </tbody>
+</table>
+{% endblock %}

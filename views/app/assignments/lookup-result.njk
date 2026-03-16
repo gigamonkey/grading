@@ -1,0 +1,5 @@
+{% if error %}
+<p class="error">{{ error }}</p>
+{% elif assignment %}
+<p class="info">{{ assignment.title }} ({{ assignment.course_id }})</p>
+{% endif %}

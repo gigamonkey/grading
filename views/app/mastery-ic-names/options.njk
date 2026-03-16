@@ -1,0 +1,24 @@
+{% if standards.length == 0 %}
+<p>All standards are mapped for this course.</p>
+{% else %}
+<table>
+  <thead>
+    <tr><th>Standard</th><th>IC Name</th></tr>
+  </thead>
+  <tbody>
+    {% for s in standards %}
+    <tr>
+      <td>{{ s }}</td>
+      <td>
+        <select name="standard_{{ s }}">
+          <option value="">-- select --</option>
+          {% for ic in icNames %}
+          <option value="{{ ic }}">{{ ic }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}

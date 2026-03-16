@@ -1,0 +1,8 @@
+{% for a in assignments %}
+<label>
+  <input type="radio" name="assignmentId" value="{{ a.assignment_id }}" required>
+  {{ a.assignment_id }} — {{ a.title }} ({{ a.course_id }})
+</label>
+{% else %}
+<p>No assignments found.</p>
+{% endfor %}

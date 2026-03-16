@@ -1,0 +1,22 @@
+{% extends "app/layout.njk" %}
+{% block title %}Mastery IC Names - Gradebook{% endblock %}
+{% block content %}
+<h1>Mastery IC Name Mapping</h1>
+<form method="post" action="/mastery-ic-names">
+  <label>Course:
+    <select name="course"
+      hx-get="/mastery-ic-names/options"
+      hx-trigger="change"
+      hx-target="#mapping-options"
+      hx-include="this">
+      {% for c in courses %}
+      <option value="{{ c }}" {% if c == course %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div id="mapping-options">
+    {% include "app/mastery-ic-names/options.njk" %}
+  </div>
+  <button type="submit">Save Mappings</button>
+</form>
+{% endblock %}

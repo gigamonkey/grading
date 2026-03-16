@@ -1,0 +1,28 @@
+{% extends "app/layout.njk" %}
+{% block title %}New Assignment - Gradebook{% endblock %}
+{% block content %}
+<h1>New Assignment</h1>
+<form hx-post="/assignments" hx-target="#assignments-tbody" hx-swap="innerHTML">
+  <label>Assignment ID
+    <input type="text" name="assignmentId" required
+      hx-get="/assignments/lookup"
+      hx-trigger="blur"
+      hx-target="#lookup-result"
+      hx-include="[name='assignmentId']">
+  </label>
+  <div id="lookup-result"></div>
+  <label>Standard <input type="text" name="standard" required></label>
+  <label>IC Name <input type="text" name="icName" required></label>
+  <label>Points <input type="number" name="points" required></label>
+  <button type="submit">Add Assignment</button>
+</form>
+<h2>Current Assignments</h2>
+<table>
+  <thead>
+    <tr><th>ID</th><th>Title</th><th>Course</th><th>Date</th><th>Standard</th><th>IC Name</th><th>Points</th></tr>
+  </thead>
+  <tbody id="assignments-tbody">
+    <tr><td colspan="7">Submit to see updated list.</td></tr>
+  </tbody>
+</table>
+{% endblock %}

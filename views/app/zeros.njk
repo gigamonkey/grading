@@ -1,0 +1,35 @@
+{% extends "app/layout.njk" %}
+{% block title %}Zeros &amp; Missing - Gradebook{% endblock %}
+{% block content %}
+<h1>Zeros &amp; Missing Assignments</h1>
+<div class="filters">
+  <select name="course"
+    hx-get="/zeros"
+    hx-trigger="change"
+    hx-target="#zeros-tbody"
+    hx-include="[name='course'],[name='period']">
+    <option value="">All Courses</option>
+    {% for c in courses %}
+    <option value="{{ c }}" {% if c == course %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <select name="period"
+    hx-get="/zeros"
+    hx-trigger="change"
+    hx-target="#zeros-tbody"
+    hx-include="[name='course'],[name='period']">
+    <option value="">All Periods</option>
+    {% for p in periods %}
+    <option value="{{ p }}" {% if p == period %}selected{% endif %}>Period {{ p }}</option>
+    {% endfor %}
+  </select>
+</div>
+<table>
+  <thead>
+    <tr><th>Student</th><th>Period</th><th>Course</th><th>Assignment</th><th>Date</th></tr>
+  </thead>
+  <tbody id="zeros-tbody">
+    {% include "app/zeros/tbody.njk" %}
+  </tbody>
+</table>
+{% endblock %}

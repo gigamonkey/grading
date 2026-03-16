@@ -142,3 +142,88 @@ insert or replace into direct_scores
   (assignment_id, user_id, score)
 values
   ($assignmentId, $userId, $score);
+
+-- :name findAssignment :all
+SELECT assignment_id, course_id, title, date
+FROM assignments
+WHERE upper(title) LIKE '%' || upper($q) || '%'
+   OR cast(assignment_id as text) LIKE '%' || $q || '%'
+ORDER BY assignment_id DESC
+LIMIT 20;
+
+-- :name ensureScoreOverride :insert
+INSERT OR REPLACE INTO score_overrides (user_id, assignment_id, score, reason)
+VALUES ($userId, $assignmentId, $score, $reason);
+
+-- :name standardsWithoutMasteryIcNames :list
+SELECT DISTINCT standard FROM assignment_point_values
+JOIN assignments USING (assignment_id)
+WHERE course_id = $courseId
+  AND standard NOT IN (
+    SELECT standard FROM mastery_ic_names WHERE course_id = $courseId
+  )
+ORDER BY standard;
+
+-- :name availableMasteryIcNames :list
+SELECT DISTINCT ic_name FROM ic_grades
+WHERE ic_name NOT IN (
+  SELECT ic_name FROM mastery_ic_names WHERE course_id = $courseId
+)
+ORDER BY ic_name;
+
+-- :name ensureMasteryIcName :insert
+INSERT OR REPLACE INTO mastery_ic_names (course_id, standard, ic_name)
+VALUES ($courseId, $standard, $icName);
+
+-- :name allAssignments :all
+SELECT a.assignment_id, a.date, a.course_id, a.title,
+       apv.standard, apv.ic_name, apv.points
+FROM assignments a
+LEFT JOIN assignment_point_values apv USING (assignment_id)
+WHERE ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
+       OR upper(a.course_id) LIKE '%' || upper($search) || '%')
+ORDER BY a.assignment_id DESC;
+
+-- :name allStudents :all
+SELECT user_id, github, sortable_name, period, course_id
+FROM roster
+WHERE ($search IS NULL OR upper(sortable_name) LIKE '%' || upper($search) || '%'
+       OR upper(github) LIKE '%' || upper($search) || '%')
+ORDER BY sortable_name;
+
+-- :name allOverrides :all
+SELECT so.user_id, r.sortable_name, r.github, r.period, r.course_id,
+       so.assignment_id, a.title, so.score, so.reason
+FROM score_overrides so
+JOIN roster r USING (user_id)
+JOIN assignments a USING (assignment_id)
+ORDER BY r.sortable_name;
+
+-- :name toUpdate :all
+SELECT * FROM to_update
+WHERE ($period IS NULL OR period = $period)
+ORDER BY period, sortable_name;
+
+-- :name masteryToUpdate :all
+SELECT * FROM mastery_to_update
+WHERE ($period IS NULL OR period = $period)
+ORDER BY period, sortable_name;
+
+-- :name zerosReport :all
+SELECT * FROM zeros
+WHERE ($course IS NULL OR course_id = $course)
+  AND ($period IS NULL OR period = $period)
+ORDER BY course_id, period, sortable_name, assignment_id;
+
+-- :name dashboardStats :get
+SELECT
+  (SELECT count(*) FROM roster) as student_count,
+  (SELECT count(*) FROM assignments) as assignment_count,
+  (SELECT count(*) FROM ungraded_speedruns) as ungraded_speedrun_count,
+  (SELECT count(*) FROM to_update) as to_update_count;
+
+-- :name distinctCourses :list
+SELECT DISTINCT course_id FROM roster ORDER BY course_id;
+
+-- :name distinctPeriods :list
+SELECT DISTINCT period FROM roster ORDER BY period;

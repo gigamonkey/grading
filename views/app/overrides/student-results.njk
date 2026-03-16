@@ -1,0 +1,8 @@
+{% for s in students %}
+<label>
+  <input type="radio" name="userId" value="{{ s.user_id }}" required>
+  {{ s.sortable_name }} — Period {{ s.period }}, {{ s.course_id }} ({{ s.github }})
+</label>
+{% else %}
+<p>No students found.</p>
+{% endfor %}

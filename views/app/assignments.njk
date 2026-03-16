@@ -1,0 +1,23 @@
+{% extends "app/layout.njk" %}
+{% block title %}Assignments - Gradebook{% endblock %}
+{% block content %}
+<h1>Assignments</h1>
+<p><a href="/assignments/new">+ New Assignment</a></p>
+<input type="search" placeholder="Search assignments..."
+  value="{{ search or '' }}"
+  hx-get="/assignments"
+  hx-trigger="input delay:300ms"
+  hx-target="#assignments-tbody"
+  hx-include="this"
+  name="search">
+<table>
+  <thead>
+    <tr>
+      <th>ID</th><th>Title</th><th>Course</th><th>Date</th><th>Standard</th><th>IC Name</th><th>Points</th>
+    </tr>
+  </thead>
+  <tbody id="assignments-tbody">
+    {% include "app/assignments/tbody.njk" %}
+  </tbody>
+</table>
+{% endblock %}

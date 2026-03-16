@@ -1,0 +1,39 @@
+{% extends "app/layout.njk" %}
+{% block title %}New Override - Gradebook{% endblock %}
+{% block content %}
+<h1>New Score Override</h1>
+<form hx-post="/overrides" hx-target="#overrides-tbody">
+  <fieldset>
+    <legend>Student</legend>
+    <input type="search" placeholder="Search by name or GitHub..."
+      hx-get="/overrides/search-students"
+      hx-trigger="input delay:300ms"
+      hx-target="#student-results"
+      name="q">
+    <div id="student-results"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Assignment</legend>
+    <input type="search" placeholder="Search by ID or title..."
+      hx-get="/overrides/search-assignments"
+      hx-trigger="input delay:300ms"
+      hx-target="#assignment-results"
+      name="q">
+    <div id="assignment-results"></div>
+  </fieldset>
+
+  <label>Score <input type="number" name="score" step="0.01" required></label>
+  <label>Reason <input type="text" name="reason" required></label>
+  <button type="submit">Add Override</button>
+</form>
+<h2>Current Overrides</h2>
+<table>
+  <thead>
+    <tr><th>Student</th><th>Period</th><th>Course</th><th>Assignment</th><th>Score</th><th>Reason</th></tr>
+  </thead>
+  <tbody id="overrides-tbody">
+    <tr><td colspan="6">Submit to see updated list.</td></tr>
+  </tbody>
+</table>
+{% endblock %}

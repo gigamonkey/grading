@@ -1,0 +1,11 @@
+{% for r in rows %}
+<tr>
+  <td>{{ r.sortable_name }}</td>
+  <td>{{ r.period }}</td>
+  <td>{{ r.course_id }}</td>
+  <td>{{ r.title or r.assignment_id }}</td>
+  <td>{{ r.date }}</td>
+</tr>
+{% else %}
+<tr><td colspan="5">No zeros found.</td></tr>
+{% endfor %}

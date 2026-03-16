@@ -1,0 +1,12 @@
+{% for o in overrides %}
+<tr>
+  <td>{{ o.sortable_name }}</td>
+  <td>{{ o.period }}</td>
+  <td>{{ o.course_id }}</td>
+  <td>{{ o.title }}</td>
+  <td>{{ o.score }}</td>
+  <td>{{ o.reason }}</td>
+</tr>
+{% else %}
+<tr><td colspan="6">No overrides found.</td></tr>
+{% endfor %}

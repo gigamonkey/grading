@@ -1,0 +1,20 @@
+{% extends "app/layout.njk" %}
+{% block title %}Students - Gradebook{% endblock %}
+{% block content %}
+<h1>Students</h1>
+<input type="search" placeholder="Search students..."
+  value="{{ search or '' }}"
+  hx-get="/students"
+  hx-trigger="input delay:300ms"
+  hx-target="#students-tbody"
+  hx-include="this"
+  name="search">
+<table>
+  <thead>
+    <tr><th>Name</th><th>GitHub</th><th>Period</th><th>Course</th></tr>
+  </thead>
+  <tbody id="students-tbody">
+    {% include "app/students/tbody.njk" %}
+  </tbody>
+</table>
+{% endblock %}

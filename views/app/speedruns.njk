@@ -1,0 +1,22 @@
+{% extends "app/layout.njk" %}
+{% block title %}Speedruns - Gradebook{% endblock %}
+{% block content %}
+<h1>Ungraded Speedruns</h1>
+<table>
+  <thead>
+    <tr><th>Student</th><th>Assignment</th><th>Course</th><th>Finished At</th></tr>
+  </thead>
+  <tbody>
+    {% for s in speedruns %}
+    <tr>
+      <td>{{ s.github }}</td>
+      <td>{{ s.title or s.assignment_id }}</td>
+      <td>{{ s.course_id }}</td>
+      <td>{{ s.finished_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">No ungraded speedruns.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

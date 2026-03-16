@@ -688,3 +688,27 @@ CREATE VIEW needs_assignment_point_values AS
 SELECT * FROM ic_assignments
 LEFT JOIN assignment_point_values USING (ic_name)
 WHERE assignment_point_values.ic_name IS NULL;
+
+-- Maps standards to IC column names for mastery grade syncing.
+CREATE TABLE IF NOT EXISTS mastery_ic_names (
+  course_id TEXT NOT NULL,
+  standard TEXT NOT NULL,
+  ic_name TEXT NOT NULL,
+  PRIMARY KEY (course_id, standard)
+);
+
+DROP VIEW IF EXISTS mastery_to_update;
+CREATE VIEW mastery_to_update AS
+SELECT
+  r.user_id,
+  r.period,
+  r.sortable_name,
+  min.ic_name,
+  ic.points ic,
+  mp.points db
+FROM mastery_points mp
+JOIN roster r USING (user_id)
+JOIN mastery_ic_names min USING (course_id, standard)
+LEFT JOIN ic_grades ic USING (student_number, ic_name)
+WHERE ic.points IS NULL AND mp.points IS NOT NULL OR ic.points <> mp.points
+ORDER BY r.period, r.sortable_name;

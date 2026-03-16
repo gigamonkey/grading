@@ -1,0 +1,11 @@
+{% for r in rows %}
+<tr>
+  <td>{{ r.sortable_name }}</td>
+  <td>{{ r.period }}</td>
+  <td>{{ r.ic_name }}</td>
+  <td>{{ r.ic }}</td>
+  <td>{{ r.db }}</td>
+</tr>
+{% else %}
+<tr><td colspan="5">Nothing to update.</td></tr>
+{% endfor %}

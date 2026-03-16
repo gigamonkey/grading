@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Gradebook{% endblock %}</title>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <nav>
+    <a href="/">Dashboard</a>
+    <a href="/assignments">Assignments</a>
+    <a href="/students">Students</a>
+    <a href="/overrides">Overrides</a>
+    <a href="/to-update">To Update</a>
+    <a href="/mastery-to-update">Mastery To Update</a>
+    <a href="/mastery-ic-names">Mastery IC Names</a>
+    <a href="/zeros">Zeros</a>
+    <a href="/speedruns">Speedruns</a>
+  </nav>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
