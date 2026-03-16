@@ -145,7 +145,10 @@ table.checklist th:first-child, table.checklist td:first-child { text-align: lef
 table.checklist td.checklist-points:first-child { text-align: center; }
 
 table.checklist th:not(:first-child), table.checklist td:not(:first-child) { width: 5rem; }
-table.checklist thead th { white-space: nowrap; }
+table.checklist thead th {
+  /* white-space: nowrap; */
+  font-size: 60%;
+}
 
 td.checklist-cell {
   cursor: pointer;
