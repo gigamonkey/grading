@@ -92,7 +92,7 @@ const main = async (assignmentId, directory, opts) => {
       const dir = path.join(directory, github);
       mkdirSync(dir, { recursive: true });
 
-      const repo = new Repo(`../github/${github}.git/`);
+      const repo = new Repo(`${opts.repos}/${github}.git/`);
       const sha = opts.sha || repo.sha(branch, filename, opts.before);
       if (sha) {
         const timestamp = repo.timestamp(sha);
@@ -103,10 +103,11 @@ const main = async (assignmentId, directory, opts) => {
         if (existsSync(path.join(dir, "missing.txt"))) {
           unlinkSync(path.join(dir, "missing.txt"));
         }
+        console.log(`Wrote files in ${dir}`);
       } else {
         writeFileSync(path.join(dir, "missing.txt"), '');
+        console.log(`Wrote missing.txt in ${dir}`);
       }
-      console.log(`Wrote files in ${dir}`);
     }
   } catch (e) {
     console.log(e);
@@ -121,6 +122,7 @@ new Command()
   .addOption(new Option('-p, --period <period>', 'Period').conflicts(['user', 'course']))
   .addOption(new Option('-c, --course <course>', 'Course').conflicts(['user', 'period']))
   .option('-b, --before <before>', 'Fetch latest version before this timestamp')
+  .option('--repos <repos>', 'Repos dir', env.BHS_CS_REPOS)
   .option('--sha <sha>', 'Specific SHA')
   .option('-s, --server <url>', 'Server URL', env.BHS_CS_SERVER)
   .option('-k, --api-key <key>', 'API key', env.BHS_CS_API_KEY)
