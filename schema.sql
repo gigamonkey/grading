@@ -532,6 +532,30 @@ LEFT JOIN ic_grades ic USING (student_number, ic_name)
 WHERE ic.points is null and ap.points is not null or ic.points <> ap.points
 ORDER BY period, sortable_name;
 
+-- Mapping from (course_id, standard) to IC assignment names for mastery point grades.
+CREATE TABLE IF NOT EXISTS mastery_ic_names (
+  course_id TEXT NOT NULL,
+  standard TEXT NOT NULL,
+  ic_name TEXT NOT NULL,
+  PRIMARY KEY (course_id, standard)
+);
+
+DROP VIEW IF EXISTS mastery_to_update;
+CREATE VIEW mastery_to_update AS
+SELECT
+  mp.user_id,
+  mp.period,
+  mp.sortable_name,
+  min.ic_name,
+  ic.points ic,
+  mp.points db
+FROM mastery_points mp
+JOIN roster r USING (user_id)
+JOIN mastery_ic_names min ON min.standard = mp.standard AND min.course_id = r.course_id
+LEFT JOIN ic_grades ic USING (student_number, ic_name)
+WHERE ic.points IS NULL AND mp.points IS NOT NULL OR ic.points <> mp.points
+ORDER BY mp.period, mp.sortable_name;
+
 DROP VIEW IF EXISTS unweighted;
 
 DROP VIEW IF EXISTS db_grades;

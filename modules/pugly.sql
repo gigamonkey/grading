@@ -350,6 +350,32 @@ insert into mastery_assignments (points) values ($points);
 insert into mastery_assignments (points) values ($points);
 
 
+-- mastery_ic_names ----------------------------------------
+
+-- :name masteryIcNames :all
+select * from mastery_ic_names;
+
+-- :name insertMasteryIcName :insert
+insert into mastery_ic_names (course_id, standard, ic_name) values ($courseId, $standard, $icName);
+
+-- :name masteryIcName :get
+select * from mastery_ic_names where course_id = $courseId and standard = $standard;
+
+-- :name updateMasteryIcName :run
+update mastery_ic_names set
+  (ic_name) =
+  ($icName)
+where
+  course_id = $courseId and
+  standard = $standard
+
+-- :name makeMasteryIcName :insert
+insert into mastery_ic_names (ic_name) values ($icName);
+
+-- :name makeMasteryIcNameWithDefaultValues :insert
+insert into mastery_ic_names (ic_name) values ($icName);
+
+
 -- mastery_speedruns ---------------------------------------
 
 -- :name masterySpeedruns :all

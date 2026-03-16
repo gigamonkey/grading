@@ -106,6 +106,27 @@ insert or replace into java_unit_tests
 values
   ($assignmentId, $github, $correct, $score, $timestamp, $sha);
 
+-- :name standardsWithoutMasteryIcNames :list
+SELECT DISTINCT ma.standard
+FROM mastery_assignments ma
+JOIN assignments a USING (assignment_id)
+LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
+WHERE a.course_id = $courseId AND min.standard IS NULL
+ORDER BY ma.standard;
+
+-- :name availableMasteryIcNames :list
+SELECT DISTINCT ic_name
+FROM ic_grades
+JOIN roster USING (student_number)
+WHERE course_id = $courseId
+AND ic_name NOT IN (SELECT ic_name FROM assignment_point_values)
+AND ic_name NOT IN (SELECT ic_name FROM mastery_ic_names WHERE course_id = $courseId)
+ORDER BY ic_name;
+
+-- :name ensureMasteryIcName :insert
+INSERT OR REPLACE INTO mastery_ic_names (course_id, standard, ic_name)
+VALUES ($courseId, $standard, $icName);
+
 -- :name questionsForAssignment :one
 select questions from speedrunnables where assignment_id = $assignmentId;
 
