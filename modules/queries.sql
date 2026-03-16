@@ -202,7 +202,8 @@ LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
 WHERE ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
-       OR upper(a.course_id) LIKE '%' || upper($search) || '%')
+       OR upper(a.course_id) LIKE '%' || upper($search) || '%'
+       OR CAST(a.assignment_id AS TEXT) = $search)
 ORDER BY a.assignment_id DESC;
 
 -- :name allStudents :all
