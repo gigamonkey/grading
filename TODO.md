@@ -15,8 +15,6 @@
 
 ## Plans
 
-- [ ] Implement the plan in [plans/script-cleanup.md](plans/script-cleanup.md)
-
 ## Done
 
 - [x] Add a VIEW to schema.sql `mastery_to_update` which compares the grades in
