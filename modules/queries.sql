@@ -91,6 +91,9 @@ select github from roster where github = $user;
 -- :name findUser :all
 select * from roster where upper(github) like '%' || upper($q) || '%' or upper(sortable_name) like '%' || upper($q) || '%' or user_id = $q;
 
+-- :name standardsByCourse :list
+SELECT standard FROM standards WHERE course_id = $courseId ORDER BY standard;
+
 -- :name findAssignment :all
 select * from assignments where assignment_id = cast($q as integer) or upper(title) like '%' || upper($q) || '%';
 
@@ -123,12 +126,11 @@ ORDER BY standard;
 DELETE FROM mastery_ic_names WHERE course_id = $courseId AND standard = $standard;
 
 -- :name standardsWithoutMasteryIcNames :list
-SELECT DISTINCT ma.standard
-FROM mastery_assignments ma
-JOIN assignments a USING (assignment_id)
-LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
-WHERE a.course_id = $courseId AND min.standard IS NULL
-ORDER BY ma.standard;
+SELECT s.standard
+FROM standards s
+LEFT JOIN mastery_ic_names min USING (course_id, standard)
+WHERE s.course_id = $courseId AND min.standard IS NULL
+ORDER BY s.standard;
 
 -- :name availableMasteryIcNames :list
 SELECT DISTINCT ic_name

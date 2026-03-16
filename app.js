@@ -7,7 +7,7 @@ import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
 import { API } from './api.js';
 
-dotenv.config({ path: 'local.env' });
+dotenv.config();
 
 const port = process.env.HTTP_PORT ?? 3000;
 const app = express();
@@ -16,7 +16,7 @@ const db = new DB('db.db')
   .addQueries('modules/pugly.sql')
   .addQueries('modules/queries.sql');
 
-const api = new API();
+const api = new API(process.env.BHS_CS_SERVER, process.env.BHS_CS_API_KEY);
 
 app.set('json spaces', 2);
 app.use(express.json());
@@ -51,9 +51,10 @@ app.get('/assignments/lookup', async (req, res) => {
   const { assignmentId } = req.query;
   try {
     const assignment = await api.assignment(assignmentId);
-    res.render('app/assignments/lookup-result.njk', { assignment });
-  } catch {
-    res.render('app/assignments/lookup-result.njk', { error: 'Not found' });
+    const standards = db.standardsByCourse({ courseId: assignment.course_id });
+    res.render('app/assignments/lookup-result.njk', { assignment, standards });
+  } catch (e) {
+    res.render('app/assignments/lookup-result.njk', { error: e.message });
   }
 });
 
@@ -109,11 +110,11 @@ app.post('/assignments', async (req, res) => {
       courseId: assignment.course_id,
       title: assignment.title,
     });
-    db.ensureAssignmentPointValue({ assignmentId, standard, icName, points: Number(points) });
-    const assignments = db.allAssignments({ search: null });
-    res.render('app/assignments/tbody.njk', { assignments });
+    db.ensureAssignmentPointValue({ assignmentId: assignment.assignment_id, standard, icName, points: Number(points) });
+    res.setHeader('HX-Redirect', '/assignments');
+    res.send('');
   } catch (e) {
-    res.status(400).send(`Error: ${e.message}`);
+    res.render('app/assignments/tbody.njk', { assignments: [], error: e.message });
   }
 });
 

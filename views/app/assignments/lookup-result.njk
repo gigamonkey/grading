@@ -2,4 +2,14 @@
 <p class="error">{{ error }}</p>
 {% elif assignment %}
 <p class="info">{{ assignment.title }} ({{ assignment.course_id }})</p>
+<div id="standard-field" hx-swap-oob="true">
+  <label>Standard
+    <select name="standard" required>
+      <option value="">-- select --</option>
+      {% for s in standards %}
+      <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+</div>
 {% endif %}
