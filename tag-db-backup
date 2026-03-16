@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+#
+# Make a symlink to a specific db backup. By default uses the latest backup.
+#
+
+set -eou pipefail
+
+tag="$1"
+target=$(realpath --relative-to=db-backups ${2:-db-backups/latest})
+
+echo "Tagging $target with $tag"
+ln -s "$target" "db-backups/$tag"
