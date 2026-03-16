@@ -2,13 +2,6 @@
 
 ## Small
 
-- [ ] Write a plan for creating a HTMX based web app for managing the gradebook
-      database. Some initial functionality would be simple things like providing
-      a web interface for the functionality provided by scripts like
-      `add-assignment.js` and `add-override.js` and also web based view of
-      grades to be updated in IC. Basically various kinds of queries and
-      reports.
-
 ## Medium
 
 ## Large
@@ -21,6 +14,8 @@
       the elapsed time, number of tests passed at each change, etc.)
 
 ## Plans
+
+- [ ] Implement the plan in [plans/gradebook-web-app.md](plans/gradebook-web-app.md)
 
 ## Done
 
@@ -38,3 +33,30 @@
       the name given, present the user with a choice, listing the sortable name,
       period, and course_id of each. And if the assignment is ambiguous show the
       possible choices and let them pick.
+
+- [x] Write a plan for creating a HTMX based web app for managing the gradebook
+      database. Some initial functionality would be simple things like providing
+      a web interface for the functionality provided by scripts like
+      `add-assignment.js` and `add-override.js` and also web based view of
+      grades to be updated in IC. Basically various kinds of queries and
+      reports. (plan: [gradebook-web-app.md](plans/gradebook-web-app.md))
+
+- [x] Compare `schema.sql` (the file that we use to define the schema of db.db)
+      with `actual-schema.sql` (the output of running `sqlite3 db.db .schema`)
+      and identify any dead code in `schema.sql`. Be a bit careful; it's
+      possible that there are things created in `schema.sql` and then dropped
+      after being used for something, i.e. just because something isn't present
+      in `actual-schema.sql` doesn't mean it can be removed. On the other hand,
+      there are `DROP IF EXISTS` statements in `schema.sql` of things that no
+      longer exist; those should be marked as dead. Don't delete anything from
+      `schema.sql` but add comments that start with `-- DEAD?` to mark anything
+      you think we can remove.
+
+- [x] Report on untracked files. Please use the command `git ls-files ':(glob)*'
+      -o --exclude-standard` to get a list of currently untracked files in root
+      of this repo and write a report in the file UNTRACKED.md that categorizes
+      them as "Should be added" if they seem to contain code that something else
+      in the repo depends on, "Seems useful", if they aren't obviously depended
+      on by anything but seem useful given the current state of things (e.g. the
+      work with the current database schema, etc.) or "Probably trash" for
+      everything else. Do not delete any files; just write the report.

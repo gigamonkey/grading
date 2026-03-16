@@ -9,19 +9,6 @@ CREATE TABLE IF NOT EXISTS assignments (
   PRIMARY KEY (assignment_id)
 );
 
--- Weights for any standard an assignment affects
-DROP TABLE IF EXISTS assignment_weights;
-
--- Weights for any standard that will be increased by an assignment if a student
--- did better on the assignment than their current grade for that standard. So a
--- student who has, say, a 2 on some standard and takes a test that touches on
--- that standard and gets a 4 will have their grade raised as if the assignment
--- had been weighted for that standard but a student who already has a 4 and
--- does worse won't have their grade lowered. This allows students to
--- demonstrate improved mastery of old standards without penalizing them on old
--- standards due to poor performance on new material.
-DROP TABLE IF EXISTS secondary_weights;
-
 -- Assignments that I don't expect every student in a class to have done.
 CREATE TABLE IF NOT EXISTS optional_assignments (
   assignment_id INTEGER,
@@ -136,10 +123,6 @@ CREATE TABLE IF NOT EXISTS hand_graded_questions(
   question TEXT,
   correct INTEGER
 );
-
-DROP TABLE IF EXISTS hand_grade;
-DROP TABLE IF EXISTS hand_scored;
-DROP VIEW IF EXISTS hand_graded_to_scores;
 
 --------------------------------------------------------------------------------
 -- Directly scored
@@ -279,11 +262,6 @@ JOIN roster using (github)
 GROUP BY assignment_id, github;
 
 --------------------------------------------------------------------------------
--- Responses to prompts. Just graded on a 0-4 scale.
-
-DROP TABLE IF EXISTS prompt_response_grades;
-
---------------------------------------------------------------------------------
 -- Graded by rubric. For each student we compare their work against a rubric and
 -- record for each element of the rubric whether they met it or not. We can then
 -- compute a total score for the assignment from the individual grades.
@@ -307,8 +285,6 @@ CREATE TABLE IF NOT EXISTS score_overrides (
   reason TEXT,
   PRIMARY KEY (user_id, assignment_id)
 );
-
-DROP TABLE IF EXISTS fps;
 
 -- Filled in from ../roster.json
 CREATE TABLE IF NOT EXISTS roster (
@@ -463,12 +439,6 @@ SELECT
 FROM recorded_scores rs
 LEFT JOIN score_overrides o using (user_id, assignment_id);
 
-DROP VIEW IF EXISTS assignment_grades;
-DROP VIEW IF EXISTS dynamic_weights;
-DROP VIEW IF EXISTS all_weights;
-DROP VIEW IF EXISTS users_standards_summary;
-DROP VIEW IF EXISTS standard_grades;
-
 -- The standards that exist.
 DROP VIEW IF EXISTS standards;
 CREATE VIEW standards AS
@@ -555,10 +525,6 @@ JOIN mastery_ic_names min ON min.standard = mp.standard AND min.course_id = r.co
 LEFT JOIN ic_grades ic USING (student_number, ic_name)
 WHERE ic.points IS NULL AND mp.points IS NOT NULL OR ic.points <> mp.points
 ORDER BY mp.period, mp.sortable_name;
-
-DROP VIEW IF EXISTS unweighted;
-
-DROP VIEW IF EXISTS db_grades;
 
 CREATE TABLE IF NOT EXISTS server_grades (
   user_id TEXT NOT NULL,
