@@ -569,6 +569,11 @@ CREATE TABLE IF NOT EXISTS ad_hoc_mastery_points (
   reason TEXT NOT NULL
 );
 
+-- Base points per standard for doing speedruns of various assignments. For
+-- points with assigned values this will be the same as the assignment's point
+-- value (for now we're just populating this table with the duplicate info) and
+-- for assignments that weren't graded for points (e.g. boot ups) we put in some
+-- base value, usually 5.
 CREATE TABLE IF NOT EXISTS mastery_speedruns (
   assignment_id INTEGER NOT NULL,
   standard TEXT NOT NULL,
