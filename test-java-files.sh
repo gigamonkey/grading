@@ -7,9 +7,6 @@ JAR=$BHS_CS/java/target/bhs-cs.jar
 
 export BHS_DATA_ROOT=$BHS_CS/java/
 
-if java --enable-preview -Xrs -Xss8m -Xmx200m -cp "$JAR" "$RUNNER" "$tester" "$f" > "$(dirname "$f")/results.json " ; then
-
-
 tester="com.gigamonkeys.bhs.assignments.$1"
 shift
 
@@ -22,8 +19,8 @@ for f; do
     echo -n "Testing $f ... "
     rm -f "$(dirname "$f")/broken.txt"
     if [[ ! -e "$(dirname "$f")/missing.txt" ]]; then
-        if java --enable-preview -Xrs -Xss8m -Xmx200m -cp "$JAR" "$RUNNER" "$tester" "$f" > "$(dirname "$f")/results.json" ; then
         #if java -Xrs -Xss8m -Xmx200m -cp "$JAR" "$RUNNER" "$tester" "$f" > "$(dirname "$f")/results.json" 2> /dev/null; then
+        if java --enable-preview -Xrs -Xss8m -Xmx200m -cp "$JAR" "$RUNNER" "$tester" "$f" > "$(dirname "$f")/results.json" ; then
             echo "ok."
         else
             echo "broken."
