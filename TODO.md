@@ -2,7 +2,8 @@
 
 ## Small
 
-- [ ] On the `/checklists` page, deleting a criterion column should update the points and scores for the whole table.
+- [ ] On the `/checklists` page, deleting a criterion column should update the
+      points and scores for the whole table.
 
 - [ ] Make assignment sorting on `/checklist` page in `app.js` only show
       assignments that haven't already been graded. And show them all in a table
@@ -22,9 +23,6 @@
 ## Plans
 
 ## Done
-
-- [x] Show existing mappings on `/mastery-ic-names` page in `app.js` and make
-      them editable.
 
 - [x] Implement [checklist-grader](plans/checklist-grader.md).
 
@@ -87,3 +85,6 @@
 - [x] Add a `checklist_scores` view to `schema.sql` providing `(assignment_id,
       user_id, score)` triples computed from `checklist_criteria` and
       `checklist_marks`.
+
+- [x] Show existing mappings on `/mastery-ic-names` page in `app.js` and make
+      them editable.
