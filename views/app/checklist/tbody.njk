@@ -6,7 +6,8 @@
   <td>{{ a.date }}</td>
   <td>{{ a.assignment_type }}</td>
   <td>{{ a.standard }}</td>
+  <td>{{ a.graded }}</td>
 </tr>
 {% else %}
-<tr><td colspan="6">No ungraded assignments found.</td></tr>
+<tr><td colspan="7">No assignments found.</td></tr>
 {% endfor %}
