@@ -31,10 +31,7 @@
     allThs.forEach((th) => (th.style.width = th.offsetWidth + 'px'));
     table.style.tableLayout = 'fixed';
 
-    // Add a clear-all th at the end of the first header row
-    const headerRow = table.querySelector('thead tr');
-    const clearTh = document.createElement('th');
-    clearTh.className = 'col-filter-clear-th';
+    // Insert a clear-all button just before the table
     const clearBtn = document.createElement('button');
     clearBtn.className = 'col-filter-clear-all';
     clearBtn.textContent = 'Clear filters';
@@ -43,8 +40,7 @@
       for (const key of Object.keys(activeFilters)) delete activeFilters[key];
       applyFilters(table, activeFilters, headers);
     });
-    clearTh.appendChild(clearBtn);
-    headerRow.appendChild(clearTh);
+    table.parentNode.insertBefore(clearBtn, table);
 
     // Re-apply filters after HTMX swaps the tbody
     table._columnFilters = {
