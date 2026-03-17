@@ -34,8 +34,13 @@ const scoreQuestion = (cases) => sum(cases.map((c) => (c.passed ? 1 : 0))) / cas
  * Score the results using a set of weights per question.
  */
 const scoreWeighted = (results, scoring) => {
+  // console.log(scoring);
+  // console.log(entries(results).length);
+  // console.log(entries(results).map(([name, r]) => ({ name, value: fullyCorrect(r) ? scoring[name] : 0 })));;
   // const numerator = sum(entries(results).map(([name, r]) => fullyCorrect(r) ? scoring[name] : 0));
+  // console.log(numerator);
   // const denom = sum(values(scoring));
+  // console.log(numerator, denom, numerator / denom);
   // console.log(`${numerator} / ${denom} = ${numerator / denom}`);
   // entries(results).map(([name, r]) => {
   //   if (!fullyCorrect(r)) { console.log(name); }
