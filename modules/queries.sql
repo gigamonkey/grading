@@ -208,6 +208,22 @@ WHERE ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
        OR CAST(a.assignment_id AS TEXT) = $search)
 ORDER BY a.assignment_id DESC;
 
+-- :name ungradedAssignments :all
+SELECT a.assignment_id, a.date, a.course_id, a.title,
+       CASE WHEN ma.assignment_id IS NOT NULL THEN 'M' WHEN apv.assignment_id IS NOT NULL THEN 'A' ELSE '?' END as assignment_type,
+       COALESCE(apv.standard, ma.standard) as standard,
+       COALESCE(apv.ic_name, min.ic_name) as ic_name,
+       COALESCE(apv.points, ma.points) as points
+FROM assignments a
+LEFT JOIN assignment_point_values apv USING (assignment_id)
+LEFT JOIN mastery_assignments ma USING (assignment_id)
+LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
+WHERE a.assignment_id NOT IN (SELECT DISTINCT assignment_id FROM assignment_scores)
+  AND ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
+       OR upper(a.course_id) LIKE '%' || upper($search) || '%'
+       OR CAST(a.assignment_id AS TEXT) = $search)
+ORDER BY a.assignment_id DESC;
+
 -- :name allStudents :all
 SELECT user_id, github, sortable_name, period, course_id
 FROM roster

@@ -1,0 +1,12 @@
+{% for a in assignments %}
+<tr>
+  <td>{{ a.assignment_id }}</td>
+  <td><a href="/checklist/{{ a.assignment_id }}">{{ a.title }}</a></td>
+  <td>{{ a.course_id }}</td>
+  <td>{{ a.date }}</td>
+  <td>{{ a.assignment_type }}</td>
+  <td>{{ a.standard }}</td>
+</tr>
+{% else %}
+<tr><td colspan="6">No ungraded assignments found.</td></tr>
+{% endfor %}

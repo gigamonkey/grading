@@ -282,8 +282,12 @@ function ensureChecklistCriterion(assignmentId, criteriaLabel) {
 
 app.get('/checklist', (req, res) => {
   const search = req.query.search || null;
-  const assignments = search ? db.findAssignment({ q: search }) : [];
-  res.render('app/checklist.njk', { assignments, search });
+  const assignments = db.ungradedAssignments({ search });
+  if (req.headers['hx-request']) {
+    res.render('app/checklist/tbody.njk', { assignments });
+  } else {
+    res.render('app/checklist.njk', { assignments, search });
+  }
 });
 
 app.get('/checklist/:assignmentId', (req, res) => {
