@@ -154,8 +154,7 @@
 
     // Show/hide clear-all button
     const anyActive = Object.keys(activeFilters).length > 0;
-    const clearBtn = table.querySelector('.col-filter-clear-all');
-    if (clearBtn) clearBtn.style.display = anyActive ? '' : 'none';
+    clearBtn.style.display = anyActive ? '' : 'none';
 
     // Show/hide rows
     table.querySelectorAll('tbody tr').forEach((row) => {
