@@ -158,12 +158,12 @@ app.post('/overrides', (req, res) => {
 
 // To Update
 app.get('/to-update', (_req, res) => {
-  const rows = db.toUpdate({});
+  const rows = db.toUpdate({ period: null });
   res.render('app/to-update.njk', { rows });
 });
 
 app.get('/mastery-to-update', (_req, res) => {
-  const rows = db.masteryToUpdate({});
+  const rows = db.masteryToUpdate({ period: null });
   res.render('app/mastery-to-update.njk', { rows });
 });
 
@@ -225,7 +225,7 @@ app.post('/mastery-ic-names', (req, res) => {
 
 // Zeros
 app.get('/zeros', (_req, res) => {
-  const rows = db.zerosReport({});
+  const rows = db.zerosReport({ course: null, period: null });
   res.render('app/zeros.njk', { rows });
 });
 
