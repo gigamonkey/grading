@@ -42,10 +42,33 @@
     });
     table.parentNode.insertBefore(clearBtn, table);
 
+    function applyFilters() {
+      // Update header indicators
+      headers.forEach((th) => {
+        const colIndex = parseInt(th.getAttribute('data-column-filter'));
+        const btn = th.querySelector('.col-filter-btn');
+        if (btn) btn.classList.toggle('col-filter-active', !!activeFilters[colIndex]);
+      });
+
+      // Show/hide clear-all button
+      clearBtn.style.display = Object.keys(activeFilters).length > 0 ? '' : 'none';
+
+      // Show/hide rows
+      table.querySelectorAll('tbody tr').forEach((row) => {
+        let visible = true;
+        for (const [colStr, selectedValues] of Object.entries(activeFilters)) {
+          const cell = row.cells[parseInt(colStr)];
+          if (cell && !selectedValues.has(cell.textContent.trim())) {
+            visible = false;
+            break;
+          }
+        }
+        row.style.display = visible ? '' : 'none';
+      });
+    }
+
     // Re-apply filters after HTMX swaps the tbody
-    table._columnFilters = {
-      reapply: () => applyFilters(table, activeFilters, headers),
-    };
+    table._columnFilters = { reapply: applyFilters };
 
     // Close dropdowns on outside click
     document.addEventListener('click', closeDropdowns);
@@ -71,14 +94,14 @@
         e.stopPropagation();
         dropdown.querySelectorAll('input[type=checkbox]').forEach((cb) => (cb.checked = true));
         delete activeFilters[colIndex];
-        applyFilters(table, activeFilters, headers);
+        applyFilters();
       });
 
       makeBtn(actions, 'Clear all', (e) => {
         e.stopPropagation();
         dropdown.querySelectorAll('input[type=checkbox]').forEach((cb) => (cb.checked = false));
         activeFilters[colIndex] = new Set();
-        applyFilters(table, activeFilters, headers);
+        applyFilters();
       });
 
       dropdown.appendChild(actions);
@@ -106,7 +129,7 @@
           if (currentValues.every((v) => activeFilters[colIndex].has(v))) {
             delete activeFilters[colIndex];
           }
-          applyFilters(table, activeFilters, headers);
+          applyFilters();
         });
 
         label.appendChild(cb);
@@ -142,32 +165,6 @@
       if (cell) values.add(cell.textContent.trim());
     });
     return Array.from(values).sort();
-  }
-
-  function applyFilters(table, activeFilters, headers) {
-    // Update header indicators
-    headers.forEach((th) => {
-      const colIndex = parseInt(th.getAttribute('data-column-filter'));
-      const btn = th.querySelector('.col-filter-btn');
-      if (btn) btn.classList.toggle('col-filter-active', !!activeFilters[colIndex]);
-    });
-
-    // Show/hide clear-all button
-    const anyActive = Object.keys(activeFilters).length > 0;
-    clearBtn.style.display = anyActive ? '' : 'none';
-
-    // Show/hide rows
-    table.querySelectorAll('tbody tr').forEach((row) => {
-      let visible = true;
-      for (const [colStr, selectedValues] of Object.entries(activeFilters)) {
-        const cell = row.cells[parseInt(colStr)];
-        if (cell && !selectedValues.has(cell.textContent.trim())) {
-          visible = false;
-          break;
-        }
-      }
-      row.style.display = visible ? '' : 'none';
-    });
   }
 
   document.addEventListener('DOMContentLoaded', () => {
