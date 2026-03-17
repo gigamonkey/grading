@@ -136,7 +136,7 @@ app.get('/overrides', (_req, res) => {
 });
 
 app.get('/overrides/new', (_req, res) => {
-  res.render('app/overrides/new.njk', {});
+  res.render('app/overrides/form.njk', {});
 });
 
 app.get('/overrides/search-students', (req, res) => {
@@ -153,7 +153,7 @@ app.post('/overrides', (req, res) => {
   const { userId, assignmentId, score, reason } = req.body;
   db.ensureScoreOverride({ userId, assignmentId: Number(assignmentId), score: Number(score), reason });
   const overrides = db.allOverrides();
-  res.render('app/overrides/tbody.njk', { overrides });
+  res.render('app/overrides/post-response.njk', { overrides });
 });
 
 // To Update
