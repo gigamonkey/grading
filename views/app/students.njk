@@ -9,9 +9,9 @@
   hx-target="#students-tbody"
   hx-include="this"
   name="search">
-<table>
+<table data-column-filters>
   <thead>
-    <tr><th>Name</th><th>GitHub</th><th>Period</th><th>Course</th></tr>
+    <tr><th>Name</th><th>GitHub</th><th data-column-filter="2">Period</th><th data-column-filter="3">Course</th></tr>
   </thead>
   <tbody id="students-tbody">
     {% include "app/students/tbody.njk" %}

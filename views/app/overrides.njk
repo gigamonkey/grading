@@ -3,9 +3,9 @@
 {% block content %}
 <h1>Score Overrides</h1>
 <p><a href="/overrides/new">+ New Override</a></p>
-<table>
+<table data-column-filters>
   <thead>
-    <tr><th>Student</th><th>Period</th><th>Course</th><th>Assignment</th><th>Score</th><th>Reason</th></tr>
+    <tr><th>Student</th><th data-column-filter="1">Period</th><th data-column-filter="2">Course</th><th>Assignment</th><th>Score</th><th>Reason</th></tr>
   </thead>
   <tbody id="overrides-tbody">
     {% include "app/overrides/tbody.njk" %}

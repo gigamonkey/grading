@@ -2,9 +2,9 @@
 {% block title %}Speedruns - Gradebook{% endblock %}
 {% block content %}
 <h1>Ungraded Speedruns</h1>
-<table>
+<table data-column-filters>
   <thead>
-    <tr><th>Student</th><th>Assignment</th><th>Course</th><th>Finished At</th></tr>
+    <tr><th>Student</th><th>Assignment</th><th data-column-filter="2">Course</th><th>Finished At</th></tr>
   </thead>
   <tbody>
     {% for s in speedruns %}

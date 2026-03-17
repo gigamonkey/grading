@@ -193,3 +193,61 @@ td.checklist-points {
 td.checklist-points:hover { background: #ddd; }
 td.checklist-points.editing { background: #fff; padding: 0; }
 td.checklist-points.editing input { padding: 0.1rem 0.25rem; font-size: 0.85rem; border-radius: 2px; margin: 0; }
+
+/* Column filter dropdowns */
+th[data-column-filter]:hover { background: #ddd; }
+
+.col-filter-btn { font-size: 0.75rem; opacity: 0.5; }
+.col-filter-btn.col-filter-active { opacity: 1; color: #1a1a2e; font-weight: 700; }
+
+.col-filter-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 0.5rem;
+  min-width: 10rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  white-space: nowrap;
+}
+
+.col-filter-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.col-filter-actions button {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.col-filter-item {
+  display: block;
+  padding: 0.2rem 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+
+.col-filter-item:hover { background: #f5f5f5; }
+
+button.col-filter-clear-all {
+  display: none;
+  margin-top: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: normal;
+  background: transparent;
+  color: #888;
+  border: 1px solid #ccc;
+  white-space: nowrap;
+}
+button.col-filter-clear-all:hover { background: #eee; color: #444; border-color: #aaa; }
