@@ -12,9 +12,9 @@
   <option value="{{ p }}" {% if p == period %}selected{% endif %}>Period {{ p }}</option>
   {% endfor %}
 </select>
-<table>
+<table data-column-filters>
   <thead>
-    <tr><th>Student</th><th>Period</th><th>IC Name</th><th>IC Points</th><th>DB Points</th></tr>
+    <tr><th>Student</th><th data-column-filter="1">Period</th><th data-column-filter="2">IC Name</th><th>IC Points</th><th>DB Points</th></tr>
   </thead>
   <tbody id="to-update-tbody">
     {% include "app/to-update/tbody.njk" %}
