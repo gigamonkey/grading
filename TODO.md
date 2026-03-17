@@ -74,3 +74,6 @@ chronological order from oldest to newest.
       values to filter the table down to. Should be links or buttons for "Clear
       all" and "All" which clear all selections and select them all
       respectively. Then clicking on individual names selects or deselects them.
+
+- [x] Please make the boxes on the home page links to the corresponding section
+      of the site.

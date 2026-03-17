@@ -3,21 +3,21 @@
 {% block content %}
 <h1>Gradebook Dashboard</h1>
 <div class="stats">
-  <div class="stat">
+  <a class="stat" href="/students">
     <span class="stat-value">{{ stats.student_count }}</span>
     <span class="stat-label">Students</span>
-  </div>
-  <div class="stat">
+  </a>
+  <a class="stat" href="/assignments">
     <span class="stat-value">{{ stats.assignment_count }}</span>
     <span class="stat-label">Assignments</span>
-  </div>
-  <div class="stat">
+  </a>
+  <a class="stat" href="/speedruns">
     <span class="stat-value">{{ stats.ungraded_speedrun_count }}</span>
     <span class="stat-label">Ungraded Speedruns</span>
-  </div>
-  <div class="stat">
+  </a>
+  <a class="stat" href="/to-update">
     <span class="stat-value">{{ stats.to_update_count }}</span>
     <span class="stat-label">Grades to Update</span>
-  </div>
+  </a>
 </div>
 {% endblock %}
