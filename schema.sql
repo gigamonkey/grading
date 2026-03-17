@@ -430,6 +430,8 @@ WITH recorded_scores AS (
   SELECT *, 'direct_scores' FROM direct_scores
     UNION
   SELECT *, 'form_assessment_scores' FROM form_assessment_scores
+    UNION
+  SELECT *, 'checklist_scores' FROM checklist_scores
 )
 SELECT
   assignment_id,
