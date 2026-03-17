@@ -157,26 +157,14 @@ app.post('/overrides', (req, res) => {
 });
 
 // To Update
-app.get('/to-update', (req, res) => {
-  const period = req.query.period || null;
-  const rows = db.toUpdate({ period });
-  const periods = db.distinctPeriods();
-  if (req.headers['hx-request']) {
-    res.render('app/to-update/tbody.njk', { rows });
-  } else {
-    res.render('app/to-update.njk', { rows, periods, period });
-  }
+app.get('/to-update', (_req, res) => {
+  const rows = db.toUpdate({});
+  res.render('app/to-update.njk', { rows });
 });
 
-app.get('/mastery-to-update', (req, res) => {
-  const period = req.query.period || null;
-  const rows = db.masteryToUpdate({ period });
-  const periods = db.distinctPeriods();
-  if (req.headers['hx-request']) {
-    res.render('app/mastery-to-update/tbody.njk', { rows });
-  } else {
-    res.render('app/mastery-to-update.njk', { rows, periods, period });
-  }
+app.get('/mastery-to-update', (_req, res) => {
+  const rows = db.masteryToUpdate({});
+  res.render('app/mastery-to-update.njk', { rows });
 });
 
 // Mastery IC Names
@@ -236,17 +224,9 @@ app.post('/mastery-ic-names', (req, res) => {
 });
 
 // Zeros
-app.get('/zeros', (req, res) => {
-  const course = req.query.course || null;
-  const period = req.query.period || null;
-  const rows = db.zerosReport({ course, period });
-  const courses = db.distinctCourses();
-  const periods = db.distinctPeriods();
-  if (req.headers['hx-request']) {
-    res.render('app/zeros/tbody.njk', { rows });
-  } else {
-    res.render('app/zeros.njk', { rows, courses, periods, course, period });
-  }
+app.get('/zeros', (_req, res) => {
+  const rows = db.zerosReport({});
+  res.render('app/zeros.njk', { rows });
 });
 
 // Speedruns
