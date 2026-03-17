@@ -26,6 +26,22 @@
       });
     });
 
+    // Add a clear-all th at the end of the first header row
+    const headerRow = table.querySelector('thead tr');
+    const clearTh = document.createElement('th');
+    clearTh.className = 'col-filter-clear-th';
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'col-filter-clear-all';
+    clearBtn.title = 'Clear all filters';
+    clearBtn.textContent = '✕';
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      for (const key of Object.keys(activeFilters)) delete activeFilters[key];
+      applyFilters(table, activeFilters, headers);
+    });
+    clearTh.appendChild(clearBtn);
+    headerRow.appendChild(clearTh);
+
     // Re-apply filters after HTMX swaps the tbody
     table._columnFilters = {
       reapply: () => applyFilters(table, activeFilters, headers),
@@ -135,6 +151,11 @@
       const btn = th.querySelector('.col-filter-btn');
       if (btn) btn.classList.toggle('col-filter-active', !!activeFilters[colIndex]);
     });
+
+    // Show/hide clear-all button
+    const anyActive = Object.keys(activeFilters).length > 0;
+    const clearBtn = table.querySelector('.col-filter-clear-all');
+    if (clearBtn) clearBtn.style.display = anyActive ? '' : 'none';
 
     // Show/hide rows
     table.querySelectorAll('tbody tr').forEach((row) => {
