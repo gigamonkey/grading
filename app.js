@@ -151,7 +151,7 @@ app.get('/overrides/search-assignments', (req, res) => {
 
 app.post('/overrides', (req, res) => {
   const { userId, assignmentId, score, reason } = req.body;
-  db.ensureScoreOverride({ userId: Number(userId), assignmentId: Number(assignmentId), score: Number(score), reason });
+  db.ensureScoreOverride({ userId, assignmentId: Number(assignmentId), score: Number(score), reason });
   const overrides = db.allOverrides();
   res.render('app/overrides/tbody.njk', { overrides });
 });
