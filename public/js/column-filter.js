@@ -41,7 +41,8 @@
     function openFilterDropdown(table, th, colIndex) {
       closeDropdowns();
 
-      const allValues = getColumnValues(table, colIndex);
+      // Only show values present in rows that pass all *other* active filters
+      const allValues = getColumnValues(table, colIndex, activeFilters);
       if (allValues.length === 0) return;
 
       const dropdown = document.createElement('div');
@@ -84,7 +85,9 @@
           } else {
             activeFilters[colIndex].delete(val);
           }
-          if (activeFilters[colIndex].size === allValues.length) {
+          // If all currently-available values are selected, clear the filter
+          const currentValues = getColumnValues(table, colIndex, activeFilters);
+          if (currentValues.every((v) => activeFilters[colIndex].has(v))) {
             delete activeFilters[colIndex];
           }
           applyFilters(table, activeFilters, headers);
@@ -109,9 +112,16 @@
     return btn;
   }
 
-  function getColumnValues(table, colIndex) {
+  // Returns unique values for colIndex from rows that pass all active filters
+  // except the filter on colIndex itself (so the dropdown shows what's available).
+  function getColumnValues(table, colIndex, activeFilters) {
     const values = new Set();
     table.querySelectorAll('tbody tr').forEach((row) => {
+      for (const [colStr, selectedValues] of Object.entries(activeFilters)) {
+        if (parseInt(colStr) === colIndex) continue;
+        const cell = row.cells[parseInt(colStr)];
+        if (cell && !selectedValues.has(cell.textContent.trim())) return;
+      }
       const cell = row.cells[colIndex];
       if (cell) values.add(cell.textContent.trim());
     });
