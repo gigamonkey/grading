@@ -32,8 +32,7 @@
     clearTh.className = 'col-filter-clear-th';
     const clearBtn = document.createElement('button');
     clearBtn.className = 'col-filter-clear-all';
-    clearBtn.title = 'Clear all filters';
-    clearBtn.textContent = '✕';
+    clearBtn.textContent = 'Clear filters';
     clearBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       for (const key of Object.keys(activeFilters)) delete activeFilters[key];

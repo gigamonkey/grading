@@ -243,9 +243,12 @@ th.col-filter-clear-th { width: 1px; padding: 0 0.25rem; }
 
 button.col-filter-clear-all {
   display: none;
-  padding: 0.1rem 0.35rem;
+  padding: 0.15rem 0.5rem;
   font-size: 0.75rem;
-  background: #c00;
-  line-height: 1.2;
+  font-weight: normal;
+  background: transparent;
+  color: #888;
+  border: 1px solid #ccc;
+  white-space: nowrap;
 }
-button.col-filter-clear-all:hover { background: #a00; }
+button.col-filter-clear-all:hover { background: #eee; color: #444; border-color: #aaa; }
