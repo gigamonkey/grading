@@ -7,7 +7,6 @@
 (function () {
   function initColumnFilters(table) {
     const headers = Array.from(table.querySelectorAll('th[data-column-filter]'));
-    console.log('initColumnFilters:', table, 'filterable headers:', headers.length);
     const activeFilters = {}; // colIndex -> Set of selected values, or absent if all selected
 
     headers.forEach((th) => {
@@ -44,9 +43,6 @@
     table.parentNode.insertBefore(clearBtn, table);
 
     function applyFilters() {
-      console.log('applyFilters called, activeFilters:', JSON.stringify(Object.fromEntries(Object.entries(activeFilters).map(([k,v]) => [k, [...v]]))));
-      console.log('clearBtn:', clearBtn, 'anyActive:', Object.keys(activeFilters).length > 0);
-
       // Update header indicators
       headers.forEach((th) => {
         const colIndex = parseInt(th.getAttribute('data-column-filter'));
@@ -55,8 +51,7 @@
       });
 
       // Show/hide clear-all button
-      clearBtn.style.display = Object.keys(activeFilters).length > 0 ? '' : 'none';
-      console.log('clearBtn.style.display after set:', clearBtn.style.display);
+      clearBtn.style.display = Object.keys(activeFilters).length > 0 ? 'inline-block' : 'none';
 
       // Show/hide rows
       table.querySelectorAll('tbody tr').forEach((row) => {
@@ -121,7 +116,6 @@
 
         cb.addEventListener('change', (e) => {
           e.stopPropagation();
-          console.log('checkbox change, col:', colIndex, 'val:', val, 'checked:', cb.checked);
           if (!activeFilters[colIndex]) {
             activeFilters[colIndex] = new Set(allValues);
           }
@@ -174,9 +168,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const tables = document.querySelectorAll('table[data-column-filters]');
-    console.log('column-filter: DOMContentLoaded, found tables:', tables.length);
-    tables.forEach(initColumnFilters);
+    document.querySelectorAll('table[data-column-filters]').forEach(initColumnFilters);
   });
 
   // Re-apply filters after HTMX swaps tbody content
