@@ -26,6 +26,11 @@
       });
     });
 
+    // Lock column widths at their initial rendered size to prevent layout shifts
+    const allThs = Array.from(table.querySelectorAll('thead th'));
+    allThs.forEach((th) => (th.style.width = th.offsetWidth + 'px'));
+    table.style.tableLayout = 'fixed';
+
     // Add a clear-all th at the end of the first header row
     const headerRow = table.querySelector('thead tr');
     const clearTh = document.createElement('th');
