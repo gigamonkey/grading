@@ -33,7 +33,7 @@ if __name__ == "__main__":
         if answers:
             print(f"Question:\n\n{question}\n")
 
-            if kind in { "choices", "ochices", "tf", "yn" }:
+            if kind in { "choices", "ochoices", "tf", "yn" }:
                 for i, a in enumerate(answers):
                     print(f"[{i}] {a}")
                 print()
