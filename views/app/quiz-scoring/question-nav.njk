@@ -6,7 +6,7 @@
      hx-target="#question-panel"
      hx-swap="innerHTML">
     Q{{ q.question_number + 1 }}
-    {% if q.scored %}<span class="question-nav-check">&#10003;</span>{% endif %}
+    {% if q.scored %}<span class="question-nav-check"><i class="bi bi-check-lg"></i></span>{% endif %}
   </a>
   {% endfor %}
 </div>

@@ -34,14 +34,14 @@
             hx-target="#question-panel" hx-swap="innerHTML">
         <input type="hidden" name="answer" value="{{ a.answer }}">
         <input type="hidden" name="score" value="1">
-        <button type="submit" class="answer-button mchoice-correct" title="Correct">&#10003;</button>
+        <button type="submit" class="answer-button mchoice-correct" title="Correct"><i class="bi bi-check-lg"></i></button>
       </form>
       <form style="display: inline;"
             hx-post="/quiz-scoring/{{ assignmentId }}/question/{{ question.question_number }}/toggle-mchoice"
             hx-target="#question-panel" hx-swap="innerHTML">
         <input type="hidden" name="answer" value="{{ a.answer }}">
         <input type="hidden" name="score" value="-1">
-        <button type="submit" class="answer-button mchoice-incorrect" title="Incorrect">&#10007;</button>
+        <button type="submit" class="answer-button mchoice-incorrect" title="Incorrect"><i class="bi bi-x-lg"></i></button>
       </form>
     </div>
     {% endfor %}
@@ -57,14 +57,14 @@
             hx-target="#question-panel" hx-swap="innerHTML">
         <input type="hidden" name="answer" value="{{ a.answer }}">
         <input type="hidden" name="score" value="1">
-        <button type="submit" class="answer-button mchoice-correct" title="Score 1">&#10003;</button>
+        <button type="submit" class="answer-button mchoice-correct" title="Score 1"><i class="bi bi-check-lg"></i></button>
       </form>
       <form style="display: inline;"
             hx-post="/quiz-scoring/{{ assignmentId }}/question/{{ question.question_number }}/score-free"
             hx-target="#question-panel" hx-swap="innerHTML">
         <input type="hidden" name="answer" value="{{ a.answer }}">
         <input type="hidden" name="score" value="0">
-        <button type="submit" class="answer-button mchoice-incorrect" title="Score 0">&#10007;</button>
+        <button type="submit" class="answer-button mchoice-incorrect" title="Score 0"><i class="bi bi-x-lg"></i></button>
       </form>
       {% for v in [0.25, 0.5, 0.75] %}
       <form style="display: inline;"
@@ -101,7 +101,7 @@
             hx-post="/quiz-scoring/{{ assignmentId }}/question/{{ question.question_number }}/unscore"
             hx-target="#question-panel" hx-swap="innerHTML">
         <input type="hidden" name="answer" value="{{ a.answer }}">
-        <button type="submit" class="rescore-button" title="Rescore">&#9998;</button>
+        <button type="submit" class="rescore-button" title="Rescore"><i class="bi bi-pencil"></i></button>
       </form>
     </div>
     {% endfor %}
@@ -111,11 +111,11 @@
   <div class="question-panel-nav">
     {% if prevQuestion is not none %}
     <button hx-get="/quiz-scoring/{{ assignmentId }}/question/{{ prevQuestion }}"
-            hx-target="#question-panel" hx-swap="innerHTML">&#8592; Prev</button>
+            hx-target="#question-panel" hx-swap="innerHTML"><i class="bi bi-arrow-left"></i> Prev</button>
     {% endif %}
     {% if nextQuestion is not none %}
     <button hx-get="/quiz-scoring/{{ assignmentId }}/question/{{ nextQuestion }}"
-            hx-target="#question-panel" hx-swap="innerHTML">Next &#8594;</button>
+            hx-target="#question-panel" hx-swap="innerHTML">Next <i class="bi bi-arrow-right"></i></button>
     {% endif %}
   </div>
 </div>

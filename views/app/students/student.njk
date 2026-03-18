@@ -7,8 +7,8 @@
   <tr><th>Period</th><td>{{ student.period }}</td></tr>
   <tr><th>Course</th><td>{{ student.course_id }}</td></tr>
   <tr><th>GitHub</th><td><a href="https://gigamonkeys.com/berkeley-high-cs/{{ student.github }}">{{ student.github }}</a></td></tr>
-  <tr><th>Email</th><td class="copyable" onclick="navigator.clipboard.writeText('{{ student.email }}')">{{ student.email }} <span class="copy-icon">&#128203;</span></td></tr>
-  <tr><th>Student #</th><td class="copyable" onclick="navigator.clipboard.writeText('{{ student.student_number }}')">{{ student.student_number }} <span class="copy-icon">&#128203;</span></td></tr>
+  <tr><th>Email</th><td class="copyable" onclick="navigator.clipboard.writeText('{{ student.email }}')">{{ student.email }} <i class="bi bi-clipboard copy-icon"></i></td></tr>
+  <tr><th>Student #</th><td class="copyable" onclick="navigator.clipboard.writeText('{{ student.student_number }}')">{{ student.student_number }} <i class="bi bi-clipboard copy-icon"></i></td></tr>
 </table>
 
 <h2>Assignment Scores</h2>

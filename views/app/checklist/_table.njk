@@ -8,7 +8,7 @@
         {% if sort == key %}
           {% set toggledDir = 'desc' if dir == 'asc' else 'asc' %}
           {% set href = base + '?sort=' + key + '&dir=' + toggledDir + ('&prevSort=' + prevSort + '&prevDir=' + prevDir if prevSort else '') %}
-          <a href="{{ href }}" class="sort-active">{{ label }} {{ '↑' if dir == 'asc' else '↓' }}</a>
+          <a href="{{ href }}" class="sort-active">{{ label }} <i class="bi {{ 'bi-arrow-up' if dir == 'asc' else 'bi-arrow-down' }}"></i></a>
         {% else %}
           {% set href = base + '?sort=' + key + '&dir=' + defaultSortDir + '&prevSort=' + sort + '&prevDir=' + dir %}
           <a href="{{ href }}">{{ label }}</a>
@@ -28,7 +28,7 @@
         <button hx-post="/checklist/{{ assignment.assignment_id }}/criteria"
                 hx-vals='{"criteriaLabel": "-"}'
                 hx-target="#checklist-table"
-                hx-swap="innerHTML">+</button>
+                hx-swap="innerHTML"><i class="bi bi-plus-lg"></i></button>
       </th>
     </tr>
     <tr>

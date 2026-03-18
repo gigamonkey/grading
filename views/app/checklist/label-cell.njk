@@ -21,6 +21,6 @@
           hx-target="#checklist-table"
           hx-swap="innerHTML"
           hx-trigger="click consume"
-          hx-on:htmx:before-request="const th=this.closest('th');const idx=th.cellIndex;const table=th.closest('table');th.closest('tr').deleteCell(idx);table.querySelector('thead tr:nth-child(2)').deleteCell(idx-3);table.querySelectorAll('tbody tr').forEach(tr=>tr.deleteCell(idx))">×</button>
+          hx-on:htmx:before-request="const th=this.closest('th');const idx=th.cellIndex;const table=th.closest('table');th.closest('tr').deleteCell(idx);table.querySelector('thead tr:nth-child(2)').deleteCell(idx-3);table.querySelectorAll('tbody tr').forEach(tr=>tr.deleteCell(idx))"><i class="bi bi-x"></i></button>
 </th>
 {% endif %}

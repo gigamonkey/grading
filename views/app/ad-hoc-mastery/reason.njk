@@ -2,7 +2,7 @@
 {% block title %}{{ reason }} - Ad Hoc Mastery Points{% endblock %}
 {% block content %}
 <h1>Ad Hoc Mastery: {{ reason }}</h1>
-<p><a href="/ad-hoc-mastery">&larr; All ad hoc mastery points</a></p>
+<p><a href="/ad-hoc-mastery"><i class="bi bi-arrow-left"></i> All ad hoc mastery points</a></p>
 
 <h3>Add record <small>({{ standard }})</small></h3>
 <form hx-post="/ad-hoc-mastery/reason/{{ reason | urlencode }}" hx-target="#reason-tbody" hx-swap="innerHTML">
