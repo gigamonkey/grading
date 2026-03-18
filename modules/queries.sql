@@ -227,11 +227,11 @@ WHERE (a.assignment_id NOT IN (SELECT DISTINCT assignment_id FROM assignment_sco
 ORDER BY a.assignment_id DESC;
 
 -- :name allStudents :all
-SELECT user_id, github, sortable_name, period, course_id
+SELECT user_id, github, sortable_name, name, email, student_number, period, course_id
 FROM roster
 WHERE ($search IS NULL OR upper(sortable_name) LIKE '%' || upper($search) || '%'
        OR upper(github) LIKE '%' || upper($search) || '%')
-ORDER BY sortable_name;
+ORDER BY period, sortable_name;
 
 -- :name allOverrides :all
 SELECT so.user_id, r.sortable_name, r.github, r.period, r.course_id,

@@ -1,10 +1,13 @@
 {% for s in students %}
 <tr>
-  <td><a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a></td>
-  <td>{{ s.github }}</td>
-  <td>{{ s.period }}</td>
+  <td class="copyable" onclick="navigator.clipboard.writeText('{{ s.student_number }}')">{{ s.student_number }} <i class="bi bi-clipboard copy-icon"></i></td>
   <td>{{ s.course_id }}</td>
+  <td>{{ s.period }}</td>
+  <td><a href="/students/{{ s.user_id }}">{{ s.name }}</a></td>
+  <td><a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a></td>
+  <td class="copyable" onclick="navigator.clipboard.writeText('{{ s.email }}')">{{ s.email.split('@')[0] }}@ <i class="bi bi-clipboard copy-icon"></i></td>
+  <td>{{ s.github }}</td>
 </tr>
 {% else %}
-<tr><td colspan="4">No students found.</td></tr>
+<tr><td colspan="7">No students found.</td></tr>
 {% endfor %}
