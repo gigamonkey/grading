@@ -370,12 +370,16 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 
 .scored-answer {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
   margin-bottom: 0.2rem;
   font-size: 0.85rem;
 }
+
+.scored-answer .answer-text { flex: 1; }
+.scored-answer .answer-score { min-width: 2.5rem; text-align: right; }
 
 .scored-answer.correct { background: #d4edda; color: #155724; }
 .scored-answer.partial { background: #fff3cd; color: #856404; }
