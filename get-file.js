@@ -88,11 +88,16 @@ const main = async (assignmentId, directory, opts) => {
     const { branch, dir, file } = await getBranchAndFile(api, url, kind);
     const filename = path.join(dir, file);
 
+    // console.log(`filename: ${filename}`);
+    // console.log(`branch: ${branch}`);
+    // console.log(`opts`, opts);
+
     for (const github of handles) {
       const dir = path.join(directory, github);
       mkdirSync(dir, { recursive: true });
 
       const repo = new Repo(`${opts.repos}/${github}.git/`);
+
       const sha = opts.sha || repo.sha(branch, filename, opts.before);
       if (sha) {
         const timestamp = repo.timestamp(sha);
