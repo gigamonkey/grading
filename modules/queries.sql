@@ -312,3 +312,38 @@ DELETE FROM checklist_criteria WHERE assignment_id = $assignmentId AND seq = $se
 
 -- :name deleteChecklistMarksForCriterion :run
 DELETE FROM checklist_marks WHERE assignment_id = $assignmentId AND seq = $seq;
+
+-- Quiz scoring
+-- :name formAssessments :all
+SELECT fa.assignment_id, a.title, a.course_id, a.date,
+  (SELECT count(*) FROM questions q WHERE q.assignment_id = fa.assignment_id) question_count,
+  (SELECT count(DISTINCT sa.github) FROM student_answers sa
+   WHERE sa.assignment_id = fa.assignment_id) student_count
+FROM form_assessments fa
+JOIN assignments a USING (assignment_id)
+ORDER BY a.assignment_id DESC;
+
+-- :name questionsForFormAssessment :all
+SELECT question_number, label, kind, question FROM questions
+WHERE assignment_id = $assignmentId ORDER BY question_number;
+
+-- :name unscoredAnswersForQuestion :all
+SELECT na.answer, count(DISTINCT sa.github) student_count
+FROM normalized_answers na
+JOIN student_answers sa ON sa.assignment_id = na.assignment_id
+  AND sa.question_number = na.question_number AND sa.raw_answer = na.raw_answer
+LEFT JOIN scored_answers sc ON sc.assignment_id = na.assignment_id
+  AND sc.question_number = na.question_number AND sc.answer = na.answer
+WHERE na.assignment_id = $assignmentId AND na.question_number = $questionNumber
+  AND sc.assignment_id IS NULL
+GROUP BY na.answer ORDER BY student_count DESC;
+
+-- :name scoredAnswersForQuestion :all
+SELECT answer, score FROM scored_answers
+WHERE assignment_id = $assignmentId AND question_number = $questionNumber
+ORDER BY score DESC, answer;
+
+-- :name addScoredAnswer :insert
+INSERT INTO scored_answers (assignment_id, question_number, answer, score)
+VALUES ($assignmentId, $questionNumber, $answer, $score)
+ON CONFLICT(assignment_id, question_number, answer) DO UPDATE SET score = excluded.score;

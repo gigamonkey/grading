@@ -1,0 +1,31 @@
+{% extends "app/layout.njk" %}
+{% block title %}Quiz Scoring - Gradebook{% endblock %}
+{% block content %}
+<h1>Quiz Scoring</h1>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Title</th>
+      <th>Course</th>
+      <th>Date</th>
+      <th>Questions</th>
+      <th>Students</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in assessments %}
+    <tr>
+      <td><a href="/quiz-scoring/{{ a.assignment_id }}">{{ a.assignment_id }}</a></td>
+      <td><a href="/quiz-scoring/{{ a.assignment_id }}">{{ a.title }}</a></td>
+      <td>{{ a.course_id }}</td>
+      <td>{{ a.date }}</td>
+      <td>{{ a.question_count }}</td>
+      <td>{{ a.student_count }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">No form assessments found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

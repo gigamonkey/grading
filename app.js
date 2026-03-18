@@ -6,15 +6,15 @@ import express from 'express';
 import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
 import { API } from './api.js';
+import { Repo } from './modules/repo.js';
+import { camelify } from './modules/util.js';
 
 dotenv.config();
 
 const port = process.env.HTTP_PORT ?? 3001;
 const app = express();
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const api = new API(process.env.BHS_CS_SERVER, process.env.BHS_CS_API_KEY);
 
@@ -81,7 +81,7 @@ app.get('/assignments/:assignmentId/view-row', (req, res) => {
 app.put('/assignments/:assignmentId/point-value', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const { standard, points, assignment_type } = req.body;
-  let { icName } = req.body;
+  const { icName } = req.body;
   const current = db.assignmentById({ assignmentId });
   if (assignment_type === 'M') {
     if (current.assignment_type !== 'M') db.clearAssignmentPointValue({ assignmentId });
@@ -110,7 +110,12 @@ app.post('/assignments', async (req, res) => {
       courseId: assignment.course_id,
       title: assignment.title,
     });
-    db.ensureAssignmentPointValue({ assignmentId: assignment.assignment_id, standard, icName, points: Number(points) });
+    db.ensureAssignmentPointValue({
+      assignmentId: assignment.assignment_id,
+      standard,
+      icName,
+      points: Number(points),
+    });
     res.setHeader('HX-Redirect', '/assignments');
     res.send('');
   } catch (e) {
@@ -151,7 +156,12 @@ app.get('/overrides/search-assignments', (req, res) => {
 
 app.post('/overrides', (req, res) => {
   const { userId, assignmentId, score, reason } = req.body;
-  db.ensureScoreOverride({ userId, assignmentId: Number(assignmentId), score: Number(score), reason });
+  db.ensureScoreOverride({
+    userId,
+    assignmentId: Number(assignmentId),
+    score: Number(score),
+    reason,
+  });
   const overrides = db.allOverrides();
   res.render('app/overrides/post-response.njk', { overrides });
 });
@@ -191,7 +201,13 @@ app.put('/mastery-ic-names/:courseId/:standard', (req, res) => {
   const icName = req.body.icName?.trim();
   if (icName) db.ensureMasteryIcName({ courseId, standard, icName });
   const icNames = db.availableMasteryIcNames({ courseId });
-  res.render('app/mastery-ic-names/mapping-cell.njk', { courseId, standard, icName: icName || null, icNames, editing: false });
+  res.render('app/mastery-ic-names/mapping-cell.njk', {
+    courseId,
+    standard,
+    icName: icName || null,
+    icNames,
+    editing: false,
+  });
 });
 
 app.delete('/mastery-ic-names/:courseId/:standard', (req, res) => {
@@ -199,26 +215,44 @@ app.delete('/mastery-ic-names/:courseId/:standard', (req, res) => {
   const standard = req.params.standard;
   db.deleteMasteryIcName({ courseId, standard });
   const icNames = db.availableMasteryIcNames({ courseId });
-  res.render('app/mastery-ic-names/mapping-cell.njk', { courseId, standard, icName: null, icNames, editing: false });
+  res.render('app/mastery-ic-names/mapping-cell.njk', {
+    courseId,
+    standard,
+    icName: null,
+    icNames,
+    editing: false,
+  });
 });
 
 app.get('/mastery-ic-names/:courseId/:standard', (req, res) => {
   const courseId = req.params.courseId;
   const standard = req.params.standard;
-  const mapping = db.masteryIcNamesByCourse({ courseId }).find(m => m.standard === standard);
+  const mapping = db.masteryIcNamesByCourse({ courseId }).find((m) => m.standard === standard);
   const icName = mapping?.ic_name ?? null;
   const icNames = db.availableMasteryIcNames({ courseId });
-  res.render('app/mastery-ic-names/mapping-cell.njk', { courseId, standard, icName, icNames, editing: false });
+  res.render('app/mastery-ic-names/mapping-cell.njk', {
+    courseId,
+    standard,
+    icName,
+    icNames,
+    editing: false,
+  });
 });
 
 app.get('/mastery-ic-names/:courseId/:standard/edit', (req, res) => {
   const courseId = req.params.courseId;
   const standard = req.params.standard;
-  const mapping = db.masteryIcNamesByCourse({ courseId }).find(m => m.standard === standard);
+  const mapping = db.masteryIcNamesByCourse({ courseId }).find((m) => m.standard === standard);
   const icName = mapping?.ic_name ?? null;
   const icNames = db.availableMasteryIcNames({ courseId });
   if (icName && !icNames.includes(icName)) icNames.unshift(icName);
-  res.render('app/mastery-ic-names/mapping-cell.njk', { courseId, standard, icName, icNames, editing: true });
+  res.render('app/mastery-ic-names/mapping-cell.njk', {
+    courseId,
+    standard,
+    icName,
+    icNames,
+    editing: true,
+  });
 });
 
 app.post('/mastery-ic-names', (req, res) => {
@@ -245,15 +279,23 @@ app.get('/speedruns', (_req, res) => {
 });
 
 // Checklist grader
-function renderChecklistTable(res, assignmentId, sort = 'github', dir = 'asc', prevSort = null, prevDir = 'asc') {
+function renderChecklistTable(
+  res,
+  assignmentId,
+  sort = 'github',
+  dir = 'asc',
+  prevSort = null,
+  prevDir = 'asc',
+) {
   const data = checklistData(assignmentId);
   const byGithub = (a, b) => (a.github || '').localeCompare(b.github || '');
-  const byName   = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
-  const byPoints = (a, b) => (data.studentPoints[a.user_id] ?? -1) - (data.studentPoints[b.user_id] ?? -1);
+  const byName = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
+  const byPoints = (a, b) =>
+    (data.studentPoints[a.user_id] ?? -1) - (data.studentPoints[b.user_id] ?? -1);
   const makeCmp = (s, d) => {
     const r = d === 'desc' ? -1 : 1;
     if (s === 'github') return (a, b) => r * byGithub(a, b);
-    if (s === 'name')   return (a, b) => r * byName(a, b);
+    if (s === 'name') return (a, b) => r * byName(a, b);
     if (s === 'score' || s === 'points') return (a, b) => r * byPoints(a, b);
     return () => 0;
   };
@@ -284,7 +326,7 @@ function checklistData(assignmentId) {
 
 function ensureChecklistCriterion(assignmentId, criteriaLabel) {
   const criteria = db.checklistCriteria({ assignmentId });
-  if (!criteria.some(c => c.label === criteriaLabel)) {
+  if (!criteria.some((c) => c.label === criteriaLabel)) {
     db.addChecklistCriterion({ assignmentId, criteriaLabel });
   }
 }
@@ -302,26 +344,31 @@ app.get('/checklist', (req, res) => {
 app.get('/checklist/:assignmentId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   ensureChecklistCriterion(assignmentId, 'Turned in');
-  const sort = ['name', 'github', 'score', 'points'].includes(req.query.sort) ? req.query.sort : 'github';
-  const defaultDir = (sort === 'score' || sort === 'points') ? 'desc' : 'asc';
+  const sort = ['name', 'github', 'score', 'points'].includes(req.query.sort)
+    ? req.query.sort
+    : 'github';
+  const defaultDir = sort === 'score' || sort === 'points' ? 'desc' : 'asc';
   const dir = ['asc', 'desc'].includes(req.query.dir) ? req.query.dir : defaultDir;
-  const prevSort = ['name', 'github', 'score', 'points'].includes(req.query.prevSort) ? req.query.prevSort : null;
+  const prevSort = ['name', 'github', 'score', 'points'].includes(req.query.prevSort)
+    ? req.query.prevSort
+    : null;
   const prevDir = ['asc', 'desc'].includes(req.query.prevDir) ? req.query.prevDir : 'asc';
   const data = checklistData(assignmentId);
 
   const byGithub = (a, b) => (a.github || '').localeCompare(b.github || '');
-  const byName   = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
-  const byPoints = (a, b) => (data.studentPoints[a.user_id] ?? -1) - (data.studentPoints[b.user_id] ?? -1);
+  const byName = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
+  const byPoints = (a, b) =>
+    (data.studentPoints[a.user_id] ?? -1) - (data.studentPoints[b.user_id] ?? -1);
 
   const makeCmp = (s, d) => {
     const r = d === 'desc' ? -1 : 1;
     if (s === 'github') return (a, b) => r * byGithub(a, b);
-    if (s === 'name')   return (a, b) => r * byName(a, b);
+    if (s === 'name') return (a, b) => r * byName(a, b);
     if (s === 'score' || s === 'points') return (a, b) => r * byPoints(a, b);
     return () => 0;
   };
 
-  const primary   = makeCmp(sort, dir);
+  const primary = makeCmp(sort, dir);
   const secondary = prevSort ? makeCmp(prevSort, prevDir) : byGithub;
   data.students.sort((a, b) => primary(a, b) || secondary(a, b));
 
@@ -353,22 +400,42 @@ app.put('/checklist/:assignmentId/mark/:userId/:seq', (req, res) => {
     if (m.user_id === userId) userMarks[m.seq] = m.value;
   }
   const totalPoints = criteria.reduce((sum, c) => sum + (c.points ?? 1), 0);
-  const earned = criteria.reduce((sum, c) => sum + (userMarks[c.seq] === 'check' ? (c.points ?? 1) : 0), 0);
-  res.render('app/checklist/mark-response.njk', { assignmentId, userId, seq, value: next, earned, totalPoints });
+  const earned = criteria.reduce(
+    (sum, c) => sum + (userMarks[c.seq] === 'check' ? (c.points ?? 1) : 0),
+    0,
+  );
+  res.render('app/checklist/mark-response.njk', {
+    assignmentId,
+    userId,
+    seq,
+    value: next,
+    earned,
+    totalPoints,
+  });
 });
 
 app.get('/checklist/:assignmentId/criteria/:seq/label', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criterion = db.checklistCriteria({ assignmentId }).find(c => c.seq === seq);
-  res.render('app/checklist/label-cell.njk', { assignmentId, seq, criteriaLabel: criterion?.label ?? '', editing: false });
+  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/checklist/label-cell.njk', {
+    assignmentId,
+    seq,
+    criteriaLabel: criterion?.label ?? '',
+    editing: false,
+  });
 });
 
 app.get('/checklist/:assignmentId/criteria/:seq/label/edit', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criterion = db.checklistCriteria({ assignmentId }).find(c => c.seq === seq);
-  res.render('app/checklist/label-cell.njk', { assignmentId, seq, criteriaLabel: criterion?.label ?? '', editing: true });
+  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/checklist/label-cell.njk', {
+    assignmentId,
+    seq,
+    criteriaLabel: criterion?.label ?? '',
+    editing: true,
+  });
 });
 
 app.put('/checklist/:assignmentId/criteria/:seq/label', (req, res) => {
@@ -376,22 +443,37 @@ app.put('/checklist/:assignmentId/criteria/:seq/label', (req, res) => {
   const seq = Number(req.params.seq);
   const criteriaLabel = req.body.criteriaLabel?.trim() || '';
   if (criteriaLabel) db.updateChecklistCriterionLabel({ assignmentId, seq, criteriaLabel });
-  const criterion = db.checklistCriteria({ assignmentId }).find(c => c.seq === seq);
-  res.render('app/checklist/label-cell.njk', { assignmentId, seq, criteriaLabel: criterion?.label ?? criteriaLabel, editing: false });
+  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/checklist/label-cell.njk', {
+    assignmentId,
+    seq,
+    criteriaLabel: criterion?.label ?? criteriaLabel,
+    editing: false,
+  });
 });
 
 app.get('/checklist/:assignmentId/criteria/:seq/points', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criterion = db.checklistCriteria({ assignmentId }).find(c => c.seq === seq);
-  res.render('app/checklist/points-cell.njk', { assignmentId, seq, points: criterion?.points ?? 1, editing: false });
+  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/checklist/points-cell.njk', {
+    assignmentId,
+    seq,
+    points: criterion?.points ?? 1,
+    editing: false,
+  });
 });
 
 app.get('/checklist/:assignmentId/criteria/:seq/points/edit', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criterion = db.checklistCriteria({ assignmentId }).find(c => c.seq === seq);
-  res.render('app/checklist/points-cell.njk', { assignmentId, seq, points: criterion?.points ?? 1, editing: true });
+  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/checklist/points-cell.njk', {
+    assignmentId,
+    seq,
+    points: criterion?.points ?? 1,
+    editing: true,
+  });
 });
 
 app.put('/checklist/:assignmentId/criteria/:seq/points', (req, res) => {
@@ -410,6 +492,223 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
     db.deleteChecklistMarksForCriterion({ assignmentId, seq });
   });
   renderChecklistTable(res, assignmentId);
+});
+
+// Quiz Scoring
+
+function saveAnswers(github, assignmentId, answers) {
+  answers.forEach((answer, num) => {
+    if (Array.isArray(answer)) {
+      answer.forEach((a, i) => {
+        db.ensureStudentAnswer({
+          github,
+          assignmentId,
+          questionNumber: num,
+          answerNumber: i,
+          rawAnswer: a,
+        });
+        if (a)
+          db.ensureNormalizedAnswer({
+            assignmentId,
+            questionNumber: num,
+            rawAnswer: a,
+            answer: a.trim(),
+          });
+      });
+    } else {
+      db.ensureStudentAnswer({
+        github,
+        assignmentId,
+        questionNumber: num,
+        answerNumber: 0,
+        rawAnswer: answer,
+      });
+      if (answer)
+        db.ensureNormalizedAnswer({
+          assignmentId,
+          questionNumber: num,
+          rawAnswer: answer,
+          answer: answer.trim(),
+        });
+    }
+  });
+}
+
+function quizScoringData(assignmentId, questionNumber) {
+  const assignment = db.assignmentById({ assignmentId });
+  const questions = db.questionsForFormAssessment({ assignmentId });
+
+  // Determine scored status for each question
+  for (const q of questions) {
+    const unscored = db.unscoredAnswersForQuestion({
+      assignmentId,
+      questionNumber: q.question_number,
+    });
+    q.scored = unscored.length === 0;
+  }
+
+  // Find current question
+  const question = questions.find((q) => q.question_number === questionNumber) || null;
+  const unscoredAnswers = question
+    ? db.unscoredAnswersForQuestion({ assignmentId, questionNumber })
+    : [];
+  const scoredAnswers = question
+    ? db.scoredAnswersForQuestion({ assignmentId, questionNumber })
+    : [];
+
+  // Prev/next
+  const idx = questions.findIndex((q) => q.question_number === questionNumber);
+  const prevQuestion = idx > 0 ? questions[idx - 1].question_number : null;
+  const nextQuestion = idx < questions.length - 1 ? questions[idx + 1].question_number : null;
+
+  return {
+    assignment,
+    questions,
+    question,
+    unscoredAnswers,
+    scoredAnswers,
+    prevQuestion,
+    nextQuestion,
+    currentQuestion: questionNumber,
+  };
+}
+
+function firstUnscoredQuestion(assignmentId) {
+  const questions = db.questionsForFormAssessment({ assignmentId });
+  for (const q of questions) {
+    const unscored = db.unscoredAnswersForQuestion({
+      assignmentId,
+      questionNumber: q.question_number,
+    });
+    if (unscored.length > 0) return q.question_number;
+  }
+  return questions.length > 0 ? questions[0].question_number : 0;
+}
+
+function nextUnscoredQuestion(assignmentId, afterQuestionNumber) {
+  const questions = db.questionsForFormAssessment({ assignmentId });
+  const idx = questions.findIndex((q) => q.question_number === afterQuestionNumber);
+  // Look after current
+  for (let i = idx + 1; i < questions.length; i++) {
+    const unscored = db.unscoredAnswersForQuestion({
+      assignmentId,
+      questionNumber: questions[i].question_number,
+    });
+    if (unscored.length > 0) return questions[i].question_number;
+  }
+  // Wrap around
+  for (let i = 0; i <= idx; i++) {
+    const unscored = db.unscoredAnswersForQuestion({
+      assignmentId,
+      questionNumber: questions[i].question_number,
+    });
+    if (unscored.length > 0) return questions[i].question_number;
+  }
+  // All scored, stay on next question
+  return idx < questions.length - 1 ? questions[idx + 1].question_number : afterQuestionNumber;
+}
+
+app.get('/quiz-scoring', (_req, res) => {
+  const assessments = db.formAssessments();
+  res.render('app/quiz-scoring.njk', { assessments });
+});
+
+app.get('/quiz-scoring/:assignmentId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const questionNumber =
+    req.query.q != null ? Number(req.query.q) : firstUnscoredQuestion(assignmentId);
+  const data = quizScoringData(assignmentId, questionNumber);
+  const studentCount =
+    db.formAssessments().find((a) => a.assignment_id === assignmentId)?.student_count || 0;
+  res.render('app/quiz-scoring/scoring.njk', { ...data, assignmentId, studentCount });
+});
+
+app.post('/quiz-scoring/:assignmentId/fetch', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  try {
+    const data = camelify(await api.assignment(assignmentId));
+    const { url, kind, courseId, title, openDate } = data;
+    if (kind !== 'questions') {
+      return res.render('app/quiz-scoring/fetch-status.njk', {
+        error: `Assignment kind is "${kind}", expected "questions".`,
+      });
+    }
+    db.ensureAssignment({ assignmentId, openDate, courseId, title });
+    db.ensureFormAssessment({ assignmentId });
+    const students = db.studentsByCourse({ courseId });
+    const filename = `${url.slice(1)}/answers.json`;
+    let loaded = 0;
+    db.transaction(() => {
+      db.clearStudentAnswers({ assignmentId });
+      for (const student of students) {
+        if (!student.github) continue;
+        try {
+          const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+          const sha = repo.sha('main', filename);
+          if (sha) {
+            const contents = repo.contents(sha, filename);
+            const answers = JSON.parse(contents);
+            saveAnswers(student.github, assignmentId, answers);
+            loaded++;
+          }
+        } catch (e) {
+          console.log(`Error fetching answers for ${student.github}: ${e.message}`);
+        }
+      }
+    });
+    res.render('app/quiz-scoring/fetch-status.njk', { loaded, total: students.length });
+  } catch (e) {
+    res.render('app/quiz-scoring/fetch-status.njk', { error: e.message });
+  }
+});
+
+app.get('/quiz-scoring/:assignmentId/question/:questionNumber', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const questionNumber = Number(req.params.questionNumber);
+  const data = quizScoringData(assignmentId, questionNumber);
+  res.render('app/quiz-scoring/question-panel.njk', { ...data, assignmentId });
+});
+
+app.post('/quiz-scoring/:assignmentId/question/:questionNumber/score-choice', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const questionNumber = Number(req.params.questionNumber);
+  const correctAnswer = req.body.answer;
+  const unscored = db.unscoredAnswersForQuestion({ assignmentId, questionNumber });
+  db.transaction(() => {
+    for (const a of unscored) {
+      const score = a.answer === correctAnswer ? 1.0 : 0.0;
+      db.addScoredAnswer({ assignmentId, questionNumber, answer: a.answer, score });
+    }
+  });
+  const next = nextUnscoredQuestion(assignmentId, questionNumber);
+  const data = quizScoringData(assignmentId, next);
+  res.render('app/quiz-scoring/question-panel.njk', { ...data, assignmentId });
+});
+
+app.post('/quiz-scoring/:assignmentId/question/:questionNumber/toggle-mchoice', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const questionNumber = Number(req.params.questionNumber);
+  const { answer } = req.body;
+  const score = Number(req.body.score);
+  db.addScoredAnswer({ assignmentId, questionNumber, answer, score });
+  const remaining = db.unscoredAnswersForQuestion({ assignmentId, questionNumber });
+  const showQuestion =
+    remaining.length > 0 ? questionNumber : nextUnscoredQuestion(assignmentId, questionNumber);
+  const data = quizScoringData(assignmentId, showQuestion);
+  res.render('app/quiz-scoring/question-panel.njk', { ...data, assignmentId });
+});
+
+app.post('/quiz-scoring/:assignmentId/question/:questionNumber/score-free', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const questionNumber = Number(req.params.questionNumber);
+  const { answer } = req.body;
+  const score = Number(req.body.score);
+  db.addScoredAnswer({ assignmentId, questionNumber, answer, score });
+  const remaining = db.unscoredAnswersForQuestion({ assignmentId, questionNumber });
+  const showQuestion =
+    remaining.length > 0 ? questionNumber : nextUnscoredQuestion(assignmentId, questionNumber);
+  const data = quizScoringData(assignmentId, showQuestion);
+  res.render('app/quiz-scoring/question-panel.njk', { ...data, assignmentId });
 });
 
 app.listen(port, () => {

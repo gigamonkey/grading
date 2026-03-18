@@ -1,0 +1,26 @@
+{% extends "app/layout.njk" %}
+{% block title %}Score: {{ assignment.title }} - Gradebook{% endblock %}
+{% block content %}
+<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+
+<div style="margin-bottom: 1rem;">
+  <form hx-post="/quiz-scoring/{{ assignment.assignment_id }}/fetch"
+        hx-target="#fetch-status" hx-indicator="#fetch-spinner"
+        style="display: inline;">
+    <button type="submit">Fetch &amp; Load Answers</button>
+    <span id="fetch-spinner" class="htmx-indicator">Loading...</span>
+  </form>
+  <span id="fetch-status">
+    {% if studentCount %} {{ studentCount }} students loaded.{% endif %}
+  </span>
+</div>
+
+<div class="quiz-scoring-layout">
+  <div id="question-nav">
+    {% include "app/quiz-scoring/question-nav.njk" %}
+  </div>
+  <div id="question-panel">
+    {% include "app/quiz-scoring/question-panel.njk" %}
+  </div>
+</div>
+{% endblock %}

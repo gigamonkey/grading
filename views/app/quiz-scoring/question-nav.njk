@@ -1,0 +1,12 @@
+<div class="question-nav-list">
+  {% for q in questions %}
+  <a href="#"
+     class="question-nav-item{% if q.question_number == currentQuestion %} active{% endif %}{% if q.scored %} scored{% endif %}"
+     hx-get="/quiz-scoring/{{ assignmentId }}/question/{{ q.question_number }}"
+     hx-target="#question-panel"
+     hx-swap="innerHTML">
+    Q{{ q.question_number + 1 }}
+    {% if q.scored %}<span class="question-nav-check">&#10003;</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
