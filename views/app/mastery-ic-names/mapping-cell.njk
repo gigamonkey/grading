@@ -5,7 +5,8 @@
           hx-trigger="change, focusout"
           hx-target="closest td"
           hx-swap="outerHTML"
-          autofocus>
+          autofocus
+          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.removeAttribute('hx-put');this.removeAttribute('hx-trigger');htmx.ajax('GET','/mastery-ic-names/{{ courseId | urlencode }}/{{ standard | urlencode }}',{target:this.closest('td'),swap:'outerHTML'})}">
     <option value="">-- none --</option>
     {% for ic in icNames %}
     <option value="{{ ic }}" {% if ic == icName %}selected{% endif %}>{{ ic }}</option>

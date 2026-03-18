@@ -6,7 +6,8 @@
          hx-target="closest th"
          hx-swap="outerHTML"
          style="width:100%;margin:0"
-         autofocus onfocus="this.select()">
+         autofocus onfocus="this.select()"
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/checklist/{{ assignmentId }}/criteria/{{ seq }}/label',{target:this.closest('th'),swap:'outerHTML'})}">
 </th>
 {% else %}
 <th class="checklist-label"

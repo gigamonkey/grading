@@ -6,7 +6,8 @@
          hx-target="#checklist-table"
          hx-swap="innerHTML"
          style="width:100%;margin:0"
-         autofocus onfocus="this.select()">
+         autofocus onfocus="this.select()"
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/checklist/{{ assignmentId }}/criteria/{{ seq }}/points',{target:this.closest('td'),swap:'outerHTML'})}">
 </td>
 {% else %}
 <td class="checklist-points"
