@@ -3,7 +3,7 @@
   <h2>Question {{ question.question_number + 1 }}
     <small>({{ question.kind }})</small>
   </h2>
-  <p class="question-text">{{ question.question }}</p>
+  <pre class="question-text">{{ question.question }}</pre>
 
   {% if scoredAnswers.length %}
   <div class="scored-section">

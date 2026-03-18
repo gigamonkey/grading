@@ -298,7 +298,13 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
   padding: 1.25rem;
 }
 
-.question-text { font-size: 1rem; color: #444; margin-bottom: 1rem; }
+.question-text {
+  font-size: 1rem;
+  color: #444;
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+  font-family: system-ui, sans-serif;
+}
 
 .scoring-hint { font-size: 0.85rem; color: #666; margin-bottom: 0.5rem; }
 
