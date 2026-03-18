@@ -1,0 +1,79 @@
+{% extends "app/layout.njk" %}
+{% block title %}{{ student.sortable_name }} - Gradebook{% endblock %}
+{% block content %}
+<h1>{{ student.name }} <small>({{ student.sortable_name }})</small></h1>
+
+<table class="info-table">
+  <tr><th>Period</th><td>{{ student.period }}</td></tr>
+  <tr><th>Course</th><td>{{ student.course_id }}</td></tr>
+  <tr><th>GitHub</th><td><a href="https://gigamonkeys.com/berkeley-high-cs/{{ student.github }}">{{ student.github }}</a></td></tr>
+  <tr><th>Email</th><td class="copyable" onclick="navigator.clipboard.writeText('{{ student.email }}')">{{ student.email }} <span class="copy-icon">&#128203;</span></td></tr>
+  <tr><th>Student #</th><td class="copyable" onclick="navigator.clipboard.writeText('{{ student.student_number }}')">{{ student.student_number }} <span class="copy-icon">&#128203;</span></td></tr>
+</table>
+
+<h2>Assignment Scores</h2>
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Assignment</th>
+      <th>Date</th>
+      <th>IC Name</th>
+      <th>Score</th>
+      <th>Points</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in assignments %}
+    <tr>
+      <td><a href="/assignments/{{ a.assignment_id }}/students">{{ a.title }}</a></td>
+      <td>{{ a.date }}</td>
+      <td>{{ a.ic_name }}</td>
+      <td>{% if a.score != null %}{{ (a.score * 100) | round }}%{% else %}&mdash;{% endif %}</td>
+      <td>{% if a.points != null %}{{ a.points }} / {{ a.max_points }}{% else %}&mdash;{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No assignment scores.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Mastery Totals by Standard</h2>
+<table>
+  <thead>
+    <tr><th>Standard</th><th>Points</th></tr>
+  </thead>
+  <tbody>
+    {% for t in masteryTotals %}
+    <tr><td>{{ t.standard }}</td><td>{{ t.points }}</td></tr>
+    {% else %}
+    <tr><td colspan="2">No mastery points.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>All Mastery Points</h2>
+<table data-column-filters>
+  <thead>
+    <tr>
+      <th data-column-filter="0">Standard</th>
+      <th data-column-filter="1">Type</th>
+      <th>Points</th>
+      <th>Source</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in masteryPoints %}
+    <tr>
+      <td>{{ p.standard }}</td>
+      <td>{{ p.type }}</td>
+      <td>{{ p.points }}</td>
+      <td>{{ p.source }}</td>
+      <td>{{ p.date }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No mastery points.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

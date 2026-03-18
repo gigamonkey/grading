@@ -1,6 +1,6 @@
 {% for s in students %}
 <tr>
-  <td>{{ s.sortable_name }}</td>
+  <td><a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a></td>
   <td>{{ s.github }}</td>
   <td>{{ s.period }}</td>
   <td>{{ s.course_id }}</td>

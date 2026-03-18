@@ -20,7 +20,7 @@
   <tbody>
     {% for s in students %}
     <tr{% if s.override %} class="override"{% endif %}>
-      <td>{{ s.sortable_name }}</td>
+      <td><a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a></td>
       <td>{{ s.period }}</td>
       <td>{% if s.score != null %}{{ (s.score * 100) | round }}%{% else %}&mdash;{% endif %}</td>
       {% if assignment.points %}<td>{% if s.points != null %}{{ s.points }} / {{ s.max_points }}{% else %}&mdash;{% endif %}</td>{% endif %}

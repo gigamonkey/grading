@@ -415,3 +415,8 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
   padding-top: 0.75rem;
   border-top: 1px solid #eee;
 }
+
+.copyable { cursor: pointer; }
+.copyable:hover { background: #f0f0f0; }
+.copy-icon { opacity: 0.4; font-size: 0.85em; }
+.copyable:hover .copy-icon { opacity: 0.7; }

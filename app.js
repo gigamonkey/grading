@@ -141,6 +141,15 @@ app.get('/students', (req, res) => {
   }
 });
 
+app.get('/students/:userId', (req, res) => {
+  const userId = req.params.userId;
+  const student = db.studentById({ userId });
+  const assignments = db.studentAssignmentScores({ userId });
+  const masteryPoints = db.studentMasteryPoints({ userId });
+  const masteryTotals = db.studentMasteryTotals({ userId });
+  res.render('app/students/student.njk', { student, assignments, masteryPoints, masteryTotals });
+});
+
 // Overrides
 app.get('/overrides', (_req, res) => {
   const overrides = db.allOverrides();
