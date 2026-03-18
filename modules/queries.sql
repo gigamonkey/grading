@@ -314,7 +314,7 @@ DELETE FROM checklist_criteria WHERE assignment_id = $assignmentId AND seq = $se
 DELETE FROM checklist_marks WHERE assignment_id = $assignmentId AND seq = $seq;
 
 -- Quiz scoring
--- :name formAssessments :all
+-- :name formAssessmentsWithDetails :all
 SELECT fa.assignment_id, a.title, a.course_id, a.date,
   (SELECT count(*) FROM questions q WHERE q.assignment_id = fa.assignment_id) question_count,
   (SELECT count(DISTINCT sa.github) FROM student_answers sa
@@ -322,10 +322,6 @@ SELECT fa.assignment_id, a.title, a.course_id, a.date,
 FROM form_assessments fa
 JOIN assignments a USING (assignment_id)
 ORDER BY a.assignment_id DESC;
-
--- :name questionsForFormAssessment :all
-SELECT question_number, label, kind, question FROM questions
-WHERE assignment_id = $assignmentId ORDER BY question_number;
 
 -- :name unscoredAnswersForQuestion :all
 SELECT na.answer, count(DISTINCT sa.github) student_count

@@ -609,7 +609,7 @@ function nextUnscoredQuestion(assignmentId, afterQuestionNumber) {
 }
 
 app.get('/quiz-scoring', (_req, res) => {
-  const assessments = db.formAssessments();
+  const assessments = db.formAssessmentsWithDetails();
   res.render('app/quiz-scoring.njk', { assessments });
 });
 
@@ -619,7 +619,7 @@ app.get('/quiz-scoring/:assignmentId', (req, res) => {
     req.query.q != null ? Number(req.query.q) : firstUnscoredQuestion(assignmentId);
   const data = quizScoringData(assignmentId, questionNumber);
   const studentCount =
-    db.formAssessments().find((a) => a.assignment_id === assignmentId)?.student_count || 0;
+    db.formAssessmentsWithDetails().find((a) => a.assignment_id === assignmentId)?.student_count || 0;
   res.render('app/quiz-scoring/scoring.njk', { ...data, assignmentId, studentCount });
 });
 
