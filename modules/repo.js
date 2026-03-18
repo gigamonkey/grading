@@ -12,6 +12,7 @@ class Repo {
   }
 
   git(cmd) {
+    //console.log(cmd);
     return exec(`git -C ${this.directory} ${cmd}`);
   }
 
@@ -47,7 +48,6 @@ class Repo {
   changes(start, end, branch) {
     const range = `${start}^...${end}`;
     const cmd = `log --pretty=tformat:'%H %at' ${range} -- ${branch}`;
-    console.log('cmd', cmd);
     return this.git(cmd).trim().split('\n').map(s => this.parseCommit(s));
   }
 
