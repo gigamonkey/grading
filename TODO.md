@@ -11,12 +11,6 @@ Items here should be done in a branch which you should create. You may commit to
 the branch whenever you wish but the user will tell you when to merge the branch
 back into `main`.
 
-- [ ] There seems to be a bug in the `/checklists` page where if there isn't a
-      criterion named `"Turned in"` one gets added when we sort the table or
-      reload. While the first time we load an assignment it should create a
-      "Turned in" criterion, if it gets renamed there's no need to create a new
-      one.
-
 ## Medium
 
 Items here should be done in a worktree which you should create. You may commit
@@ -108,3 +102,9 @@ chronological order from oldest to newest.
 
 - [x] Make it so when adding an assignment the drop down to pick the standard
       also allows the user to enter a new standard name.
+
+- [x] There seems to be a bug in the `/checklists` page where if there isn't a
+      criterion named `"Turned in"` one gets added when we sort the table or
+      reload. While the first time we load an assignment it should create a
+      "Turned in" criterion, if it gets renamed there's no need to create a new
+      one.
