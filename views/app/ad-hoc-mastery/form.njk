@@ -1,0 +1,35 @@
+<form hx-post="/ad-hoc-mastery" hx-target="#ad-hoc-tbody" hx-swap="innerHTML">
+  <fieldset>
+    <legend>Student</legend>
+    <input type="search" placeholder="Search by name or GitHub..."
+      hx-get="/ad-hoc-mastery/search-students"
+      hx-trigger="input delay:300ms"
+      hx-target="#ad-hoc-student-results"
+      name="q">
+    <div id="ad-hoc-student-results"></div>
+  </fieldset>
+
+  <label>Standard
+    <input type="text" name="standard" required list="standards-list">
+    <datalist id="standards-list">
+      {% for s in standards %}
+      <option value="{{ s }}">
+      {% endfor %}
+    </datalist>
+  </label>
+
+  <label>Points <input type="number" name="points" required></label>
+
+  <label>Reason
+    <input type="text" name="reason" required list="reasons-list">
+    <datalist id="reasons-list">
+      {% for r in reasons %}
+      <option value="{{ r }}">
+      {% endfor %}
+    </datalist>
+  </label>
+
+  <label>Date <input type="date" name="date" value="{{ today }}" required></label>
+
+  <button type="submit">Add</button>
+</form>

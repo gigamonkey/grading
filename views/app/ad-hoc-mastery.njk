@@ -1,0 +1,24 @@
+{% extends "app/layout.njk" %}
+{% block title %}Ad Hoc Mastery Points - Gradebook{% endblock %}
+{% block content %}
+<h1>Ad Hoc Mastery Points</h1>
+<div id="ad-hoc-form">
+  <a hx-get="/ad-hoc-mastery/new" hx-target="#ad-hoc-form" hx-swap="innerHTML">+ New</a>
+</div>
+<table data-column-filters>
+  <thead>
+    <tr>
+      <th>Student</th>
+      <th data-column-filter="1">Period</th>
+      <th data-column-filter="2">Course</th>
+      <th data-column-filter="3">Standard</th>
+      <th>Points</th>
+      <th data-column-filter="5">Reason</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody id="ad-hoc-tbody">
+    {% include "app/ad-hoc-mastery/tbody.njk" %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "app/layout.njk" %}
+{% block title %}{{ reason }} - Ad Hoc Mastery Points{% endblock %}
+{% block content %}
+<h1>Ad Hoc Mastery: {{ reason }}</h1>
+<p><a href="/ad-hoc-mastery">&larr; All ad hoc mastery points</a></p>
+
+<h3>Add record <small>({{ standard }})</small></h3>
+<form hx-post="/ad-hoc-mastery/reason/{{ reason | urlencode }}" hx-target="#reason-tbody" hx-swap="innerHTML">
+  <input type="hidden" name="standard" value="{{ standard }}">
+  <fieldset>
+    <legend>Student</legend>
+    <input type="search" placeholder="Search by name or GitHub..."
+      hx-get="/ad-hoc-mastery/search-students"
+      hx-trigger="input delay:300ms"
+      hx-target="#reason-student-results"
+      name="q">
+    <div id="reason-student-results"></div>
+  </fieldset>
+
+  <label>Points <input type="number" name="points" required></label>
+  <label>Date <input type="date" name="date" value="{{ today }}" required></label>
+
+  <button type="submit">Add</button>
+</form>
+
+<table data-column-filters>
+  <thead>
+    <tr>
+      <th>Student</th>
+      <th data-column-filter="1">Period</th>
+      <th data-column-filter="2">Course</th>
+      <th data-column-filter="3">Standard</th>
+      <th>Points</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody id="reason-tbody">
+    {% include "app/ad-hoc-mastery/reason-tbody.njk" %}
+  </tbody>
+</table>
+{% endblock %}

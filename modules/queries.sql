@@ -347,3 +347,62 @@ ON CONFLICT(assignment_id, question_number, answer) DO UPDATE SET score = exclud
 -- :name deleteScoredAnswer :run
 DELETE FROM scored_answers
 WHERE assignment_id = $assignmentId AND question_number = $questionNumber AND answer = $answer;
+
+-- Ad hoc mastery points
+-- :name allAdHocMasteryPoints :all
+SELECT ah.user_id, r.sortable_name, r.period, r.course_id,
+       ah.standard, ah.points, ah.reason, ah.date
+FROM ad_hoc_mastery_points ah
+JOIN roster r USING (user_id)
+ORDER BY ah.date DESC, r.sortable_name;
+
+-- :name insertAdHocMasteryPoints :insert
+INSERT INTO ad_hoc_mastery_points (user_id, date, standard, points, reason)
+VALUES ($userId, $date, $standard, $points, $reason);
+
+-- :name adHocReasons :list
+SELECT DISTINCT reason FROM ad_hoc_mastery_points ORDER BY reason;
+
+-- :name adHocMasteryPointsByReason :all
+SELECT ah.rowid, ah.user_id, r.sortable_name, r.period, r.course_id,
+       ah.standard, ah.points, ah.reason, ah.date
+FROM ad_hoc_mastery_points ah
+JOIN roster r USING (user_id)
+WHERE ah.reason = $reason
+ORDER BY ah.date DESC, r.sortable_name;
+
+-- :name updateAdHocMasteryPoints :run
+UPDATE ad_hoc_mastery_points SET points = $points WHERE rowid = $rowid;
+
+-- :name studentById :get
+SELECT * FROM roster WHERE user_id = $userId;
+
+-- :name studentMasteryPoints :all
+SELECT mp.standard, mp.points, 'assignment' type, mp.title source, a.date
+FROM mastery_assignment_points mp
+JOIN assignments a USING (assignment_id)
+WHERE mp.user_id = $userId
+UNION ALL
+SELECT standard, points, 'ad hoc' type, reason source, date
+FROM ad_hoc_mastery_points
+WHERE user_id = $userId
+UNION ALL
+SELECT sp.standard, sp.points, 'speedrun' type, a.title source,
+       date(max(cs.finished_at), 'unixepoch', 'localtime') date
+FROM speedrun_mastery_points sp
+JOIN assignments a USING (assignment_id)
+JOIN completed_speedruns cs USING (user_id, assignment_id)
+JOIN graded_speedruns gs USING (speedrun_id)
+WHERE sp.user_id = $userId AND gs.ok = 1
+GROUP BY sp.user_id, sp.assignment_id
+ORDER BY standard, type, source;
+
+-- :name studentMasteryTotals :all
+SELECT standard, sum(points) points
+FROM all_mastery_points
+WHERE user_id = $userId
+GROUP BY standard
+ORDER BY standard;
+
+-- :name allStandards :list
+SELECT DISTINCT standard FROM standards ORDER BY standard;

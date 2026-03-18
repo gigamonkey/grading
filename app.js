@@ -166,6 +166,89 @@ app.post('/overrides', (req, res) => {
   res.render('app/overrides/post-response.njk', { overrides });
 });
 
+// Ad Hoc Mastery Points
+app.get('/ad-hoc-mastery', (_req, res) => {
+  const points = db.allAdHocMasteryPoints();
+  res.render('app/ad-hoc-mastery.njk', { points });
+});
+
+app.get('/ad-hoc-mastery/new', (_req, res) => {
+  const standards = db.allStandards();
+  const reasons = db.adHocReasons();
+  const today = new Date().toISOString().slice(0, 10);
+  res.render('app/ad-hoc-mastery/form.njk', { standards, reasons, today });
+});
+
+app.get('/ad-hoc-mastery/search-students', (req, res) => {
+  const students = db.findUser({ q: req.query.q || '' });
+  res.render('app/overrides/student-results.njk', { students });
+});
+
+app.post('/ad-hoc-mastery', (req, res) => {
+  const { userId, standard, points, reason, date } = req.body;
+  db.insertAdHocMasteryPoints({
+    userId,
+    standard,
+    points: Number(points),
+    reason,
+    date,
+  });
+  const allPoints = db.allAdHocMasteryPoints();
+  const standards = db.allStandards();
+  const reasons = db.adHocReasons();
+  res.render('app/ad-hoc-mastery/post-response.njk', { points: allPoints, standards, reasons });
+});
+
+app.get('/ad-hoc-mastery/reason/:reason', (req, res) => {
+  const reason = req.params.reason;
+  const points = db.adHocMasteryPointsByReason({ reason });
+  const standard = req.query.standard || (points.length ? points[0].standard : '');
+  const today = new Date().toISOString().slice(0, 10);
+  res.render('app/ad-hoc-mastery/reason.njk', { points, reason, standard, today });
+});
+
+app.post('/ad-hoc-mastery/reason/:reason', (req, res) => {
+  const reason = req.params.reason;
+  const { userId, standard, points, date } = req.body;
+  db.insertAdHocMasteryPoints({
+    userId,
+    standard,
+    points: Number(points),
+    reason,
+    date,
+  });
+  const allPoints = db.adHocMasteryPointsByReason({ reason });
+  res.render('app/ad-hoc-mastery/reason-tbody.njk', { points: allPoints });
+});
+
+app.get('/ad-hoc-mastery/student/:userId', (req, res) => {
+  const userId = req.params.userId;
+  const student = db.studentById({ userId });
+  const points = db.studentMasteryPoints({ userId });
+  const totals = db.studentMasteryTotals({ userId });
+  res.render('app/ad-hoc-mastery/student.njk', { student, points, totals });
+});
+
+app.get('/ad-hoc-mastery/:rowid/points', (_req, res) => {
+  const rowid = Number(_req.params.rowid);
+  const editing = _req.query.edit === '1';
+  res.render('app/ad-hoc-mastery/points-cell.njk', {
+    rowid,
+    points: Number(_req.query.points),
+    editing,
+  });
+});
+
+app.put('/ad-hoc-mastery/:rowid/points', (req, res) => {
+  const rowid = Number(req.params.rowid);
+  db.updateAdHocMasteryPoints({ rowid, points: Number(req.body.points) });
+  res.render('app/ad-hoc-mastery/points-cell.njk', {
+    rowid,
+    points: Number(req.body.points),
+    editing: false,
+  });
+});
+
 // To Update
 app.get('/to-update', (_req, res) => {
   const rows = db.toUpdate({ period: null });
@@ -648,7 +731,8 @@ async function fetchAndLoadAnswers(assignmentId) {
 app.get('/quiz-scoring/:assignmentId', async (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const studentCount =
-    db.formAssessmentsWithDetails().find((a) => a.assignment_id === assignmentId)?.student_count || 0;
+    db.formAssessmentsWithDetails().find((a) => a.assignment_id === assignmentId)?.student_count ||
+    0;
   if (studentCount === 0) {
     try {
       await fetchAndLoadAnswers(assignmentId);
@@ -660,8 +744,13 @@ app.get('/quiz-scoring/:assignmentId', async (req, res) => {
     req.query.q != null ? Number(req.query.q) : firstUnscoredQuestion(assignmentId);
   const data = quizScoringData(assignmentId, questionNumber);
   const newStudentCount =
-    db.formAssessmentsWithDetails().find((a) => a.assignment_id === assignmentId)?.student_count || 0;
-  res.render('app/quiz-scoring/scoring.njk', { ...data, assignmentId, studentCount: newStudentCount });
+    db.formAssessmentsWithDetails().find((a) => a.assignment_id === assignmentId)?.student_count ||
+    0;
+  res.render('app/quiz-scoring/scoring.njk', {
+    ...data,
+    assignmentId,
+    studentCount: newStudentCount,
+  });
 });
 
 app.post('/quiz-scoring/:assignmentId/fetch', async (req, res) => {

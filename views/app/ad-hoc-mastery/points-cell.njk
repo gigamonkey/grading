@@ -1,0 +1,17 @@
+{% if editing %}
+<td class="editing">
+  <input type="number" name="points" value="{{ points }}" step="1"
+         hx-put="/ad-hoc-mastery/{{ rowid }}/points"
+         hx-trigger="change, keyup[key=='Enter']"
+         hx-target="closest td"
+         hx-swap="outerHTML"
+         style="width:4em;margin:0"
+         autofocus onfocus="this.select()"
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/ad-hoc-mastery/{{ rowid }}/points?points={{ points }}',{target:this.closest('td'),swap:'outerHTML'})}">
+</td>
+{% else %}
+<td hx-get="/ad-hoc-mastery/{{ rowid }}/points?points={{ points }}&edit=1"
+    hx-trigger="click"
+    hx-target="this"
+    hx-swap="outerHTML">{{ points }}</td>
+{% endif %}

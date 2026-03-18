@@ -1,0 +1,12 @@
+{% for p in points %}
+<tr>
+  <td><a href="/ad-hoc-mastery/student/{{ p.user_id }}">{{ p.sortable_name }}</a></td>
+  <td>{{ p.period }}</td>
+  <td>{{ p.course_id }}</td>
+  <td>{{ p.standard }}</td>
+  {% set rowid = p.rowid %}{% set points = p.points %}{% include "app/ad-hoc-mastery/points-cell.njk" %}
+  <td>{{ p.date }}</td>
+</tr>
+{% else %}
+<tr><td colspan="6">No records for this reason.</td></tr>
+{% endfor %}

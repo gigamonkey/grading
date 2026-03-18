@@ -1,0 +1,46 @@
+{% extends "app/layout.njk" %}
+{% block title %}{{ student.sortable_name }} Mastery Points - Gradebook{% endblock %}
+{% block content %}
+<h1>{{ student.sortable_name }} <small>Period {{ student.period }}, {{ student.course_id }}</small></h1>
+<p><a href="/ad-hoc-mastery">&larr; Ad hoc mastery points</a></p>
+
+<h2>Totals by Standard</h2>
+<table>
+  <thead>
+    <tr><th>Standard</th><th>Points</th></tr>
+  </thead>
+  <tbody>
+    {% for t in totals %}
+    <tr><td>{{ t.standard }}</td><td>{{ t.points }}</td></tr>
+    {% else %}
+    <tr><td colspan="2">No mastery points.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>All Mastery Points</h2>
+<table data-column-filters>
+  <thead>
+    <tr>
+      <th data-column-filter="0">Standard</th>
+      <th data-column-filter="1">Type</th>
+      <th>Points</th>
+      <th>Source</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in points %}
+    <tr>
+      <td>{{ p.standard }}</td>
+      <td>{{ p.type }}</td>
+      <td>{{ p.points }}</td>
+      <td>{{ p.source }}</td>
+      <td>{{ p.date }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No mastery points.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
