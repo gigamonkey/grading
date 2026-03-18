@@ -416,6 +416,8 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
   border-top: 1px solid #eee;
 }
 
+.info-table { width: auto; }
+
 .copyable { cursor: pointer; }
 .copyable:hover { background: #f0f0f0; }
 .copy-icon { opacity: 0.4; font-size: 0.85em; }
