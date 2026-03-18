@@ -57,7 +57,7 @@ wanted.
 
 ## Plans
 
-This is where you put new items to actually implement a plan, after you havedi
+This is where you put new items to actually implement a plan, after you haved
 written the plan.
 
 ## Done
