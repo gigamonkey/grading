@@ -292,6 +292,7 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 
 .question-panel-content {
   flex: 1;
+  max-width: 40em;
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
