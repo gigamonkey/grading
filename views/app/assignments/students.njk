@@ -1,0 +1,32 @@
+{% extends "app/layout.njk" %}
+{% block title %}{{ assignment.title }} - Students{% endblock %}
+{% block content %}
+<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+<p>
+  {% if assignment.standard %}Standard: {{ assignment.standard }}{% endif %}
+  {% if assignment.points %} &middot; {{ assignment.points }} points{% endif %}
+</p>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Student</th>
+      <th>Period</th>
+      <th>Score</th>
+      {% if assignment.points %}<th>Points</th>{% endif %}
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in students %}
+    <tr{% if s.override %} class="override"{% endif %}>
+      <td>{{ s.sortable_name }}</td>
+      <td>{{ s.period }}</td>
+      <td>{% if s.score != null %}{{ (s.score * 100) | round }}%{% else %}&mdash;{% endif %}</td>
+      {% if assignment.points %}<td>{% if s.points != null %}{{ s.points }} / {{ s.max_points }}{% else %}&mdash;{% endif %}</td>{% endif %}
+      <td>{% if s.override %}override{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

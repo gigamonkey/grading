@@ -11,7 +11,7 @@
     <span id="fetch-spinner" class="htmx-indicator">Loading...</span>
   </form>
   <span id="fetch-status">
-    {% if studentCount %} {{ studentCount }} students loaded.{% endif %}
+    {% if studentCount %} <a href="/assignments/{{ assignment.assignment_id }}/students">{{ studentCount }} students</a> loaded.{% endif %}
   </span>
 </div>
 

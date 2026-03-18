@@ -406,3 +406,14 @@ ORDER BY standard;
 
 -- :name allStandards :list
 SELECT DISTINCT standard FROM standards ORDER BY standard;
+
+-- :name assignmentStudentScores :all
+SELECT r.user_id, r.sortable_name, r.period, r.course_id,
+       s.score, cast(round(s.score * apv.points) as integer) points,
+       apv.points max_points, s.override
+FROM assigned a
+JOIN roster r USING (user_id)
+LEFT JOIN assignment_scores s ON s.user_id = a.user_id AND s.assignment_id = a.assignment_id
+LEFT JOIN assignment_point_values apv ON apv.assignment_id = a.assignment_id
+WHERE a.assignment_id = $assignmentId
+ORDER BY r.sortable_name;

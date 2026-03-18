@@ -58,6 +58,13 @@ app.get('/assignments/lookup', async (req, res) => {
   }
 });
 
+app.get('/assignments/:assignmentId/students', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const assignment = db.assignmentById({ assignmentId });
+  const students = db.assignmentStudentScores({ assignmentId });
+  res.render('app/assignments/students.njk', { assignment, students });
+});
+
 app.get('/assignments/:assignmentId/edit-row', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const a = db.assignmentById({ assignmentId });
