@@ -7,7 +7,7 @@
 
   {% if scoredAnswers.length %}
   <div class="scored-section">
-    <h3>Scored</h3>
+    <h3>Scored ({{ scoredAnswers.length }} of {{ scoredAnswers.length + unscoredAnswers.length }})</h3>
     {% for a in scoredAnswers %}
     <div class="scored-answer {% if a.score >= 1 %}correct{% elif a.score > 0 %}partial{% elif a.score < 0 %}incorrect{% else %}zero{% endif %}">
       <span class="answer-text">{{ a.answer }}</span>
@@ -25,7 +25,7 @@
 
   {% if unscoredAnswers.length %}
   <div class="unscored-section">
-    <h3>Unscored</h3>
+    <h3>Unscored ({{ unscoredAnswers.length }} of {{ scoredAnswers.length + unscoredAnswers.length }})</h3>
 
     {% if question.kind in ['choices', 'ochoices', 'tf', 'yn'] %}
     <p class="scoring-hint">Click the correct answer:</p>
@@ -65,7 +65,7 @@
     {% endfor %}
 
     {% elif question.kind == 'freeanswer' %}
-    <p class="scoring-hint">Click check/x for 1/0, or type a score and press Enter:</p>
+    <p class="scoring-hint">Click check/x for 1/0, or a partial credit button:</p>
     {% for a in unscoredAnswers %}
     <div class="answer-row free-row">
       <span class="answer-text">{{ a.answer }}</span>
@@ -84,12 +84,15 @@
         <input type="hidden" name="score" value="0">
         <button type="submit" class="answer-button mchoice-incorrect" title="Score 0">&#10007;</button>
       </form>
+      {% for v in [0.25, 0.5, 0.75] %}
       <form style="display: inline;"
             hx-post="/quiz-scoring/{{ assignmentId }}/question/{{ question.question_number }}/score-free"
             hx-target="#question-panel" hx-swap="innerHTML">
         <input type="hidden" name="answer" value="{{ a.answer }}">
-        <input type="text" name="score" style="width: 3rem;" placeholder=".5">
+        <input type="hidden" name="score" value="{{ v }}">
+        <button type="submit" class="answer-button partial-credit" title="Score {{ v }}">{{ v }}</button>
       </form>
+      {% endfor %}
     </div>
     {% endfor %}
 
