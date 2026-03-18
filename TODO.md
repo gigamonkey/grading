@@ -11,7 +11,6 @@ Items here should be done in a branch which you should create. You may commit to
 the branch whenever you wish but the user will tell you when to merge the branch
 back into `main`.
 
-
 - [ ] There seems to be a bug in the `/checklists` page where if there isn't a
       criterion named `"Turned in"` one gets added when we sort the table or
       reload. While the first time we load an assignment it should create a
@@ -85,3 +84,21 @@ chronological order from oldest to newest.
 - [x] Make it so any any click-to-edit elements such as on the checklist grading
       page, hitting Esc while the element is edit mode exits edit mode, i.e.
       turns an input back into plain text.
+
+- [x] Write a plan for adding a feature to the website that combines the
+      functionality of `get-file.js`, `load-answers.js`, and `score-answers.py`
+      for scoring answers to a quiz. It does not need to write anything to files
+      like `get-file.js` does but it should fetch the `answers.json` files from
+      repos under `$BHS_CS_REPOS` the same way `get-file.js` does. Then it
+      should load the answers into the db the way `load-answers.js` does.
+      Finally, there should be a page on the website for scoring all the answers
+      submitted per question similar to the way `score-answers.py` does but
+      rather than asking one at a time, it should present each question and all
+      the unique answers to that question (with a number showing how many
+      students gave that answer) and a place to click to mark the answer as
+      correct or incorrect for choices, ochoices, mchoices, and omchoices and a
+      place to enter the score for freeanswers. When all answers are scored it
+      should advance to the next question but there should be nav elements for
+      moving through the set of questions. (plan: [quiz-scoring.md](plans/quiz-scoring.md))
+
+- [x] Implement the plan in [plans/quiz-scoring.md](plans/quiz-scoring.md)
