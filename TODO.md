@@ -43,6 +43,9 @@ Items in here should result in a new plan file in `plans/`. Feel free to ask
 questions about requirements if the item is not clear enough about what is
 wanted.
 
+- [ ] Write a plan for making `standards` a first class thing in the database
+      with a UI for adding them.
+
 ## Large
 
 - [ ] Unify Java and Javascript speedrun and history testing scripts. Make
@@ -54,7 +57,7 @@ wanted.
 
 ## Plans
 
-This is where you put new items to actually implement a plan, after you have
+This is where you put new items to actually implement a plan, after you havedi
 written the plan.
 
 ## Done
@@ -102,3 +105,6 @@ chronological order from oldest to newest.
       moving through the set of questions. (plan: [quiz-scoring.md](plans/quiz-scoring.md))
 
 - [x] Implement the plan in [plans/quiz-scoring.md](plans/quiz-scoring.md)
+
+- [x] Make it so when adding an assignment the drop down to pick the standard
+      also allows the user to enter a new standard name.

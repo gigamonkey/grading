@@ -15,20 +15,18 @@
     </select>
   </td>
   <td>
-    <select name="standard"
+    <input type="text" name="standard" value="{{ a.standard or '' }}" list="standards-list-{{ a.assignment_id }}" required
       {% if a.assignment_type == 'M' %}
         hx-get="/assignments/{{ a.assignment_id }}/mastery-ic-name"
         hx-trigger="change"
         hx-target="#ic-name-cell-{{ a.assignment_id }}"
         hx-include="this"
       {% endif %}>
-      {% if a.standard and a.standard not in standards %}
-      <option value="{{ a.standard }}" selected>{{ a.standard }}</option>
-      {% endif %}
+    <datalist id="standards-list-{{ a.assignment_id }}">
       {% for s in standards %}
-      <option value="{{ s }}" {% if s == a.standard %}selected{% endif %}>{{ s }}</option>
+      <option value="{{ s }}">
       {% endfor %}
-    </select>
+    </datalist>
   </td>
   <td id="ic-name-cell-{{ a.assignment_id }}">
     {% if a.assignment_type == 'M' %}

@@ -4,12 +4,12 @@
 <p class="info">{{ assignment.title }} ({{ assignment.course_id }})</p>
 <div id="standard-field" hx-swap-oob="true">
   <label>Standard
-    <select name="standard" required>
-      <option value="">-- select --</option>
+    <input type="text" name="standard" required list="standards-list">
+    <datalist id="standards-list">
       {% for s in standards %}
-      <option value="{{ s }}">{{ s }}</option>
+      <option value="{{ s }}">
       {% endfor %}
-    </select>
+    </datalist>
   </label>
 </div>
 {% endif %}
