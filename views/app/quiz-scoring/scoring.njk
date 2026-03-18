@@ -7,7 +7,7 @@
   <form hx-post="/quiz-scoring/{{ assignment.assignment_id }}/fetch"
         hx-target="#fetch-status" hx-indicator="#fetch-spinner"
         style="display: inline;">
-    <button type="submit">Fetch &amp; Load Answers</button>
+    <button type="submit">Reload Answers</button>
     <span id="fetch-spinner" class="htmx-indicator">Loading...</span>
   </form>
   <span id="fetch-status">

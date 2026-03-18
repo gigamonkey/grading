@@ -613,50 +613,62 @@ app.get('/quiz-scoring', (_req, res) => {
   res.render('app/quiz-scoring.njk', { assessments });
 });
 
-app.get('/quiz-scoring/:assignmentId', (req, res) => {
+async function fetchAndLoadAnswers(assignmentId) {
+  const data = camelify(await api.assignment(assignmentId));
+  const { url, kind, courseId, title, openDate } = data;
+  if (kind !== 'questions') {
+    throw new Error(`Assignment kind is "${kind}", expected "questions".`);
+  }
+  db.ensureAssignment({ assignmentId, openDate, courseId, title });
+  db.ensureFormAssessment({ assignmentId });
+  const students = db.studentsByCourse({ courseId });
+  const filename = `${url.slice(1)}/answers.json`;
+  let loaded = 0;
+  db.transaction(() => {
+    db.clearStudentAnswers({ assignmentId });
+    for (const student of students) {
+      if (!student.github) continue;
+      try {
+        const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+        const sha = repo.sha('main', filename);
+        if (sha) {
+          const contents = repo.contents(sha, filename);
+          const answers = JSON.parse(contents);
+          saveAnswers(student.github, assignmentId, answers);
+          loaded++;
+        }
+      } catch (e) {
+        console.log(`Error fetching answers for ${student.github}: ${e.message}`);
+      }
+    }
+  });
+  return { loaded, total: students.length };
+}
+
+app.get('/quiz-scoring/:assignmentId', async (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
+  const studentCount =
+    db.formAssessmentsWithDetails().find((a) => a.assignment_id === assignmentId)?.student_count || 0;
+  if (studentCount === 0) {
+    try {
+      await fetchAndLoadAnswers(assignmentId);
+    } catch (e) {
+      console.log(`Auto-fetch failed for assignment ${assignmentId}: ${e.message}`);
+    }
+  }
   const questionNumber =
     req.query.q != null ? Number(req.query.q) : firstUnscoredQuestion(assignmentId);
   const data = quizScoringData(assignmentId, questionNumber);
-  const studentCount =
+  const newStudentCount =
     db.formAssessmentsWithDetails().find((a) => a.assignment_id === assignmentId)?.student_count || 0;
-  res.render('app/quiz-scoring/scoring.njk', { ...data, assignmentId, studentCount });
+  res.render('app/quiz-scoring/scoring.njk', { ...data, assignmentId, studentCount: newStudentCount });
 });
 
 app.post('/quiz-scoring/:assignmentId/fetch', async (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   try {
-    const data = camelify(await api.assignment(assignmentId));
-    const { url, kind, courseId, title, openDate } = data;
-    if (kind !== 'questions') {
-      return res.render('app/quiz-scoring/fetch-status.njk', {
-        error: `Assignment kind is "${kind}", expected "questions".`,
-      });
-    }
-    db.ensureAssignment({ assignmentId, openDate, courseId, title });
-    db.ensureFormAssessment({ assignmentId });
-    const students = db.studentsByCourse({ courseId });
-    const filename = `${url.slice(1)}/answers.json`;
-    let loaded = 0;
-    db.transaction(() => {
-      db.clearStudentAnswers({ assignmentId });
-      for (const student of students) {
-        if (!student.github) continue;
-        try {
-          const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
-          const sha = repo.sha('main', filename);
-          if (sha) {
-            const contents = repo.contents(sha, filename);
-            const answers = JSON.parse(contents);
-            saveAnswers(student.github, assignmentId, answers);
-            loaded++;
-          }
-        } catch (e) {
-          console.log(`Error fetching answers for ${student.github}: ${e.message}`);
-        }
-      }
-    });
-    res.render('app/quiz-scoring/fetch-status.njk', { loaded, total: students.length });
+    const { loaded, total } = await fetchAndLoadAnswers(assignmentId);
+    res.render('app/quiz-scoring/fetch-status.njk', { loaded, total });
   } catch (e) {
     res.render('app/quiz-scoring/fetch-status.njk', { error: e.message });
   }
