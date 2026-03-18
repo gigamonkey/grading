@@ -12,6 +12,12 @@
     <div class="scored-answer {% if a.score >= 1 %}correct{% elif a.score > 0 %}partial{% elif a.score < 0 %}incorrect{% else %}zero{% endif %}">
       <span class="answer-text">{{ a.answer }}</span>
       <span class="answer-score">{{ a.score }}</span>
+      <form style="display: inline;"
+            hx-post="/quiz-scoring/{{ assignmentId }}/question/{{ question.question_number }}/unscore"
+            hx-target="#question-panel" hx-swap="innerHTML">
+        <input type="hidden" name="answer" value="{{ a.answer }}">
+        <button type="submit" class="rescore-button" title="Rescore">&#9998;</button>
+      </form>
     </div>
     {% endfor %}
   </div>

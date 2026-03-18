@@ -382,6 +382,17 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 .scored-answer.incorrect { background: #f8d7da; color: #721c24; }
 .scored-answer.zero { background: #f8d7da; color: #721c24; }
 
+.rescore-button {
+  background: transparent;
+  color: #888;
+  border: none;
+  padding: 0 0.3rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.rescore-button:hover { color: #333; }
+
 .question-panel-nav {
   display: flex;
   gap: 0.5rem;

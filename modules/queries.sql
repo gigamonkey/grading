@@ -343,3 +343,7 @@ ORDER BY score DESC, answer;
 INSERT INTO scored_answers (assignment_id, question_number, answer, score)
 VALUES ($assignmentId, $questionNumber, $answer, $score)
 ON CONFLICT(assignment_id, question_number, answer) DO UPDATE SET score = excluded.score;
+
+-- :name deleteScoredAnswer :run
+DELETE FROM scored_answers
+WHERE assignment_id = $assignmentId AND question_number = $questionNumber AND answer = $answer;

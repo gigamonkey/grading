@@ -711,6 +711,15 @@ app.post('/quiz-scoring/:assignmentId/question/:questionNumber/score-free', (req
   res.render('app/quiz-scoring/question-panel.njk', { ...data, assignmentId });
 });
 
+app.post('/quiz-scoring/:assignmentId/question/:questionNumber/unscore', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const questionNumber = Number(req.params.questionNumber);
+  const { answer } = req.body;
+  db.deleteScoredAnswer({ assignmentId, questionNumber, answer });
+  const data = quizScoringData(assignmentId, questionNumber);
+  res.render('app/quiz-scoring/question-panel.njk', { ...data, assignmentId });
+});
+
 app.listen(port, () => {
   console.log(`Gradebook app running at http://localhost:${port}`);
 });
