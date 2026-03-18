@@ -324,10 +324,10 @@ function checklistData(assignmentId) {
   return { assignment, criteria, students, markMap, totalPoints, studentPoints };
 }
 
-function ensureChecklistCriterion(assignmentId, criteriaLabel) {
+function ensureDefaultCriteria(assignmentId) {
   const criteria = db.checklistCriteria({ assignmentId });
-  if (!criteria.some((c) => c.label === criteriaLabel)) {
-    db.addChecklistCriterion({ assignmentId, criteriaLabel });
+  if (criteria.length === 0) {
+    db.addChecklistCriterion({ assignmentId, criteriaLabel: 'Turned in' });
   }
 }
 
@@ -343,7 +343,7 @@ app.get('/checklist', (req, res) => {
 
 app.get('/checklist/:assignmentId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
-  ensureChecklistCriterion(assignmentId, 'Turned in');
+  ensureDefaultCriteria(assignmentId);
   const sort = ['name', 'github', 'score', 'points'].includes(req.query.sort)
     ? req.query.sort
     : 'github';
