@@ -378,8 +378,9 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 }
 
 .scored-answer.correct { background: #d4edda; color: #155724; }
+.scored-answer.partial { background: #fff3cd; color: #856404; }
 .scored-answer.incorrect { background: #f8d7da; color: #721c24; }
-.scored-answer.zero { background: #fff3cd; color: #856404; }
+.scored-answer.zero { background: #f8d7da; color: #721c24; }
 
 .question-panel-nav {
   display: flex;
