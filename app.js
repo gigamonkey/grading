@@ -313,6 +313,12 @@ app.get('/mastery-to-update', (_req, res) => {
   res.render('app/mastery-to-update.njk', { rows });
 });
 
+app.get('/ic-assignment/:icName', (req, res) => {
+  const icName = req.params.icName;
+  const rows = db.icAssignmentScores({ icName });
+  res.render('app/ic-assignment.njk', { icName, rows });
+});
+
 // Mastery IC Names
 app.get('/mastery-ic-names', (req, res) => {
   const courses = db.distinctCourses();
@@ -442,9 +448,9 @@ function renderChecklistTable(
 
 function checklistData(assignmentId) {
   const assignment = db.assignmentById({ assignmentId });
-  const criteria = db.checklistCriteria({ assignmentId });
+  const criteria = db.checklistCriteriaForAssignment({ assignmentId });
   const students = db.studentsByCourse({ courseId: assignment.course_id });
-  const marks = db.checklistMarks({ assignmentId });
+  const marks = db.checklistMarksForAssignment({ assignmentId });
   const markMap = {};
   for (const m of marks) {
     if (!markMap[m.user_id]) markMap[m.user_id] = {};
@@ -461,7 +467,7 @@ function checklistData(assignmentId) {
 }
 
 function ensureDefaultCriteria(assignmentId) {
-  const criteria = db.checklistCriteria({ assignmentId });
+  const criteria = db.checklistCriteriaForAssignment({ assignmentId });
   if (criteria.length === 0) {
     db.addChecklistCriterion({ assignmentId, criteriaLabel: 'Turned in' });
   }
@@ -529,8 +535,8 @@ app.put('/checklist/:assignmentId/mark/:userId/:seq', (req, res) => {
   } else {
     db.deleteChecklistMark({ userId, assignmentId, seq });
   }
-  const criteria = db.checklistCriteria({ assignmentId });
-  const marks = db.checklistMarks({ assignmentId });
+  const criteria = db.checklistCriteriaForAssignment({ assignmentId });
+  const marks = db.checklistMarksForAssignment({ assignmentId });
   const userMarks = {};
   for (const m of marks) {
     if (m.user_id === userId) userMarks[m.seq] = m.value;
@@ -553,7 +559,7 @@ app.put('/checklist/:assignmentId/mark/:userId/:seq', (req, res) => {
 app.get('/checklist/:assignmentId/criteria/:seq/label', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  const criterion = db.checklistCriteriaForAssignment({ assignmentId }).find((c) => c.seq === seq);
   res.render('app/checklist/label-cell.njk', {
     assignmentId,
     seq,
@@ -565,7 +571,7 @@ app.get('/checklist/:assignmentId/criteria/:seq/label', (req, res) => {
 app.get('/checklist/:assignmentId/criteria/:seq/label/edit', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  const criterion = db.checklistCriteriaForAssignment({ assignmentId }).find((c) => c.seq === seq);
   res.render('app/checklist/label-cell.njk', {
     assignmentId,
     seq,
@@ -579,7 +585,7 @@ app.put('/checklist/:assignmentId/criteria/:seq/label', (req, res) => {
   const seq = Number(req.params.seq);
   const criteriaLabel = req.body.criteriaLabel?.trim() || '';
   if (criteriaLabel) db.updateChecklistCriterionLabel({ assignmentId, seq, criteriaLabel });
-  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  const criterion = db.checklistCriteriaForAssignment({ assignmentId }).find((c) => c.seq === seq);
   res.render('app/checklist/label-cell.njk', {
     assignmentId,
     seq,
@@ -591,7 +597,7 @@ app.put('/checklist/:assignmentId/criteria/:seq/label', (req, res) => {
 app.get('/checklist/:assignmentId/criteria/:seq/points', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  const criterion = db.checklistCriteriaForAssignment({ assignmentId }).find((c) => c.seq === seq);
   res.render('app/checklist/points-cell.njk', {
     assignmentId,
     seq,
@@ -603,7 +609,7 @@ app.get('/checklist/:assignmentId/criteria/:seq/points', (req, res) => {
 app.get('/checklist/:assignmentId/criteria/:seq/points/edit', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criterion = db.checklistCriteria({ assignmentId }).find((c) => c.seq === seq);
+  const criterion = db.checklistCriteriaForAssignment({ assignmentId }).find((c) => c.seq === seq);
   res.render('app/checklist/points-cell.njk', {
     assignmentId,
     seq,

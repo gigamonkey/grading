@@ -278,7 +278,7 @@ SELECT user_id, github, sortable_name, period
 FROM roster WHERE course_id = $courseId
 ORDER BY period, sortable_name;
 
--- :name checklistCriteria :all
+-- :name checklistCriteriaForAssignment :all
 SELECT seq, label, points FROM checklist_criteria
 WHERE assignment_id = $assignmentId ORDER BY seq;
 
@@ -286,7 +286,7 @@ WHERE assignment_id = $assignmentId ORDER BY seq;
 INSERT INTO checklist_criteria (assignment_id, seq, label, points)
 VALUES ($assignmentId, (SELECT COALESCE(MAX(seq), 0) + 1 FROM checklist_criteria WHERE assignment_id = $assignmentId), $criteriaLabel, 1);
 
--- :name checklistMarks :all
+-- :name checklistMarksForAssignment :all
 SELECT user_id, seq, value FROM checklist_marks
 WHERE assignment_id = $assignmentId;
 
@@ -304,10 +304,6 @@ WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
 
 -- :name updateChecklistCriterionLabel :run
 UPDATE checklist_criteria SET label = $criteriaLabel
-WHERE assignment_id = $assignmentId AND seq = $seq;
-
--- :name updateChecklistCriterionPoints :run
-UPDATE checklist_criteria SET points = $points
 WHERE assignment_id = $assignmentId AND seq = $seq;
 
 -- :name deleteChecklistCriterion :run
@@ -437,6 +433,12 @@ LEFT JOIN assignment_scores s ON s.user_id = a.user_id AND s.assignment_id = a.a
 LEFT JOIN assignment_point_values apv ON apv.assignment_id = a.assignment_id
 WHERE a.assignment_id = $assignmentId
 ORDER BY r.sortable_name;
+
+-- :name icAssignmentScores :all
+SELECT sortable_name, period, points
+FROM assignment_points
+WHERE ic_name = $icName
+ORDER BY period, sortable_name;
 
 -- :name studentQuizAnswers :all
 SELECT

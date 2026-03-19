@@ -2,7 +2,7 @@
 <tr>
   <td>{{ r.sortable_name }}</td>
   <td>{{ r.period }}</td>
-  <td>{{ r.ic_name }}</td>
+  <td><a href="/ic-assignment/{{ r.ic_name | urlencode }}">{{ r.ic_name }}</a></td>
   <td>{{ r.ic }}</td>
   <td>{{ r.db }}</td>
 </tr>

@@ -82,3 +82,14 @@ Java CLASSPATH must include `/Users/peter/hacks/bhs-cs/java/target/bhs-cs.jar`. 
 ## pugsql.js
 
 This codebase uses pugsql.js to access the SQLite database. pugsql.js is a wrapper around `better-sqlite3` but exposes its own API which we use. In particular in `pugsql` the `db.transaction` method takes a function to run in the transactions and any args that need to be passed to the function. This is different than the `better-sqlite3` transaction method which takes a function and returns a function which is then called whith whatever args the passed in function needs.
+
+## SQL query files
+
+There are two SQL query files loaded by `db-smoke-test.js` (and the app):
+
+- **`modules/pugly.sql`** — auto-generated from `schema.sql` via `npx puglify schema.sql > modules/pugly.sql`. Contains generic CRUD queries for every table (e.g. `checklistCriteria` returns all rows).
+- **`modules/queries.sql`** — hand-written queries for app-specific needs (e.g. `checklistCriteriaForAssignment` filters by `assignmentId`).
+
+Both files are loaded together, so **query names must not collide**. The naming convention: pugly.sql uses bare table names (e.g. `checklistCriteria`), while queries.sql uses suffixed names describing the filter (e.g. `checklistCriteriaForAssignment`). If a hand-written query in queries.sql is identical to one already generated in pugly.sql, remove it from queries.sql.
+
+After modifying `schema.sql`, regenerate pugly.sql and run `node db-smoke-test.js` to verify no name collisions. Also run `node db-smoke-test.js` after modifying `modules/queries.sql`.
