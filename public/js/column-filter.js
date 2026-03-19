@@ -106,6 +106,43 @@
 
       dropdown.appendChild(actions);
 
+      // Add search box for quick select-by-enter
+      let searchInput = null;
+      {
+        searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Search (Enter to select)';
+        searchInput.className = 'col-filter-search';
+        searchInput.addEventListener('click', (e) => e.stopPropagation());
+        searchInput.addEventListener('input', () => {
+          const query = searchInput.value.toLowerCase();
+          dropdown.querySelectorAll('.col-filter-item').forEach((label) => {
+            const text = label.textContent.toLowerCase();
+            label.style.display = text.includes(query) ? '' : 'none';
+          });
+        });
+        searchInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            // Select only the visible (matching) items
+            const visibleValues = new Set();
+            dropdown.querySelectorAll('.col-filter-item').forEach((label) => {
+              if (label.style.display !== 'none') {
+                const cb = label.querySelector('input[type=checkbox]');
+                if (cb) visibleValues.add(cb.value);
+              }
+            });
+            if (visibleValues.size > 0) {
+              activeFilters[colIndex] = visibleValues;
+              applyFilters();
+              closeDropdowns();
+            }
+          }
+        });
+        dropdown.appendChild(searchInput);
+      }
+
       allValues.forEach((val) => {
         const label = document.createElement('label');
         label.className = 'col-filter-item';
@@ -138,6 +175,7 @@
       });
 
       th.appendChild(dropdown);
+      searchInput.focus();
       dropdown.addEventListener('click', (e) => e.stopPropagation());
     }
   }
