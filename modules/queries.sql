@@ -314,6 +314,9 @@ DELETE FROM checklist_criteria WHERE assignment_id = $assignmentId AND seq = $se
 DELETE FROM checklist_marks WHERE assignment_id = $assignmentId AND seq = $seq;
 
 -- Quiz scoring
+-- :name hasFormAssessment :get
+SELECT 1 as exists_ FROM form_assessments WHERE assignment_id = $assignmentId;
+
 -- :name formAssessmentsWithDetails :all
 SELECT fa.assignment_id, a.title, a.course_id, a.date,
   (SELECT count(*) FROM questions q WHERE q.assignment_id = fa.assignment_id) question_count,

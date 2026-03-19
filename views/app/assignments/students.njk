@@ -5,6 +5,7 @@
 <p>
   {% if assignment.standard %}Standard: {{ assignment.standard }}{% endif %}
   {% if assignment.points %} &middot; {{ assignment.points }} points{% endif %}
+  {% if hasScoring %} &middot; <a href="/quiz-scoring/{{ assignment.assignment_id }}">Scoring</a>{% endif %}
 </p>
 
 <table class="data-table">
