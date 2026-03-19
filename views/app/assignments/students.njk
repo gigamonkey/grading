@@ -8,13 +8,15 @@
   {% if hasScoring %} &middot; <a href="/quiz-scoring/{{ assignment.assignment_id }}">Scoring</a>{% endif %}
 </p>
 
-<table class="data-table">
+<input type="text" id="student-filter" placeholder="Filter students..." autofocus
+       style="margin-bottom: 0.5em; padding: 0.25em 0.5em;">
+<table class="data-table" data-column-filters>
   <thead>
     <tr>
       <th>Student</th>
-      <th>Period</th>
+      <th data-column-filter="1">Period</th>
       <th>Score</th>
-      {% if assignment.points %}<th>Points</th>{% endif %}
+      {% if assignment.points %}<th data-column-filter="3">Points</th>{% endif %}
       <th></th>
     </tr>
   </thead>
@@ -48,4 +50,14 @@
     {% endfor %}
   </tbody>
 </table>
+<script>
+document.getElementById('student-filter').addEventListener('input', function () {
+  const filter = this.value.toLowerCase();
+  const rows = document.querySelectorAll('.data-table tbody tr');
+  rows.forEach(row => {
+    const name = row.cells[0].textContent.toLowerCase();
+    row.style.display = name.includes(filter) ? '' : 'none';
+  });
+});
+</script>
 {% endblock %}

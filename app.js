@@ -95,7 +95,11 @@ app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
       }
     }
   }
-  res.render('app/assignments/student-answers.njk', { assignment, student, questions });
+  const scored = questions.filter((q) => q.score != null);
+  const totalScore = scored.length
+    ? scored.reduce((sum, q) => sum + q.score, 0) / questions.length
+    : null;
+  res.render('app/assignments/student-answers.njk', { assignment, student, questions, totalScore });
 });
 
 app.get('/assignments/:assignmentId/edit-row', (req, res) => {

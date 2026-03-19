@@ -2,6 +2,8 @@
 {% block title %}Zeros &amp; Missing - Gradebook{% endblock %}
 {% block content %}
 <h1>Zeros &amp; Missing Assignments</h1>
+<input type="text" id="student-filter" placeholder="Filter students..." autofocus
+       style="margin-bottom: 0.5em; padding: 0.25em 0.5em;">
 <table data-column-filters>
   <thead>
     <tr><th data-column-filter="0">Student</th><th data-column-filter="1">Period</th><th data-column-filter="2">Course</th><th data-column-filter="3">Assignment</th><th data-column-filter="4">Date</th></tr>
@@ -10,4 +12,14 @@
     {% include "app/zeros/tbody.njk" %}
   </tbody>
 </table>
+<script>
+document.getElementById('student-filter').addEventListener('input', function () {
+  const filter = this.value.toLowerCase();
+  const rows = document.querySelectorAll('table tbody tr');
+  rows.forEach(row => {
+    const name = row.cells[0].textContent.toLowerCase();
+    row.style.display = name.includes(filter) ? '' : 'none';
+  });
+});
+</script>
 {% endblock %}
