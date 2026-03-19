@@ -1,0 +1,37 @@
+{% extends "app/layout.njk" %}
+{% block title %}{{ student.sortable_name }} - {{ assignment.title }}{% endblock %}
+{% block content %}
+<h1>{{ student.sortable_name }}</h1>
+<p>
+  <a href="/assignments/{{ assignment.assignment_id }}/students">{{ assignment.title }}</a>
+  &middot; Period {{ student.period }}
+</p>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Question</th>
+      <th>Answer</th>
+      <th>Score</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for q in questions %}
+    <tr>
+      <td>{{ q.question_number + 1 }}</td>
+      <td>{{ q.label }}</td>
+      <td>{% if q.answers.length %}{{ q.answers | join(", ") }}{% else %}&mdash;{% endif %}</td>
+      <td>
+        {% if q.answers.length == 0 %}&mdash;
+        {% elif q.score == null %}<span class="unscored">?</span>
+        {% elif q.score == 1 %}<i class="bi bi-check-lg text-success"></i>
+        {% elif q.score == 0 %}<i class="bi bi-x-lg text-danger"></i>
+        {% else %}{{ q.score }}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

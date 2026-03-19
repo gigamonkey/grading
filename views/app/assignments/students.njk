@@ -22,16 +22,21 @@
     {% for s in students %}
     <tr{% if s.override %} class="override"{% endif %}>
       <td>
+        {% if hasScoring %}
+        <a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ s.sortable_name }}</a>
+        {% else %}
         <a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a>
+        {% endif %}
         {% if hasScoring and s.github %}
-        <span class="reload-status" style="display:inline-block; margin-left: 0.3em;">
-          <button class="btn btn-sm btn-link p-0" title="Reload answers"
-                  hx-post="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/reload-answers"
-                  hx-target="closest .reload-status"
-                  hx-swap="innerHTML"
-                  hx-indicator="closest .reload-status">
+        <span class="reload-status" style="display:inline-block; margin-left: 0.3em; opacity: 0.3;">
+          <a href="#" title="Reload answers" style="color: inherit; font-size: 0.75em;"
+             hx-post="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/reload-answers"
+             hx-target="closest .reload-status"
+             hx-swap="innerHTML"
+             hx-indicator="closest .reload-status"
+             onclick="event.preventDefault()">
             <i class="bi bi-arrow-clockwise"></i>
-          </button>
+          </a>
         </span>
         {% endif %}
       </td>

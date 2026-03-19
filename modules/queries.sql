@@ -431,3 +431,17 @@ LEFT JOIN assignment_scores s ON s.user_id = a.user_id AND s.assignment_id = a.a
 LEFT JOIN assignment_point_values apv ON apv.assignment_id = a.assignment_id
 WHERE a.assignment_id = $assignmentId
 ORDER BY r.sortable_name;
+
+-- :name studentQuizAnswers :all
+SELECT
+  q.question_number, q.label, q.kind, q.question,
+  sa.raw_answer, na.answer, sc.score
+FROM questions q
+LEFT JOIN student_answers sa ON sa.assignment_id = q.assignment_id
+  AND sa.question_number = q.question_number AND sa.github = $github
+LEFT JOIN normalized_answers na ON na.assignment_id = q.assignment_id
+  AND na.question_number = q.question_number AND na.raw_answer = sa.raw_answer
+LEFT JOIN scored_answers sc ON sc.assignment_id = q.assignment_id
+  AND sc.question_number = q.question_number AND sc.answer = na.answer
+WHERE q.assignment_id = $assignmentId
+ORDER BY q.question_number, sa.answer_number;

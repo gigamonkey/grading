@@ -66,6 +66,38 @@ app.get('/assignments/:assignmentId/students', (req, res) => {
   res.render('app/assignments/students.njk', { assignment, students, hasScoring });
 });
 
+app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const assignment = db.assignmentById({ assignmentId });
+  const student = db.studentById({ userId });
+  const rows = db.studentQuizAnswers({ assignmentId, github: student.github });
+  // Group rows by question (mchoices have multiple rows per question)
+  const questions = [];
+  let current = null;
+  for (const row of rows) {
+    if (!current || current.question_number !== row.question_number) {
+      current = {
+        question_number: row.question_number,
+        label: row.label,
+        kind: row.kind,
+        question: row.question,
+        answers: [],
+        score: null,
+      };
+      questions.push(current);
+    }
+    if (row.raw_answer != null) {
+      current.answers.push(row.raw_answer);
+      // For choices/freeanswer, score is on the single row; for mchoices we don't show per-answer scores
+      if (row.score != null && current.score == null) {
+        current.score = row.score;
+      }
+    }
+  }
+  res.render('app/assignments/student-answers.njk', { assignment, student, questions });
+});
+
 app.get('/assignments/:assignmentId/edit-row', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const a = db.assignmentById({ assignmentId });
