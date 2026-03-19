@@ -780,6 +780,37 @@ app.post('/quiz-scoring/:assignmentId/fetch', async (req, res) => {
   }
 });
 
+app.post('/assignments/:assignmentId/students/:userId/reload-answers', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  try {
+    const student = db.studentById({ userId });
+    if (!student?.github) {
+      return res.send('<span class="error">No GitHub username for student.</span>');
+    }
+    const data = camelify(await api.assignment(assignmentId));
+    const { url, kind } = data;
+    if (kind !== 'questions') {
+      return res.send(`<span class="error">Not a quiz assignment.</span>`);
+    }
+    const filename = `${url.slice(1)}/answers.json`;
+    const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+    const sha = repo.sha('main', filename);
+    if (!sha) {
+      return res.send('<span class="error">No answers found.</span>');
+    }
+    const contents = repo.contents(sha, filename);
+    const answers = JSON.parse(contents);
+    db.transaction(() => {
+      db.clearStudentAnswersByGithub({ assignmentId, github: student.github });
+      saveAnswers(student.github, assignmentId, answers);
+    });
+    res.send('<i class="bi bi-check-lg text-success"></i>');
+  } catch (e) {
+    res.send(`<span class="error">${e.message}</span>`);
+  }
+});
+
 app.get('/quiz-scoring/:assignmentId/question/:questionNumber', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const questionNumber = Number(req.params.questionNumber);

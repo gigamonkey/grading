@@ -38,6 +38,9 @@ delete from direct_scores where assignment_id = $assignmentId;
 -- :name clearStudentAnswers :run
 delete from student_answers where assignment_id = $assignmentId;
 
+-- :name clearStudentAnswersByGithub :run
+delete from student_answers where assignment_id = $assignmentId and github = $github;
+
 -- :name ensureIcGrade :insert
 insert into ic_grades (student_number, ic_name, points) values ($studentNumber, $icName, $points)
 on conflict(student_number, ic_name) do update set points = excluded.points;
@@ -419,7 +422,7 @@ WHERE ap.user_id = $userId
 ORDER BY a.date DESC, ap.title;
 
 -- :name assignmentStudentScores :all
-SELECT r.user_id, r.sortable_name, r.period, r.course_id,
+SELECT r.user_id, r.github, r.sortable_name, r.period, r.course_id,
        s.score, cast(round(s.score * apv.points) as integer) points,
        apv.points max_points, s.override
 FROM assigned a
