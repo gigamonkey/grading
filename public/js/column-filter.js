@@ -122,7 +122,10 @@
           });
         });
         searchInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
+          if (e.key === 'Escape') {
+            e.stopPropagation();
+            closeDropdowns();
+          } else if (e.key === 'Enter') {
             e.preventDefault();
             e.stopPropagation();
             // Select only the visible (matching) items
