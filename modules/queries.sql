@@ -341,9 +341,15 @@ WHERE na.assignment_id = $assignmentId AND na.question_number = $questionNumber
 GROUP BY na.answer ORDER BY student_count DESC;
 
 -- :name scoredAnswersForQuestion :all
-SELECT answer, score FROM scored_answers
-WHERE assignment_id = $assignmentId AND question_number = $questionNumber
-ORDER BY score DESC, answer;
+SELECT sc.answer, sc.score, count(DISTINCT sa.github) student_count
+FROM scored_answers sc
+LEFT JOIN normalized_answers na ON na.assignment_id = sc.assignment_id
+  AND na.question_number = sc.question_number AND na.answer = sc.answer
+LEFT JOIN student_answers sa ON sa.assignment_id = na.assignment_id
+  AND sa.question_number = na.question_number AND sa.raw_answer = na.raw_answer
+WHERE sc.assignment_id = $assignmentId AND sc.question_number = $questionNumber
+GROUP BY sc.answer, sc.score
+ORDER BY sc.score DESC, sc.answer;
 
 -- :name addScoredAnswer :insert
 INSERT INTO scored_answers (assignment_id, question_number, answer, score)

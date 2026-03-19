@@ -692,6 +692,13 @@ function quizScoringData(assignmentId, questionNumber) {
     ? db.scoredAnswersForQuestion({ assignmentId, questionNumber })
     : [];
 
+  // Compute per-question accuracy stats
+  const totalStudents = unscoredAnswers.reduce((s, a) => s + a.student_count, 0)
+    + scoredAnswers.reduce((s, a) => s + a.student_count, 0);
+  const correctStudents = scoredAnswers
+    .filter((a) => a.score >= 1)
+    .reduce((s, a) => s + a.student_count, 0);
+
   // Prev/next
   const idx = questions.findIndex((q) => q.question_number === questionNumber);
   const prevQuestion = idx > 0 ? questions[idx - 1].question_number : null;
@@ -703,6 +710,8 @@ function quizScoringData(assignmentId, questionNumber) {
     question,
     unscoredAnswers,
     scoredAnswers,
+    totalStudents,
+    correctStudents,
     prevQuestion,
     nextQuestion,
     currentQuestion: questionNumber,

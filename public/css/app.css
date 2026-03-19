@@ -270,6 +270,13 @@ button.col-filter-clear-all {
 }
 button.col-filter-clear-all:hover { background: #eee; color: #444; border-color: #aaa; }
 
+.question-accuracy {
+  font-size: 0.85rem;
+  font-weight: normal;
+  color: #666;
+  margin-left: 0.5rem;
+}
+
 /* Quiz scoring */
 .quiz-scoring-layout {
   display: flex;

@@ -2,6 +2,9 @@
 <div class="question-panel-content">
   <h2>Question {{ question.question_number + 1 }}
     <small>({{ question.kind }})</small>
+    {% if totalStudents > 0 %}
+    <span class="question-accuracy">{{ ((correctStudents / totalStudents) * 100) | round }}% ({{ correctStudents }} of {{ totalStudents }})</span>
+    {% endif %}
   </h2>
   <pre class="question-text">{{ question.question }}</pre>
 
