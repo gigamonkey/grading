@@ -270,14 +270,14 @@ button.col-filter-clear-all {
 }
 button.col-filter-clear-all:hover { background: #eee; color: #444; border-color: #aaa; }
 
-.ic-assignment-table { width: auto; }
-.ic-assignment-table tbody tr:nth-child(even) { background: #f5f5f5; }
-.ic-assignment-table tbody tr.ic-highlight { background: #fff3cd; border-left: 2px solid #ffc107; border-right: 2px solid #ffc107; }
-.ic-assignment-table tbody tr.ic-highlight:first-child,
-.ic-assignment-table tbody tr.ic-highlight:not(.ic-highlight + .ic-highlight) { border-top: 2px solid #ffc107; }
-.ic-assignment-table tbody tr.ic-highlight:last-child,
-.ic-assignment-table tbody tr.ic-highlight:not(:has(+ .ic-highlight)) { border-bottom: 2px solid #ffc107; }
-.ic-assignment-table tbody tr { cursor: pointer; }
+[data-row-highlight] { width: auto; }
+[data-row-highlight] tbody tr:nth-child(even) { background: #f5f5f5; }
+[data-row-highlight] tbody tr.ic-highlight { background: #fff3cd; border-left: 2px solid #ffc107; border-right: 2px solid #ffc107; }
+[data-row-highlight] tbody tr.ic-highlight:first-child,
+[data-row-highlight] tbody tr.ic-highlight:not(.ic-highlight + .ic-highlight) { border-top: 2px solid #ffc107; }
+[data-row-highlight] tbody tr.ic-highlight:last-child,
+[data-row-highlight] tbody tr.ic-highlight:not(:has(+ .ic-highlight)) { border-bottom: 2px solid #ffc107; }
+[data-row-highlight] tbody tr { cursor: pointer; }
 
 .question-accuracy {
   font-size: 0.85rem;

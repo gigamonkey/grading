@@ -2,12 +2,13 @@
 {% block title %}Grades to Update - Gradebook{% endblock %}
 {% block content %}
 <h1>Grades to Update</h1>
-<table data-column-filters>
+<table data-column-filters data-row-highlight>
   <thead>
-    <tr><th>Student</th><th data-column-filter="1">Period</th><th data-column-filter="2">IC Name</th><th>IC Points</th><th>DB Points</th></tr>
+    <tr><th data-column-filter="0">Period</th><th>Student</th><th data-column-filter="2">IC Name</th><th>IC Points</th><th>DB Points</th></tr>
   </thead>
   <tbody id="to-update-tbody">
     {% include "app/to-update/tbody.njk" %}
   </tbody>
 </table>
+<script src="/js/row-highlight.js"></script>
 {% endblock %}
