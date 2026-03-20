@@ -1,7 +1,8 @@
 {% extends "app/layout.njk" %}
 {% block title %}{{ student.sortable_name }} - Gradebook{% endblock %}
 {% block content %}
-<h1>{{ student.name }} <small>({{ student.sortable_name }})</small></h1>
+{% set userJson = {period: student.period, userId: student.user_id, studentNumber: student.student_number, email: student.email, github: student.github, name: student.name, pronouns: student.pronouns, googleName: student.google_name, sortableName: student.sortable_name, lastName: student.last_name, firstName: student.first_name, birthdate: student.birthdate, courseId: student.course_id} %}
+<h1>{{ student.name }} <small>({{ student.sortable_name }})</small> <span class="copyable" data-copy="{{ userJson | dump | e }}" onclick="navigator.clipboard.writeText(this.dataset.copy)" style="cursor: pointer;"><i class="bi bi-clipboard copy-icon" style="font-size: 0.5em; vertical-align: middle;"></i></span></h1>
 
 <table class="info-table">
   <thead>
@@ -67,6 +68,7 @@
       <th>Points</th>
       <th>Source</th>
       <th>Date</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -74,12 +76,17 @@
     <tr>
       <td>{{ p.standard }}</td>
       <td>{{ p.type }}</td>
+      {% if p.rowid %}
+      {% set rowid = p.rowid %}{% set points = p.points %}{% include "app/ad-hoc-mastery/points-cell.njk" %}
+      {% else %}
       <td>{{ p.points }}</td>
+      {% endif %}
       <td>{{ p.source }}</td>
       <td>{{ p.date }}</td>
+      <td>{% if p.rowid %}<i class="bi bi-trash delete-icon" hx-delete="/ad-hoc-mastery/{{ p.rowid }}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this score?"></i>{% endif %}</td>
     </tr>
     {% else %}
-    <tr><td colspan="5">No mastery points.</td></tr>
+    <tr><td colspan="6">No mastery points.</td></tr>
     {% endfor %}
   </tbody>
 </table>

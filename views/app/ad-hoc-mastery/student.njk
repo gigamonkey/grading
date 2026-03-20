@@ -27,6 +27,7 @@
       <th>Points</th>
       <th>Source</th>
       <th>Date</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
@@ -34,12 +35,17 @@
     <tr>
       <td>{{ p.standard }}</td>
       <td>{{ p.type }}</td>
+      {% if p.rowid %}
+      {% set rowid = p.rowid %}{% set points = p.points %}{% include "app/ad-hoc-mastery/points-cell.njk" %}
+      {% else %}
       <td>{{ p.points }}</td>
+      {% endif %}
       <td>{{ p.source }}</td>
       <td>{{ p.date }}</td>
+      <td>{% if p.rowid %}<i class="bi bi-trash delete-icon" hx-delete="/ad-hoc-mastery/{{ p.rowid }}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this score?"></i>{% endif %}</td>
     </tr>
     {% else %}
-    <tr><td colspan="5">No mastery points.</td></tr>
+    <tr><td colspan="6">No mastery points.</td></tr>
     {% endfor %}
   </tbody>
 </table>

@@ -446,6 +446,10 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 .info-table { width: auto; }
 
 .copyable { cursor: pointer; }
-.copyable:hover { background: #f0f0f0; }
-.copy-icon { opacity: 0.4; font-size: 0.85em; }
+td.copyable:hover { background: #f0f0f0; }
+.copy-icon { opacity: 0.4; font-size: 0.85em; transition: opacity 0.2s; }
 .copyable:hover .copy-icon { opacity: 0.7; }
+.copy-icon.copied { opacity: 1; color: #198754; }
+
+.delete-icon { opacity: 0.25; cursor: pointer; font-size: 0.85em; }
+.delete-icon:hover { opacity: 0.7; color: #c00; }

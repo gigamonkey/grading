@@ -302,6 +302,11 @@ app.put('/ad-hoc-mastery/:rowid/points', (req, res) => {
   });
 });
 
+app.delete('/ad-hoc-mastery/:rowid', (req, res) => {
+  db.deleteAdHocMasteryPoints({ rowid: Number(req.params.rowid) });
+  res.send('');
+});
+
 // To Update
 app.get('/to-update', (_req, res) => {
   const rows = db.toUpdate({ period: null });

@@ -7,7 +7,8 @@
   {% set rowid = p.rowid %}{% set points = p.points %}{% include "app/ad-hoc-mastery/points-cell.njk" %}
   <td><a href="/ad-hoc-mastery/reason/{{ p.reason | urlencode }}?standard={{ p.standard | urlencode }}">{{ p.reason }}</a></td>
   <td>{{ p.date }}</td>
+  <td><i class="bi bi-trash delete-icon" hx-delete="/ad-hoc-mastery/{{ p.rowid }}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Delete this score?"></i></td>
 </tr>
 {% else %}
-<tr><td colspan="7">No ad hoc mastery points found.</td></tr>
+<tr><td colspan="8">No ad hoc mastery points found.</td></tr>
 {% endfor %}

@@ -386,16 +386,16 @@ UPDATE ad_hoc_mastery_points SET points = $points WHERE rowid = $rowid;
 SELECT * FROM roster WHERE user_id = $userId;
 
 -- :name studentMasteryPoints :all
-SELECT mp.standard, mp.points, 'assignment' type, mp.title source, a.date
+SELECT NULL rowid, mp.standard, mp.points, 'assignment' type, mp.title source, a.date
 FROM mastery_assignment_points mp
 JOIN assignments a USING (assignment_id)
 WHERE mp.user_id = $userId
 UNION ALL
-SELECT standard, points, 'ad hoc' type, reason source, date
+SELECT rowid, standard, points, 'ad hoc' type, reason source, date
 FROM ad_hoc_mastery_points
 WHERE user_id = $userId
 UNION ALL
-SELECT sp.standard, sp.points, 'speedrun' type, a.title source,
+SELECT NULL rowid, sp.standard, sp.points, 'speedrun' type, a.title source,
        date(max(cs.finished_at), 'unixepoch', 'localtime') date
 FROM speedrun_mastery_points sp
 JOIN assignments a USING (assignment_id)
@@ -404,6 +404,9 @@ JOIN graded_speedruns gs USING (speedrun_id)
 WHERE sp.user_id = $userId AND gs.ok = 1
 GROUP BY sp.user_id, sp.assignment_id
 ORDER BY standard, type, source;
+
+-- :name deleteAdHocMasteryPoints :run
+DELETE FROM ad_hoc_mastery_points WHERE rowid = $rowid;
 
 -- :name studentMasteryTotals :all
 SELECT standard, sum(points) points
