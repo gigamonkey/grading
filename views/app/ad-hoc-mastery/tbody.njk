@@ -1,10 +1,10 @@
-{% for p in points %}
+{% for p in rows %}
 <tr>
   <td><a href="/students/{{ p.user_id }}">{{ p.sortable_name }}</a></td>
   <td>{{ p.period }}</td>
   <td>{{ p.course_id }}</td>
   <td>{{ p.standard }}</td>
-  <td>{{ p.points }}</td>
+  {% set rowid = p.rowid %}{% set points = p.points %}{% include "app/ad-hoc-mastery/points-cell.njk" %}
   <td><a href="/ad-hoc-mastery/reason/{{ p.reason | urlencode }}?standard={{ p.standard | urlencode }}">{{ p.reason }}</a></td>
   <td>{{ p.date }}</td>
 </tr>

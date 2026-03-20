@@ -358,7 +358,7 @@ WHERE assignment_id = $assignmentId AND question_number = $questionNumber AND an
 
 -- Ad hoc mastery points
 -- :name allAdHocMasteryPoints :all
-SELECT ah.user_id, r.sortable_name, r.period, r.course_id,
+SELECT ah.rowid, ah.user_id, r.sortable_name, r.period, r.course_id,
        ah.standard, ah.points, ah.reason, ah.date
 FROM ad_hoc_mastery_points ah
 JOIN roster r USING (user_id)

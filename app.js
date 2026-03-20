@@ -222,7 +222,7 @@ app.post('/overrides', (req, res) => {
 // Ad Hoc Mastery Points
 app.get('/ad-hoc-mastery', (_req, res) => {
   const points = db.allAdHocMasteryPoints();
-  res.render('app/ad-hoc-mastery.njk', { points });
+  res.render('app/ad-hoc-mastery.njk', { rows: points });
 });
 
 app.get('/ad-hoc-mastery/new', (_req, res) => {
@@ -249,7 +249,7 @@ app.post('/ad-hoc-mastery', (req, res) => {
   const allPoints = db.allAdHocMasteryPoints();
   const standards = db.allStandards();
   const reasons = db.adHocReasons();
-  res.render('app/ad-hoc-mastery/post-response.njk', { points: allPoints, standards, reasons });
+  res.render('app/ad-hoc-mastery/post-response.njk', { rows: allPoints, standards, reasons });
 });
 
 app.get('/ad-hoc-mastery/reason/:reason', (req, res) => {
