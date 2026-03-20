@@ -81,6 +81,78 @@ insert into assignments (date, course_id, title) values ($date, $courseId, $titl
 insert into assignments (date, course_id, title) values ($date, $courseId, $title);
 
 
+-- checklist_criteria --------------------------------------
+
+-- :name checklistCriteria :all
+select * from checklist_criteria;
+
+-- :name insertChecklistCriterion :insert
+insert into checklist_criteria
+  (assignment_id, seq, label, points)
+values
+  ($assignmentId, $seq, $label, $points);
+
+-- :name checklistCriterion :get
+select * from checklist_criteria where assignment_id = $assignmentId and seq = $seq;
+
+-- :name updateChecklistCriterion :run
+update checklist_criteria set
+  (label, points) =
+  ($label, $points)
+where
+  assignment_id = $assignmentId and
+  seq = $seq
+
+-- :name updateChecklistCriterionExceptDefaults :run
+update checklist_criteria set (label) = ($label) where assignment_id = $assignmentId and seq = $seq
+
+-- :name insertChecklistCriterionWithDefaultValues :insert
+insert into checklist_criteria (assignment_id, seq, label) values ($assignmentId, $seq, $label);
+
+-- :name updateChecklistCriterionPoints :run
+update checklist_criteria set points = $points where assignment_id = $assignmentId and seq = $seq
+
+-- :name makeChecklistCriterion :insert
+insert into checklist_criteria (label, points) values ($label, $points);
+
+-- :name makeChecklistCriterionWithDefaultValues :insert
+insert into checklist_criteria (label) values ($label);
+
+
+-- checklist_marks -----------------------------------------
+
+-- :name checklistMarks :all
+select * from checklist_marks;
+
+-- :name insertChecklistMark :insert
+insert into checklist_marks
+  (user_id, assignment_id, seq, value)
+values
+  ($userId, $assignmentId, $seq, $value);
+
+-- :name checklistMark :get
+select * from checklist_marks
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  seq = $seq;
+
+-- :name updateChecklistMark :run
+update checklist_marks set
+  (value) =
+  ($value)
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  seq = $seq
+
+-- :name makeChecklistMark :insert
+insert into checklist_marks (value) values ($value);
+
+-- :name makeChecklistMarkWithDefaultValues :insert
+insert into checklist_marks (value) values ($value);
+
+
 -- completed_speedruns -------------------------------------
 
 -- :name completedSpeedruns :all
