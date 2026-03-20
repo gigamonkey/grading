@@ -435,7 +435,7 @@ WHERE a.assignment_id = $assignmentId
 ORDER BY r.sortable_name;
 
 -- :name icAssignmentScores :all
-SELECT sortable_name, period, points
+SELECT user_id, sortable_name, period, points
 FROM assignment_points
 WHERE ic_name = $icName
 ORDER BY period, sortable_name;

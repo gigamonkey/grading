@@ -9,7 +9,7 @@
   <tbody>
     {% for s in speedruns %}
     <tr>
-      <td>{{ s.github }}</td>
+      <td><a href="/students/{{ s.user_id }}">{{ s.github }}</a></td>
       <td>{{ s.title or s.assignment_id }}</td>
       <td>{{ s.course_id }}</td>
       <td>{{ s.finished_at }}</td>

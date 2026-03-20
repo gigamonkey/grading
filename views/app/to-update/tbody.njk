@@ -1,7 +1,7 @@
 {% for r in rows %}
 <tr>
   <td>{{ r.period }}</td>
-  <td>{{ r.sortable_name }}</td>
+  <td><a href="/students/{{ r.user_id }}">{{ r.sortable_name }}</a></td>
   <td><a href="/ic-assignment/{{ r.ic_name | urlencode }}">{{ r.ic_name }}</a></td>
   <td>{{ r.ic }}</td>
   <td>{{ r.db }}</td>

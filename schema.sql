@@ -474,6 +474,7 @@ DROP VIEW IF EXISTS zeros;
 CREATE VIEW zeros AS
 WITH scored as (select distinct assignment_id from assignment_scores)
 SELECT
+  user_id,
   sortable_name,
   period,
   course_id,

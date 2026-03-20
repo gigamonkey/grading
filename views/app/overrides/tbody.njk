@@ -1,6 +1,6 @@
 {% for o in overrides %}
 <tr>
-  <td>{{ o.sortable_name }}</td>
+  <td><a href="/students/{{ o.user_id }}">{{ o.sortable_name }}</a></td>
   <td>{{ o.period }}</td>
   <td>{{ o.course_id }}</td>
   <td>{{ o.title }}</td>
