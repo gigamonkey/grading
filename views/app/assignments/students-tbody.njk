@@ -1,7 +1,7 @@
 {% for s in students %}
 <tr{% if s.override %} class="override"{% endif %}>
   <td>
-    {% if hasScoring %}
+    {% if hasScoring or hasJsResults %}
     <a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ s.sortable_name }}</a>
     {% else %}
     <a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a>

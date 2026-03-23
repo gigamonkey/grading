@@ -7,8 +7,8 @@ import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
 import { API } from './api.js';
 import { Repo } from './modules/repo.js';
+import { loadTestcases, runTestsWithError } from './modules/test-javascript.js';
 import { camelify } from './modules/util.js';
-import { runTestsWithError, loadTestcases } from './modules/test-javascript.js';
 
 dotenv.config();
 
@@ -64,7 +64,8 @@ app.get('/assignments/:assignmentId/students', (req, res) => {
   const assignment = db.assignmentById({ assignmentId });
   const students = db.assignmentStudentScores({ assignmentId });
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
-  res.render('app/assignments/students.njk', { assignment, students, hasScoring });
+  const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
+  res.render('app/assignments/students.njk', { assignment, students, hasScoring, hasJsResults });
 });
 
 app.get('/assignments/:assignmentId/students-tbody', (req, res) => {
@@ -72,7 +73,13 @@ app.get('/assignments/:assignmentId/students-tbody', (req, res) => {
   const assignment = db.assignmentById({ assignmentId });
   const students = db.assignmentStudentScores({ assignmentId });
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
-  res.render('app/assignments/students-tbody.njk', { assignment, students, hasScoring });
+  const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
+  res.render('app/assignments/students-tbody.njk', {
+    assignment,
+    students,
+    hasScoring,
+    hasJsResults,
+  });
 });
 
 app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
@@ -80,6 +87,22 @@ app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
   const userId = req.params.userId;
   const assignment = db.assignmentById({ assignmentId });
   const student = db.studentById({ userId });
+
+  // Check for JS unit test results first
+  const jsResults = db.studentJsTestResults({ assignmentId, github: student.github });
+  if (jsResults.length > 0) {
+    const totalScore = jsResults.length
+      ? jsResults.filter((r) => r.answered).reduce((sum, r) => sum + r.correct, 0) /
+        jsResults.length
+      : null;
+    return res.render('app/assignments/student-js-results.njk', {
+      assignment,
+      student,
+      results: jsResults,
+      totalScore,
+    });
+  }
+
   const rows = db.studentQuizAnswers({ assignmentId, github: student.github });
   // Group rows by question (mchoices have multiple rows per question)
   const questions = [];
@@ -789,8 +812,9 @@ function quizScoringData(assignmentId, questionNumber) {
     : [];
 
   // Compute per-question accuracy stats
-  const totalStudents = unscoredAnswers.reduce((s, a) => s + a.student_count, 0)
-    + scoredAnswers.reduce((s, a) => s + a.student_count, 0);
+  const totalStudents =
+    unscoredAnswers.reduce((s, a) => s + a.student_count, 0) +
+    scoredAnswers.reduce((s, a) => s + a.student_count, 0);
   const correctStudents = scoredAnswers
     .filter((a) => a.score >= 1)
     .reduce((s, a) => s + a.student_count, 0);
