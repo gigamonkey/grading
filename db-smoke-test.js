@@ -6,6 +6,12 @@
 
 import { DB } from 'pugsql';
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+try {
+  new DB('db.db')
+    .addQueries('modules/pugly.sql')
+    .addQueries('modules/queries.sql');
+  console.log('ok.');
+} catch (e) {
+  console.error(e.message);
+  process.exit(1);
+}
