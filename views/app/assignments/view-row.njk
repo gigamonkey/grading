@@ -15,16 +15,16 @@
   {% include "app/assignments/standard-cell.njk" %}
   {% include "app/assignments/ic-name-cell.njk" %}
   {% include "app/assignments/points-cell.njk" %}
-  <td>
-    {% if not a.has_scores %}
-      {% if a.kind == 'coding' %}
-        <button hx-post="/assignments/{{ a.assignment_id }}/grade-js"
-                hx-target="#grade-status-{{ a.assignment_id }}"
-                hx-swap="innerHTML">Grade JS</button>
-        <span id="grade-status-{{ a.assignment_id }}"></span>
-      {% elif a.kind == 'questions' %}
-        <a href="/quiz-scoring/{{ a.assignment_id }}"><button type="button">Grade Quiz</button></a>
-      {% endif %}
+  <td class="text-center">
+    {% if a.has_scores %}
+      <i class="bi bi-check-circle-fill text-success"></i>
+    {% elif a.kind == 'coding' %}
+      <button class="btn-subtle" hx-post="/assignments/{{ a.assignment_id }}/grade-js"
+              hx-target="#grade-status-{{ a.assignment_id }}"
+              hx-swap="innerHTML">JS</button>
+      <span id="grade-status-{{ a.assignment_id }}"></span>
+    {% elif a.kind == 'questions' %}
+      <a href="/quiz-scoring/{{ a.assignment_id }}"><button type="button" class="btn-subtle">Quiz</button></a>
     {% endif %}
   </td>
 </tr>

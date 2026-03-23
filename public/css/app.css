@@ -77,6 +77,15 @@ button {
 
 button:hover { background: #2d2d52; }
 
+button.btn-subtle {
+  background: transparent;
+  color: #666;
+  border: 1px solid #ccc;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+button.btn-subtle:hover { background: #f0f0f0; color: #333; border-color: #999; }
+
 label {
   display: block;
   margin-bottom: 0.75rem;
@@ -444,6 +453,8 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 }
 
 .info-table { width: auto; }
+
+.text-center { text-align: center; }
 
 td.editable { cursor: pointer; }
 td.editable:hover { background: #f0f0f0; }

@@ -1,5 +1,5 @@
 {% if editing %}
-<td class="editing">
+<td class="editing text-center">
   <input type="number" name="points" value="{{ a.points or '' }}" step="1"
          hx-put="/assignments/{{ a.assignment_id }}/points"
          hx-trigger="keyup[key=='Enter']"
@@ -11,10 +11,10 @@
          hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/assignments/{{ a.assignment_id }}/points',{target:this.closest('td'),swap:'outerHTML',values:{points:this.value}})}">
 </td>
 {% elif a.standard %}
-<td class="editable"
+<td class="editable text-center"
     hx-get="/assignments/{{ a.assignment_id }}/points?edit=1"
     hx-target="this"
     hx-swap="outerHTML">{{ a.points or '&nbsp;' | safe }}</td>
 {% else %}
-<td class="disabled-cell" title="Set standard first">{{ a.points }}</td>
+<td class="disabled-cell text-center" title="Set standard first">{{ a.points }}</td>
 {% endif %}
