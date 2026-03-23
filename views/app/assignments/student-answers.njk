@@ -12,7 +12,7 @@
     <tr>
       <th data-column-filter="0">#</th>
       <th data-column-filter="1">Question</th>
-      <th data-column-filter="2">Answer</th>
+      <th data-column-filter="2" style="width: 30rem;">Answer</th>
       <th data-column-filter="3">Score</th>
     </tr>
   </thead>
@@ -22,7 +22,7 @@
       <td>{{ q.question_number + 1 }}</td>
       <td>{{ q.label }}</td>
       <td>{% if q.answers.length %}{{ q.answers | join(", ") }}{% else %}&mdash;{% endif %}</td>
-      <td data-filter-value="{% if q.answers.length == 0 %}—{% elif q.score == null %}Unscored{% elif q.score == 1 %}Correct{% elif q.score == 0 %}Incorrect{% else %}{{ q.score }}{% endif %}">
+      <td data-filter-value="{% if q.answers.length == 0 %}—{% elif q.score == null %}Unscored{% elif q.score == 1 %}Right{% elif q.score == 0 %}Wrong{% else %}{{ q.score }}{% endif %}">
         {% if q.answers.length == 0 %}&mdash;
         {% elif q.score == null %}<span class="unscored">?</span>
         {% elif q.score == 1 %}<i class="bi bi-check-lg text-success"></i>

@@ -26,9 +26,14 @@
       });
     });
 
-    // Lock column widths at their initial rendered size to prevent layout shifts
+    // Lock column widths at their natural content size to prevent layout shifts.
+    // Temporarily switch to auto width so measurements reflect content, not the
+    // CSS `table { width: 100% }` rule, then lock everything down with fixed layout.
     const allThs = Array.from(table.querySelectorAll('thead th'));
-    allThs.forEach((th) => (th.style.width = th.offsetWidth + 'px'));
+    table.style.width = 'auto';
+    const widths = allThs.map((th) => th.offsetWidth);
+    const tableWidth = widths.reduce((a, b) => a + b, 0);
+    allThs.forEach((th, i) => (th.style.width = widths[i] + 'px'));
     table.style.tableLayout = 'fixed';
 
     // Insert a clear-all button just before the table
@@ -81,7 +86,7 @@
       closeDropdowns();
 
       // Only show values present in rows that pass all *other* active filters
-      const allValues = getColumnValues(table, colIndex, activeFilters);
+      const { values: allValues, htmlByValue } = getColumnValues(table, colIndex, activeFilters);
       if (allValues.length === 0) return;
 
       const dropdown = document.createElement('div');
@@ -117,7 +122,8 @@
         searchInput.addEventListener('input', () => {
           const query = searchInput.value.toLowerCase();
           dropdown.querySelectorAll('.col-filter-item').forEach((label) => {
-            const text = label.textContent.toLowerCase();
+            const cb = label.querySelector('input[type=checkbox]');
+            const text = cb ? cb.value.toLowerCase() : label.textContent.toLowerCase();
             label.style.display = text.includes(query) ? '' : 'none';
           });
         });
@@ -165,7 +171,7 @@
             activeFilters[colIndex].delete(val);
           }
           // If all currently-available values are selected, clear the filter
-          const currentValues = getColumnValues(table, colIndex, activeFilters);
+          const { values: currentValues } = getColumnValues(table, colIndex, activeFilters);
           if (currentValues.every((v) => activeFilters[colIndex].has(v))) {
             delete activeFilters[colIndex];
           }
@@ -173,7 +179,9 @@
         });
 
         label.appendChild(cb);
-        label.appendChild(document.createTextNode('\u00a0' + val));
+        const labelText = document.createElement('span');
+        labelText.innerHTML = '\u00a0' + (htmlByValue[val] !== val ? htmlByValue[val] + ' ' + val : val);
+        label.appendChild(labelText);
         dropdown.appendChild(label);
       });
 
@@ -199,7 +207,7 @@
   }
 
   function getColumnValues(table, colIndex, activeFilters) {
-    const values = new Set();
+    const valueHtml = {}; // filterValue -> innerHTML of first matching cell
     table.querySelectorAll('tbody tr').forEach((row) => {
       for (const [colStr, selectedValues] of Object.entries(activeFilters)) {
         if (parseInt(colStr) === colIndex) continue;
@@ -207,9 +215,13 @@
         if (cell && !selectedValues.has(cellValue(cell))) return;
       }
       const cell = row.cells[colIndex];
-      if (cell) values.add(cellValue(cell));
+      if (cell) {
+        const val = cellValue(cell);
+        if (!(val in valueHtml)) valueHtml[val] = cell.innerHTML.trim();
+      }
     });
-    return Array.from(values).sort();
+    const sorted = Object.keys(valueHtml).sort();
+    return { values: sorted, htmlByValue: valueHtml };
   }
 
   document.addEventListener('DOMContentLoaded', () => {
