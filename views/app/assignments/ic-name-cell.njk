@@ -12,8 +12,9 @@
 {% elif a.standard %}
 <td class="editable"
     hx-get="/assignments/{{ a.assignment_id }}/ic-name?edit=1"
+    hx-trigger="dblclick"
     hx-target="this"
-    hx-swap="outerHTML">{{ a.ic_name or '&nbsp;' | safe }}</td>
+    hx-swap="outerHTML">{% if a.ic_name %}<a href="/ic-assignment/{{ a.ic_name | urlencode }}">{{ a.ic_name }}</a>{% else %}&nbsp;{% endif %}</td>
 {% else %}
-<td class="disabled-cell" title="Set standard first">{{ a.ic_name }}</td>
+<td class="disabled-cell" title="Set standard first">{% if a.ic_name %}<a href="/ic-assignment/{{ a.ic_name | urlencode }}">{{ a.ic_name }}</a>{% endif %}</td>
 {% endif %}

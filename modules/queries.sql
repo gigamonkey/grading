@@ -453,6 +453,13 @@ LEFT JOIN graded_work_metadata m ON m.user_id = a.user_id AND m.assignment_id = 
 WHERE a.assignment_id = $assignmentId
 ORDER BY r.sortable_name;
 
+-- :name icAssignmentInfo :get
+SELECT a.assignment_id, a.title, a.date, apv.points
+FROM assignment_point_values apv
+JOIN assignments a USING (assignment_id)
+WHERE apv.ic_name = $icName
+LIMIT 1;
+
 -- :name icAssignmentScores :all
 SELECT user_id, sortable_name, period, points
 FROM assignment_points

@@ -494,8 +494,9 @@ app.get('/mastery-to-update', (_req, res) => {
 
 app.get('/ic-assignment/:icName', (req, res) => {
   const icName = req.params.icName;
+  const assignment = db.icAssignmentInfo({ icName });
   const rows = db.icAssignmentScores({ icName });
-  res.render('app/ic-assignment.njk', { icName, rows });
+  res.render('app/ic-assignment.njk', { icName, assignment, rows });
 });
 
 // Mastery IC Names
