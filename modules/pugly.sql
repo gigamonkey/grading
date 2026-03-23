@@ -24,6 +24,27 @@ values
   ($userId, $date, $standard, $points, $reason);
 
 
+-- assignment_kinds ----------------------------------------
+
+-- :name assignmentKinds :all
+select * from assignment_kinds;
+
+-- :name insertAssignmentKind :insert
+insert into assignment_kinds (assignment_id, kind) values ($assignmentId, $kind);
+
+-- :name assignmentKind :get
+select * from assignment_kinds where assignment_id = $assignmentId;
+
+-- :name updateAssignmentKind :run
+update assignment_kinds set (kind) = ($kind) where assignment_id = $assignmentId
+
+-- :name makeAssignmentKind :insert
+insert into assignment_kinds (kind) values ($kind);
+
+-- :name makeAssignmentKindWithDefaultValues :insert
+insert into assignment_kinds (kind) values ($kind);
+
+
 -- assignment_point_values ---------------------------------
 
 -- :name assignmentPointValues :all
