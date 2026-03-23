@@ -47,11 +47,11 @@ on conflict(student_number, ic_name) do update set points = excluded.points;
 
 -- :name ensureStudentAnswer :insert
 insert into student_answers
-  (github, assignment_id, question_number, answer_number, raw_answer)
+  (github, assignment_id, question_number, answer_number, raw_answer, timestamp, sha)
 values
-  ($github, $assignmentId, $questionNumber, $answerNumber, $rawAnswer)
+  ($github, $assignmentId, $questionNumber, $answerNumber, $rawAnswer, $timestamp, $sha)
 on conflict (github, assignment_id, question_number, answer_number) do
-update set raw_answer = excluded.raw_answer;
+update set raw_answer = excluded.raw_answer, timestamp = excluded.timestamp, sha = excluded.sha;
 
 -- :name ensureNormalizedAnswer :insert
 insert into normalized_answers

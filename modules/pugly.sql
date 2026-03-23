@@ -845,9 +845,9 @@ select * from student_answers;
 
 -- :name insertStudentAnswer :insert
 insert into student_answers
-  (github, assignment_id, question_number, answer_number, raw_answer)
+  (github, assignment_id, question_number, answer_number, raw_answer, timestamp, sha)
 values
-  ($github, $assignmentId, $questionNumber, $answerNumber, $rawAnswer);
+  ($github, $assignmentId, $questionNumber, $answerNumber, $rawAnswer, $timestamp, $sha);
 
 -- :name studentAnswer :get
 select * from student_answers
@@ -859,8 +859,8 @@ where
 
 -- :name updateStudentAnswer :run
 update student_answers set
-  (raw_answer) =
-  ($rawAnswer)
+  (raw_answer, timestamp, sha) =
+  ($rawAnswer, $timestamp, $sha)
 where
   github = $github and
   assignment_id = $assignmentId and
@@ -874,9 +874,9 @@ select * from student_answers where assignment_id = $assignmentId;
 select * from student_answers where assignment_id = $assignmentId;
 
 -- :name makeStudentAnswer :insert
-insert into student_answers (raw_answer) values ($rawAnswer);
+insert into student_answers (raw_answer, timestamp, sha) values ($rawAnswer, $timestamp, $sha);
 
 -- :name makeStudentAnswerWithDefaultValues :insert
-insert into student_answers (raw_answer) values ($rawAnswer);
+insert into student_answers (raw_answer, timestamp, sha) values ($rawAnswer, $timestamp, $sha);
 
 
