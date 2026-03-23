@@ -71,6 +71,8 @@ npx puglify schema.sql > modules/pugly.sql
 
 **Student file layout:** `<course>/<assignmentId>-<title>/<github-username>/` with `timestamp.txt` and `sha.txt` alongside code files.
 
+**Frontend:** The web UI uses HTMX and Nunjucks templates with custom CSS (`public/css/app.css`). Bootstrap Icons is loaded for icon fonts, but Bootstrap CSS itself is not used — utility classes like `.text-success` and `.text-danger` are defined in `app.css` directly.
+
 ## Environment
 
 `.env` requires:
