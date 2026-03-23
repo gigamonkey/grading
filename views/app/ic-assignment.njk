@@ -1,7 +1,7 @@
 {% extends "app/layout.njk" %}
 {% block title %}{{ icName }} - Gradebook{% endblock %}
 {% block content %}
-<h1>{{ icName }}</h1>
+<h1>{{ icName }} <span class="copyable" data-copy="{{ icName }}" onclick="navigator.clipboard.writeText(this.dataset.copy)" style="cursor: pointer;"><i class="bi bi-clipboard copy-icon" style="font-size: 0.5em; vertical-align: middle;"></i></span></h1>
 <table class="ic-assignment-table" data-column-filters data-row-highlight>
   <thead>
     <tr><th data-column-filter="0">Period</th><th>Student</th><th>Points</th></tr>
