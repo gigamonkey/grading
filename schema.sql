@@ -312,6 +312,12 @@ CREATE TABLE IF NOT EXISTS roster (
   course_id TEXT
 );
 
+-- Max point values per IC assignment, from row 2 of the gradebook CSV export.
+CREATE TABLE IF NOT EXISTS ic_point_values (
+  ic_name TEXT PRIMARY KEY,
+  points INTEGER NOT NULL
+);
+
 -- Grades loaded from IC grade export so we can compare what's in IC to what we
 -- think it should be.
 CREATE TABLE IF NOT EXISTS ic_grades (

@@ -367,6 +367,27 @@ insert into ic_grades (points) values ($points);
 insert into ic_grades (points) values ($points);
 
 
+-- ic_point_values -----------------------------------------
+
+-- :name icPointValues :all
+select * from ic_point_values;
+
+-- :name insertIcPointValue :insert
+insert into ic_point_values (ic_name, points) values ($icName, $points);
+
+-- :name icPointValue :get
+select * from ic_point_values where ic_name = $icName;
+
+-- :name updateIcPointValue :run
+update ic_point_values set (points) = ($points) where ic_name = $icName
+
+-- :name makeIcPointValue :insert
+insert into ic_point_values (points) values ($points);
+
+-- :name makeIcPointValueWithDefaultValues :insert
+insert into ic_point_values (points) values ($points);
+
+
 -- java_unit_tests -----------------------------------------
 
 -- :name javaUnitTests :all

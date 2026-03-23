@@ -2,7 +2,15 @@
 {% block title %}Assignments - Gradebook{% endblock %}
 {% block content %}
 <h1>Assignments</h1>
-<p><a href="/assignments/new">+ New Assignment</a></p>
+<p>
+  <a href="/assignments/new">+ New Assignment</a>
+  &middot;
+  <button class="btn-subtle"
+          hx-post="/assignments/reload-gradebook"
+          hx-target="#gradebook-status"
+          hx-swap="innerHTML">Reload Gradebook</button>
+  <span id="gradebook-status"></span>
+</p>
 <input type="search" placeholder="Search assignments..."
   value="{{ search or '' }}"
   hx-get="/assignments"

@@ -53,6 +53,10 @@ delete from student_answers where assignment_id = $assignmentId;
 -- :name clearStudentAnswersByGithub :run
 delete from student_answers where assignment_id = $assignmentId and github = $github;
 
+-- :name ensureIcPointValue :insert
+insert into ic_point_values (ic_name, points) values ($icName, $points)
+on conflict(ic_name) do update set points = excluded.points;
+
 -- :name ensureIcGrade :insert
 insert into ic_grades (student_number, ic_name, points) values ($studentNumber, $icName, $points)
 on conflict(student_number, ic_name) do update set points = excluded.points;
@@ -207,12 +211,14 @@ SELECT a.assignment_id, a.date, a.course_id, a.title,
        COALESCE(apv.ic_name, min.ic_name) as ic_name,
        COALESCE(apv.points, ma.points) as points,
        EXISTS(SELECT 1 FROM assignment_scores s WHERE s.assignment_id = a.assignment_id) as has_scores,
-       ak.kind
+       ak.kind,
+       ipv.points as ic_points
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
 LEFT JOIN assignment_kinds ak USING (assignment_id)
+LEFT JOIN ic_point_values ipv ON ipv.ic_name = COALESCE(apv.ic_name, min.ic_name)
 WHERE a.assignment_id = $assignmentId;
 
 -- :name allAssignments :all
@@ -222,12 +228,14 @@ SELECT a.assignment_id, a.date, a.course_id, a.title,
        COALESCE(apv.ic_name, min.ic_name) as ic_name,
        COALESCE(apv.points, ma.points) as points,
        EXISTS(SELECT 1 FROM assignment_scores s WHERE s.assignment_id = a.assignment_id) as has_scores,
-       ak.kind
+       ak.kind,
+       ipv.points as ic_points
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
 LEFT JOIN assignment_kinds ak USING (assignment_id)
+LEFT JOIN ic_point_values ipv ON ipv.ic_name = COALESCE(apv.ic_name, min.ic_name)
 WHERE ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
        OR upper(a.course_id) LIKE '%' || upper($search) || '%'
        OR CAST(a.assignment_id AS TEXT) = $search)

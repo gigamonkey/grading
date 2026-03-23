@@ -328,7 +328,14 @@ app.post('/assignments/reload-gradebook', (req, res) => {
         const text = fs.readFileSync(path.join(dir, file), 'utf-8');
         const rows = parse(text, { relax_column_count: true });
         const names = rows[0].slice(1);
+        const maxPoints = rows[2].slice(1);
         const studentRows = rows.slice(3);
+
+        for (let i = 0; i < names.length; i++) {
+          if (names[i] && maxPoints[i]) {
+            db.ensureIcPointValue({ icName: names[i], points: Number(maxPoints[i]) });
+          }
+        }
 
         for (const cols of studentRows) {
           const name = cols[0];

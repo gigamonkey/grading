@@ -14,7 +14,7 @@
 <td class="editable text-center"
     hx-get="/assignments/{{ a.assignment_id }}/points?edit=1"
     hx-target="this"
-    hx-swap="outerHTML">{{ a.points or '&nbsp;' | safe }}</td>
+    hx-swap="outerHTML">{{ a.points or '&nbsp;' | safe }}{% if a.ic_points != null and a.points != null and a.ic_points != a.points %} <i class="bi bi-exclamation-triangle-fill text-warning" title="DB: {{ a.points }}, IC: {{ a.ic_points }}"></i>{% endif %}</td>
 {% else %}
 <td class="disabled-cell text-center" title="Set standard first">{{ a.points }}</td>
 {% endif %}
