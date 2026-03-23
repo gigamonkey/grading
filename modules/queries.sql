@@ -4,6 +4,12 @@ insert or replace into assignments
 values
   ($assignmentId, $openDate, $courseId, $title);
 
+-- :name ensureAssignmentKind :insert
+insert or replace into assignment_kinds
+  (assignment_id, kind)
+values
+  ($assignmentId, $kind);
+
 -- :name ensureAssignmentPointValue :insert
 insert or replace into assignment_point_values
   (assignment_id, standard, ic_name, points)
@@ -200,11 +206,13 @@ SELECT a.assignment_id, a.date, a.course_id, a.title,
        COALESCE(apv.standard, ma.standard) as standard,
        COALESCE(apv.ic_name, min.ic_name) as ic_name,
        COALESCE(apv.points, ma.points) as points,
-       EXISTS(SELECT 1 FROM assignment_scores s WHERE s.assignment_id = a.assignment_id) as has_scores
+       EXISTS(SELECT 1 FROM assignment_scores s WHERE s.assignment_id = a.assignment_id) as has_scores,
+       ak.kind
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
+LEFT JOIN assignment_kinds ak USING (assignment_id)
 WHERE a.assignment_id = $assignmentId;
 
 -- :name allAssignments :all
@@ -214,12 +222,12 @@ SELECT a.assignment_id, a.date, a.course_id, a.title,
        COALESCE(apv.ic_name, min.ic_name) as ic_name,
        COALESCE(apv.points, ma.points) as points,
        EXISTS(SELECT 1 FROM assignment_scores s WHERE s.assignment_id = a.assignment_id) as has_scores,
-       EXISTS(SELECT 1 FROM form_assessments fa WHERE fa.assignment_id = a.assignment_id) as has_quiz,
-       EXISTS(SELECT 1 FROM scored_question_assignments sqa WHERE sqa.assignment_id = a.assignment_id) as has_js_tests
+       ak.kind
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
+LEFT JOIN assignment_kinds ak USING (assignment_id)
 WHERE ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
        OR upper(a.course_id) LIKE '%' || upper($search) || '%'
        OR CAST(a.assignment_id AS TEXT) = $search)

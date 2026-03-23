@@ -4,6 +4,12 @@
                   onclick="document.getElementById('api-json-dialog')?.remove()">{{ a.assignment_id }}</a></td>
   <td><a href="/assignments/{{ a.assignment_id }}/students">{{ a.title }}</a></td>
   <td>{{ a.course_id }}</td>
+  <td>{% if a.kind %}{{ a.kind }}{% else %}<i class="bi bi-arrow-clockwise"
+     style="cursor:pointer"
+     title="Fetch assignment kind from server"
+     hx-post="/assignments/{{ a.assignment_id }}/refresh-kind"
+     hx-target="#apv-row-{{ a.assignment_id }}"
+     hx-swap="outerHTML"></i>{% endif %}</td>
   <td>{{ a.date }}</td>
   {% include "app/assignments/type-cell.njk" %}
   {% include "app/assignments/standard-cell.njk" %}
@@ -11,11 +17,14 @@
   {% include "app/assignments/points-cell.njk" %}
   <td>
     {% if not a.has_scores %}
-      <button hx-post="/assignments/{{ a.assignment_id }}/grade-js"
-              hx-target="#grade-status-{{ a.assignment_id }}"
-              hx-swap="innerHTML">Grade JS</button>
-      <a href="/quiz-scoring/{{ a.assignment_id }}"><button type="button">Grade Quiz</button></a>
-      <span id="grade-status-{{ a.assignment_id }}"></span>
+      {% if a.kind == 'coding' %}
+        <button hx-post="/assignments/{{ a.assignment_id }}/grade-js"
+                hx-target="#grade-status-{{ a.assignment_id }}"
+                hx-swap="innerHTML">Grade JS</button>
+        <span id="grade-status-{{ a.assignment_id }}"></span>
+      {% elif a.kind == 'questions' %}
+        <a href="/quiz-scoring/{{ a.assignment_id }}"><button type="button">Grade Quiz</button></a>
+      {% endif %}
     {% endif %}
   </td>
 </tr>

@@ -1,9 +1,9 @@
 {% if error %}
-<tr><td colspan="9" class="error">Error: {{ error }}</td></tr>
+<tr><td colspan="10" class="error">Error: {{ error }}</td></tr>
 {% else %}
 {% for a in assignments %}
 {% include "app/assignments/view-row.njk" %}
 {% else %}
-<tr><td colspan="9">No assignments found.</td></tr>
+<tr><td colspan="10">No assignments found.</td></tr>
 {% endfor %}
 {% endif %}

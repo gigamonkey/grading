@@ -9,6 +9,13 @@ CREATE TABLE IF NOT EXISTS assignments (
   PRIMARY KEY (assignment_id)
 );
 
+-- The kind of assignment as reported by the server API (e.g. "coding",
+-- "questions"). Not all assignments will have a kind recorded.
+CREATE TABLE IF NOT EXISTS assignment_kinds (
+  assignment_id INTEGER PRIMARY KEY,
+  kind TEXT NOT NULL
+);
+
 -- Assignments that I don't expect every student in a class to have done.
 CREATE TABLE IF NOT EXISTS optional_assignments (
   assignment_id INTEGER,

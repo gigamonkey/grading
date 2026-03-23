@@ -265,6 +265,12 @@ app.post('/assignments', async (req, res) => {
       courseId: assignment.course_id,
       title: assignment.title,
     });
+    if (assignment.kind) {
+      db.ensureAssignmentKind({
+        assignmentId: assignment.assignment_id,
+        kind: assignment.kind,
+      });
+    }
     db.ensureAssignmentPointValue({
       assignmentId: assignment.assignment_id,
       standard,
@@ -276,6 +282,20 @@ app.post('/assignments', async (req, res) => {
   } catch (e) {
     res.render('app/assignments/tbody.njk', { assignments: [], error: e.message });
   }
+});
+
+app.post('/assignments/:assignmentId/refresh-kind', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  try {
+    const data = camelify(await api.assignment(assignmentId));
+    if (data.kind) {
+      db.ensureAssignmentKind({ assignmentId, kind: data.kind });
+    }
+  } catch (e) {
+    console.log(`Failed to fetch kind for assignment ${assignmentId}: ${e.message}`);
+  }
+  const a = db.assignmentById({ assignmentId });
+  res.render('app/assignments/view-row.njk', { a });
 });
 
 async function gradeJavascriptUnitTests(assignmentId) {
@@ -299,6 +319,7 @@ async function gradeJavascriptUnitTests(assignmentId) {
   let graded = 0;
   db.transaction(() => {
     db.ensureAssignment({ assignmentId, openDate, courseId, title });
+    db.ensureAssignmentKind({ assignmentId, kind });
     db.clearJavascriptUnitTest({ assignmentId });
     db.clearScoredQuestionAssignment({ assignmentId });
     db.insertScoredQuestionAssignment({ assignmentId, questions });
@@ -969,6 +990,7 @@ async function fetchAndLoadAnswers(assignmentId) {
     throw new Error(`Assignment kind is "${kind}", expected "questions".`);
   }
   db.ensureAssignment({ assignmentId, openDate, courseId, title });
+  db.ensureAssignmentKind({ assignmentId, kind });
   db.ensureFormAssessment({ assignmentId });
   const students = db.studentsByCourse({ courseId });
   const filename = `${url.slice(1)}/answers.json`;
