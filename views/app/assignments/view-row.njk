@@ -1,5 +1,7 @@
 <tr id="apv-row-{{ a.assignment_id }}">
-  <td>{{ a.assignment_id }}</td>
+  <td><a href="#" hx-get="/assignments/{{ a.assignment_id }}/api-json"
+                  hx-target="body" hx-swap="beforeend"
+                  onclick="document.getElementById('api-json-dialog')?.remove()">{{ a.assignment_id }}</a></td>
   <td><a href="/assignments/{{ a.assignment_id }}/students">{{ a.title }}</a></td>
   <td>{{ a.course_id }}</td>
   <td>{{ a.date }}</td>

@@ -1,0 +1,9 @@
+<dialog id="api-json-dialog" open>
+  <h3>Assignment {{ assignmentId }} — API JSON</h3>
+  {% if error %}
+  <p class="error">{{ error }}</p>
+  {% else %}
+  <pre><code>{{ json }}</code></pre>
+  {% endif %}
+  <button onclick="this.closest('dialog').remove()">Close</button>
+</dialog>

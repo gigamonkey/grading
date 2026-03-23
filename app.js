@@ -70,6 +70,19 @@ app.get('/assignments/lookup', async (req, res) => {
   }
 });
 
+app.get('/assignments/:assignmentId/api-json', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  try {
+    const data = await api.assignment(assignmentId);
+    res.render('app/assignments/api-json-dialog.njk', {
+      assignmentId,
+      json: JSON.stringify(data, null, 2),
+    });
+  } catch (e) {
+    res.render('app/assignments/api-json-dialog.njk', { assignmentId, error: e.message });
+  }
+});
+
 app.get('/assignments/:assignmentId/students', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const assignment = db.assignmentById({ assignmentId });

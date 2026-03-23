@@ -449,6 +449,23 @@ td.editable { cursor: pointer; }
 td.editable:hover { background: #f0f0f0; }
 td.disabled-cell { color: #aaa; cursor: not-allowed; }
 
+#api-json-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 1em 1.5em;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+#api-json-dialog::backdrop { background: rgba(0,0,0,0.3); }
+#api-json-dialog pre { margin: 0; white-space: pre-wrap; font-size: 0.85em; }
+
 .copyable { cursor: pointer; }
 td.copyable:hover { background: #f0f0f0; }
 .copy-icon { opacity: 0.4; font-size: 0.85em; transition: opacity 0.2s; }
