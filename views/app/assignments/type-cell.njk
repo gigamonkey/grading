@@ -5,7 +5,9 @@
           hx-target="closest td"
           hx-swap="outerHTML"
           autofocus
-          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/type',{target:this.closest('td'),swap:'outerHTML'})}">
+          hx-on:change="this.dataset.changed='1'"
+          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/assignments/{{ a.assignment_id }}/type',{target:this.closest('td'),swap:'outerHTML'})}"
+          hx-on:blur="if(!this.dataset.changed&&!this.dataset.cancelled){htmx.ajax('GET','/assignments/{{ a.assignment_id }}/type',{target:this.closest('td'),swap:'outerHTML'})}">
     <option value="A" {% if a.assignment_type == 'A' %}selected{% endif %}>A</option>
     <option value="M" {% if a.assignment_type == 'M' %}selected{% endif %}>M</option>
   </select>

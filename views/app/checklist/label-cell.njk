@@ -2,12 +2,13 @@
 <th class="checklist-label editing">
   <input type="text" name="criteriaLabel" value="{{ criteriaLabel }}"
          hx-put="/checklist/{{ assignmentId }}/criteria/{{ seq }}/label"
-         hx-trigger="change, keyup[key=='Enter']"
+         hx-trigger="keyup[key=='Enter']"
          hx-target="closest th"
          hx-swap="outerHTML"
          style="width:100%;margin:0"
          autofocus onfocus="this.select()"
-         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/checklist/{{ assignmentId }}/criteria/{{ seq }}/label',{target:this.closest('th'),swap:'outerHTML'})}">
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/checklist/{{ assignmentId }}/criteria/{{ seq }}/label',{target:this.closest('th'),swap:'outerHTML'})}"
+         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/checklist/{{ assignmentId }}/criteria/{{ seq }}/label',{target:this.closest('th'),swap:'outerHTML',values:{criteriaLabel:this.value}})}">
 </th>
 {% else %}
 <th class="checklist-label"

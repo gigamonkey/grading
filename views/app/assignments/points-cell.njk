@@ -2,16 +2,19 @@
 <td class="editing">
   <input type="number" name="points" value="{{ a.points or '' }}" step="1"
          hx-put="/assignments/{{ a.assignment_id }}/points"
-         hx-trigger="change, keyup[key=='Enter']"
+         hx-trigger="keyup[key=='Enter']"
          hx-target="closest td"
          hx-swap="outerHTML"
          style="width:5rem"
          autofocus onfocus="this.select()"
-         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/points',{target:this.closest('td'),swap:'outerHTML'})}">
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/assignments/{{ a.assignment_id }}/points',{target:this.closest('td'),swap:'outerHTML'})}"
+         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/assignments/{{ a.assignment_id }}/points',{target:this.closest('td'),swap:'outerHTML',values:{points:this.value}})}">
 </td>
-{% else %}
+{% elif a.standard %}
 <td class="editable"
     hx-get="/assignments/{{ a.assignment_id }}/points?edit=1"
     hx-target="this"
-    hx-swap="outerHTML">{{ a.points }}</td>
+    hx-swap="outerHTML">{{ a.points or '&nbsp;' | safe }}</td>
+{% else %}
+<td class="disabled-cell" title="Set standard first">{{ a.points }}</td>
 {% endif %}

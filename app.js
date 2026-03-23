@@ -154,19 +154,29 @@ function saveAssignmentField(assignmentId, updates) {
   const current = db.assignmentById({ assignmentId });
   const type = updates.assignment_type ?? current.assignment_type;
   const standard = updates.standard ?? current.standard;
-  const icName = updates.icName ?? current.ic_name;
-  const points = updates.points != null ? Number(updates.points) : Number(current.points);
+  const icName = updates.icName ?? current.ic_name ?? '';
+  const points = updates.points != null ? Number(updates.points) : Number(current.points || 0);
+
+  // Handle cleanup when switching between A and M
+  if (type === 'M' && current.assignment_type !== 'M') {
+    db.clearAssignmentPointValue({ assignmentId });
+  }
+  if (type !== 'M' && current.assignment_type === 'M' && current.standard) {
+    db.deleteMasteryAssignmentStandard({ assignmentId, standard: current.standard });
+  }
+
+  // Can't write to point-value tables without a standard (NOT NULL + PK)
+  if (!standard) return;
+
   if (type === 'M') {
-    if (current.assignment_type !== 'M') db.clearAssignmentPointValue({ assignmentId });
-    if (current.standard && current.standard !== standard) {
+    if (current.assignment_type === 'M' && current.standard && current.standard !== standard) {
       db.deleteMasteryAssignmentStandard({ assignmentId, standard: current.standard });
     }
     db.ensureMasteryAssignment({ assignmentId, standard, points });
   } else {
-    if (current.assignment_type === 'M') {
-      db.deleteMasteryAssignmentStandard({ assignmentId, standard: current.standard });
+    if (current.standard && current.standard !== standard) {
+      db.clearAssignmentPointValue({ assignmentId });
     }
-    db.clearAssignmentPointValue({ assignmentId });
     db.ensureAssignmentPointValue({ assignmentId, standard, icName, points });
   }
 }
@@ -181,7 +191,10 @@ app.put('/assignments/:assignmentId/type', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   saveAssignmentField(assignmentId, { assignment_type: req.body.assignment_type });
   const a = db.assignmentById({ assignmentId });
-  res.render('app/assignments/type-cell.njk', { a, editing: false });
+  // Return full row since type change can clear other fields
+  res.setHeader('HX-Retarget', `#apv-row-${assignmentId}`);
+  res.setHeader('HX-Reswap', 'outerHTML');
+  res.render('app/assignments/view-row.njk', { a });
 });
 
 app.get('/assignments/:assignmentId/standard', (req, res) => {
@@ -199,7 +212,10 @@ app.put('/assignments/:assignmentId/standard', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   saveAssignmentField(assignmentId, { standard: req.body.standard });
   const a = db.assignmentById({ assignmentId });
-  res.render('app/assignments/standard-cell.njk', { a, editing: false });
+  // Return full row since standard affects editability of other cells
+  res.setHeader('HX-Retarget', `#apv-row-${assignmentId}`);
+  res.setHeader('HX-Reswap', 'outerHTML');
+  res.render('app/assignments/view-row.njk', { a });
 });
 
 app.get('/assignments/:assignmentId/ic-name', (req, res) => {

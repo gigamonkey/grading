@@ -2,12 +2,13 @@
 <td class="checklist-points editing">
   <input type="number" name="points" value="{{ points }}" min="0" step="1"
          hx-put="/checklist/{{ assignmentId }}/criteria/{{ seq }}/points"
-         hx-trigger="change, keyup[key=='Enter']"
+         hx-trigger="keyup[key=='Enter']"
          hx-target="#checklist-table"
          hx-swap="innerHTML"
          style="width:100%;margin:0"
          autofocus onfocus="this.select()"
-         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/checklist/{{ assignmentId }}/criteria/{{ seq }}/points',{target:this.closest('td'),swap:'outerHTML'})}">
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/checklist/{{ assignmentId }}/criteria/{{ seq }}/points',{target:this.closest('td'),swap:'outerHTML'})}"
+         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/checklist/{{ assignmentId }}/criteria/{{ seq }}/points',{target:'#checklist-table',swap:'innerHTML',values:{points:this.value}})}">
 </td>
 {% else %}
 <td class="checklist-points"

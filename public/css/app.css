@@ -447,6 +447,7 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 
 td.editable { cursor: pointer; }
 td.editable:hover { background: #f0f0f0; }
+td.disabled-cell { color: #aaa; cursor: not-allowed; }
 
 .copyable { cursor: pointer; }
 td.copyable:hover { background: #f0f0f0; }

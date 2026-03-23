@@ -5,7 +5,9 @@
           hx-target="closest td"
           hx-swap="outerHTML"
           autofocus
-          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/standard',{target:this.closest('td'),swap:'outerHTML'})}">
+          hx-on:change="this.dataset.changed='1'"
+          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/assignments/{{ a.assignment_id }}/standard',{target:this.closest('td'),swap:'outerHTML'})}"
+          hx-on:blur="if(!this.dataset.changed&&!this.dataset.cancelled){htmx.ajax('GET','/assignments/{{ a.assignment_id }}/standard',{target:this.closest('td'),swap:'outerHTML'})}">
     <option value="">—</option>
     {% for s in standards %}
     <option value="{{ s }}" {% if s == a.standard %}selected{% endif %}>{{ s }}</option>
@@ -16,5 +18,5 @@
 <td class="editable"
     hx-get="/assignments/{{ a.assignment_id }}/standard?edit=1"
     hx-target="this"
-    hx-swap="outerHTML">{{ a.standard }}</td>
+    hx-swap="outerHTML">{{ a.standard or '&nbsp;' | safe }}</td>
 {% endif %}

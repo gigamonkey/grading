@@ -2,15 +2,18 @@
 <td class="editing">
   <input type="text" name="icName" value="{{ a.ic_name or '' }}"
          hx-put="/assignments/{{ a.assignment_id }}/ic-name"
-         hx-trigger="change, keyup[key=='Enter']"
+         hx-trigger="keyup[key=='Enter']"
          hx-target="closest td"
          hx-swap="outerHTML"
          autofocus onfocus="this.select()"
-         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/ic-name',{target:this.closest('td'),swap:'outerHTML'})}">
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/assignments/{{ a.assignment_id }}/ic-name',{target:this.closest('td'),swap:'outerHTML'})}"
+         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/assignments/{{ a.assignment_id }}/ic-name',{target:this.closest('td'),swap:'outerHTML',values:{icName:this.value}})}">
 </td>
-{% else %}
+{% elif a.standard %}
 <td class="editable"
     hx-get="/assignments/{{ a.assignment_id }}/ic-name?edit=1"
     hx-target="this"
-    hx-swap="outerHTML">{{ a.ic_name }}</td>
+    hx-swap="outerHTML">{{ a.ic_name or '&nbsp;' | safe }}</td>
+{% else %}
+<td class="disabled-cell" title="Set standard first">{{ a.ic_name }}</td>
 {% endif %}
