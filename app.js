@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
+import { parse } from 'csv-parse/sync';
 import dotenv from 'dotenv';
 import express from 'express';
 import nunjucks from 'nunjucks';
@@ -296,6 +299,63 @@ app.post('/assignments/:assignmentId/refresh-kind', async (req, res) => {
   }
   const a = db.assignmentById({ assignmentId });
   res.render('app/assignments/view-row.njk', { a });
+});
+
+app.post('/assignments/reload-gradebook', (req, res) => {
+  const dir = process.env.GRADEBOOK_DIR;
+  if (!dir) {
+    res.send('<span class="error">GRADEBOOK_DIR not set in .env</span>');
+    return;
+  }
+
+  try {
+    const files = fs
+      .readdirSync(dir)
+      .filter((f) => f.startsWith('Grade Book Export') && f.endsWith('.csv'))
+      .sort((a, b) => {
+        const sa = fs.statSync(path.join(dir, a)).mtimeMs;
+        const sb = fs.statSync(path.join(dir, b)).mtimeMs;
+        return sa - sb;
+      });
+    if (files.length === 0) {
+      res.send(`<span class="error">No Grade Book Export CSV files found in ${dir}</span>`);
+      return;
+    }
+
+    let totalRecords = 0;
+    db.transaction(() => {
+      for (const file of files) {
+        const text = fs.readFileSync(path.join(dir, file), 'utf-8');
+        const rows = parse(text, { relax_column_count: true });
+        const names = rows[0].slice(1);
+        const studentRows = rows.slice(3);
+
+        for (const cols of studentRows) {
+          const name = cols[0];
+          const match = name.match(/#(\d+)/);
+          if (!match) continue;
+          const studentNumber = match[1];
+          const points = cols.slice(1);
+          for (let i = 0; i < names.length; i++) {
+            if (points[i]) {
+              db.ensureIcGrade({ studentNumber, icName: names[i], points: Number(points[i]) });
+              totalRecords++;
+            }
+          }
+        }
+      }
+    });
+
+    for (const file of files) {
+      fs.unlinkSync(path.join(dir, file));
+    }
+
+    res.send(
+      `<span class="success">Loaded ${totalRecords} grades from ${files.length} file${files.length === 1 ? '' : 's'}.</span>`,
+    );
+  } catch (e) {
+    res.send(`<span class="error">${e.message}</span>`);
+  }
 });
 
 async function gradeJavascriptUnitTests(assignmentId) {
