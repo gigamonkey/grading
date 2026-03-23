@@ -192,6 +192,8 @@ CREATE TABLE IF NOT EXISTS student_answers (
   question_number INT,
   answer_number,
   raw_answer TEXT,
+  timestamp INTEGER,
+  sha TEXT,
   PRIMARY KEY (github, assignment_id, question_number, answer_number),
   FOREIGN KEY (assignment_id) REFERENCES form_assessments(assignment_id) ON DELETE CASCADE
 );

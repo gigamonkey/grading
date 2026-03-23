@@ -28,8 +28,8 @@ const db = new DB('db.db')
 const normalize = (answer) => answer.trim();
 
 class DbSink {
-  saveAnswer(github, assignmentId, questionNumber, answerNumber, rawAnswer) {
-    db.ensureStudentAnswer({github, assignmentId, questionNumber, answerNumber, rawAnswer});
+  saveAnswer(github, assignmentId, questionNumber, answerNumber, rawAnswer, timestamp, sha) {
+    db.ensureStudentAnswer({github, assignmentId, questionNumber, answerNumber, rawAnswer, timestamp, sha});
     if (rawAnswer) {
       db.ensureNormalizedAnswer({
         assignmentId, questionNumber, rawAnswer, answer: rawAnswer.trim(),
@@ -39,19 +39,19 @@ class DbSink {
 }
 
 class ConsoleSink {
-  saveAnswer(github, assignmentId, questionNumber, answerNumber, rawAnswer) {
+  saveAnswer(github, assignmentId, questionNumber, answerNumber, rawAnswer, timestamp, sha) {
     console.log({
-      github, assignmentId, questionNumber, answerNumber, rawAnswer
+      github, assignmentId, questionNumber, answerNumber, rawAnswer, timestamp, sha
     });
   }
 }
 
-const saveAnswers = (sink, github, assignmentId, answers) => {
+const saveAnswers = (sink, github, assignmentId, answers, timestamp, sha) => {
   answers.forEach((answer, num) => {
     if (Array.isArray(answer)) {
-      answer.forEach((a, i) => sink.saveAnswer(github, assignmentId, num, i, a));
+      answer.forEach((a, i) => sink.saveAnswer(github, assignmentId, num, i, a, timestamp, sha));
     } else {
-      sink.saveAnswer(github, assignmentId, num, 0, answer);
+      sink.saveAnswer(github, assignmentId, num, 0, answer, timestamp, sha);
     }
   });
 };
@@ -100,7 +100,7 @@ new Command()
 
           try {
             const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
-            saveAnswers(sink, github, assignmentId, answers);
+            saveAnswers(sink, github, assignmentId, answers, timestamp, sha);
           } catch (e) {
             console.log(`Processing ${file}`);
             console.log(e);

@@ -751,7 +751,7 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
 
 // Quiz Scoring
 
-function saveAnswers(github, assignmentId, answers) {
+function saveAnswers(github, assignmentId, answers, timestamp, sha) {
   answers.forEach((answer, num) => {
     if (Array.isArray(answer)) {
       answer.forEach((a, i) => {
@@ -761,6 +761,8 @@ function saveAnswers(github, assignmentId, answers) {
           questionNumber: num,
           answerNumber: i,
           rawAnswer: a,
+          timestamp,
+          sha,
         });
         if (a)
           db.ensureNormalizedAnswer({
@@ -777,6 +779,8 @@ function saveAnswers(github, assignmentId, answers) {
         questionNumber: num,
         answerNumber: 0,
         rawAnswer: answer,
+        timestamp,
+        sha,
       });
       if (answer)
         db.ensureNormalizedAnswer({
@@ -897,9 +901,10 @@ async function fetchAndLoadAnswers(assignmentId) {
         const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
         const sha = repo.sha('main', filename);
         if (sha) {
+          const timestamp = repo.timestamp(sha);
           const contents = repo.contents(sha, filename);
           const answers = JSON.parse(contents);
-          saveAnswers(student.github, assignmentId, answers);
+          saveAnswers(student.github, assignmentId, answers, timestamp, sha);
           loaded++;
         }
       } catch (e) {
@@ -964,11 +969,12 @@ app.post('/assignments/:assignmentId/students/:userId/reload-answers', async (re
     if (!sha) {
       return res.send('<span class="error">No answers found.</span>');
     }
+    const timestamp = repo.timestamp(sha);
     const contents = repo.contents(sha, filename);
     const answers = JSON.parse(contents);
     db.transaction(() => {
       db.clearStudentAnswersByGithub({ assignmentId, github: student.github });
-      saveAnswers(student.github, assignmentId, answers);
+      saveAnswers(student.github, assignmentId, answers, timestamp, sha);
     });
     res.send('<i class="bi bi-check-lg text-success"></i>');
   } catch (e) {
