@@ -1,0 +1,18 @@
+{% if editing %}
+<td class="editing">
+  <select name="assignment_type"
+          hx-put="/assignments/{{ a.assignment_id }}/type"
+          hx-target="closest td"
+          hx-swap="outerHTML"
+          autofocus
+          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/type',{target:this.closest('td'),swap:'outerHTML'})}">
+    <option value="A" {% if a.assignment_type == 'A' %}selected{% endif %}>A</option>
+    <option value="M" {% if a.assignment_type == 'M' %}selected{% endif %}>M</option>
+  </select>
+</td>
+{% else %}
+<td class="editable"
+    hx-get="/assignments/{{ a.assignment_id }}/type?edit=1"
+    hx-target="this"
+    hx-swap="outerHTML">{{ a.assignment_type }}</td>
+{% endif %}

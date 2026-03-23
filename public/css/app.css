@@ -445,6 +445,9 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 
 .info-table { width: auto; }
 
+td.editable { cursor: pointer; }
+td.editable:hover { background: #f0f0f0; }
+
 .copyable { cursor: pointer; }
 td.copyable:hover { background: #f0f0f0; }
 .copy-icon { opacity: 0.4; font-size: 0.85em; transition: opacity 0.2s; }

@@ -1,0 +1,22 @@
+{% if editing %}
+<td class="editing">
+  <input type="text" name="standard" value="{{ a.standard or '' }}"
+         list="standards-list-{{ a.assignment_id }}"
+         hx-put="/assignments/{{ a.assignment_id }}/standard"
+         hx-trigger="change, keyup[key=='Enter']"
+         hx-target="closest td"
+         hx-swap="outerHTML"
+         autofocus onfocus="this.select()"
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/standard',{target:this.closest('td'),swap:'outerHTML'})}">
+  <datalist id="standards-list-{{ a.assignment_id }}">
+    {% for s in standards %}
+    <option value="{{ s }}">
+    {% endfor %}
+  </datalist>
+</td>
+{% else %}
+<td class="editable"
+    hx-get="/assignments/{{ a.assignment_id }}/standard?edit=1"
+    hx-target="this"
+    hx-swap="outerHTML">{{ a.standard }}</td>
+{% endif %}

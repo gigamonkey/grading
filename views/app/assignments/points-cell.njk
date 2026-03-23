@@ -1,0 +1,17 @@
+{% if editing %}
+<td class="editing">
+  <input type="number" name="points" value="{{ a.points or '' }}" step="1"
+         hx-put="/assignments/{{ a.assignment_id }}/points"
+         hx-trigger="change, keyup[key=='Enter']"
+         hx-target="closest td"
+         hx-swap="outerHTML"
+         style="width:5rem"
+         autofocus onfocus="this.select()"
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/points',{target:this.closest('td'),swap:'outerHTML'})}">
+</td>
+{% else %}
+<td class="editable"
+    hx-get="/assignments/{{ a.assignment_id }}/points?edit=1"
+    hx-target="this"
+    hx-swap="outerHTML">{{ a.points }}</td>
+{% endif %}

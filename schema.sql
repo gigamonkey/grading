@@ -418,6 +418,24 @@ JOIN graded_speedruns USING (speedrun_id)
 WHERE ok;
 
 
+-- SHA and timestamp of the work that was graded, per (assignment_id, user_id).
+-- Not all score sources have this metadata (e.g. direct_scores, checklist_marks).
+DROP VIEW IF EXISTS graded_work_metadata;
+CREATE VIEW graded_work_metadata AS
+SELECT assignment_id, user_id, timestamp, sha
+FROM expressions JOIN roster USING (github)
+UNION ALL
+SELECT assignment_id, user_id, min(timestamp), sha
+FROM javascript_unit_tests JOIN roster USING (github)
+GROUP BY assignment_id, github
+UNION ALL
+SELECT assignment_id, user_id, timestamp, sha
+FROM java_unit_tests JOIN roster USING (github)
+UNION ALL
+SELECT assignment_id, user_id, min(timestamp), sha
+FROM student_answers JOIN roster USING (github)
+GROUP BY assignment_id, github;
+
 -- This view only contains scores that actually exist. If a student hasn't done
 -- an assignment they will have no entry in this table.
 DROP VIEW IF EXISTS assignment_scores;

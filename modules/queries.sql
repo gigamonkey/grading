@@ -195,7 +195,8 @@ SELECT a.assignment_id, a.date, a.course_id, a.title,
        CASE WHEN ma.assignment_id IS NOT NULL THEN 'M' WHEN apv.assignment_id IS NOT NULL THEN 'A' ELSE '?' END as assignment_type,
        COALESCE(apv.standard, ma.standard) as standard,
        COALESCE(apv.ic_name, min.ic_name) as ic_name,
-       COALESCE(apv.points, ma.points) as points
+       COALESCE(apv.points, ma.points) as points,
+       EXISTS(SELECT 1 FROM assignment_scores s WHERE s.assignment_id = a.assignment_id) as has_scores
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
@@ -207,7 +208,10 @@ SELECT a.assignment_id, a.date, a.course_id, a.title,
        CASE WHEN ma.assignment_id IS NOT NULL THEN 'M' WHEN apv.assignment_id IS NOT NULL THEN 'A' ELSE '?' END as assignment_type,
        COALESCE(apv.standard, ma.standard) as standard,
        COALESCE(apv.ic_name, min.ic_name) as ic_name,
-       COALESCE(apv.points, ma.points) as points
+       COALESCE(apv.points, ma.points) as points,
+       EXISTS(SELECT 1 FROM assignment_scores s WHERE s.assignment_id = a.assignment_id) as has_scores,
+       EXISTS(SELECT 1 FROM form_assessments fa WHERE fa.assignment_id = a.assignment_id) as has_quiz,
+       EXISTS(SELECT 1 FROM scored_question_assignments sqa WHERE sqa.assignment_id = a.assignment_id) as has_js_tests
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
@@ -435,11 +439,13 @@ ORDER BY a.date DESC, ap.title;
 -- :name assignmentStudentScores :all
 SELECT r.user_id, r.github, r.sortable_name, r.period, r.course_id,
        s.score, cast(round(s.score * apv.points) as integer) points,
-       apv.points max_points, s.override
+       apv.points max_points, s.override,
+       m.sha, m.timestamp graded_at
 FROM assigned a
 JOIN roster r USING (user_id)
 LEFT JOIN assignment_scores s ON s.user_id = a.user_id AND s.assignment_id = a.assignment_id
 LEFT JOIN assignment_point_values apv ON apv.assignment_id = a.assignment_id
+LEFT JOIN graded_work_metadata m ON m.user_id = a.user_id AND m.assignment_id = a.assignment_id
 WHERE a.assignment_id = $assignmentId
 ORDER BY r.sortable_name;
 

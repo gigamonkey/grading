@@ -3,11 +3,17 @@
   <td><a href="/assignments/{{ a.assignment_id }}/students">{{ a.title }}</a></td>
   <td>{{ a.course_id }}</td>
   <td>{{ a.date }}</td>
-  <td>{{ a.assignment_type }}</td>
-  <td>{{ a.standard }}</td>
-  <td>{{ a.ic_name }}</td>
-  <td>{{ a.points }}</td>
-  <td><button hx-get="/assignments/{{ a.assignment_id }}/edit-row"
-              hx-target="#apv-row-{{ a.assignment_id }}"
-              hx-swap="outerHTML">Edit</button></td>
+  {% include "app/assignments/type-cell.njk" %}
+  {% include "app/assignments/standard-cell.njk" %}
+  {% include "app/assignments/ic-name-cell.njk" %}
+  {% include "app/assignments/points-cell.njk" %}
+  <td>
+    {% if not a.has_scores %}
+      <button hx-post="/assignments/{{ a.assignment_id }}/grade-js"
+              hx-target="#grade-status-{{ a.assignment_id }}"
+              hx-swap="innerHTML">Grade JS</button>
+      <a href="/quiz-scoring/{{ a.assignment_id }}"><button type="button">Grade Quiz</button></a>
+      <span id="grade-status-{{ a.assignment_id }}"></span>
+    {% endif %}
+  </td>
 </tr>

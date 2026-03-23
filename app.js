@@ -26,6 +26,17 @@ app.use(express.static('public'));
 
 const env = nunjucks.configure('views', { autoescape: true, express: app });
 env.addFilter('urlencode', encodeURIComponent);
+env.addFilter('epochDate', (ts) =>
+  ts
+    ? new Date(ts * 1000).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : '',
+);
 
 // Dashboard
 app.get('/', (_req, res) => {
@@ -134,46 +145,85 @@ app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
   res.render('app/assignments/student-answers.njk', { assignment, student, questions, totalScore });
 });
 
-app.get('/assignments/:assignmentId/edit-row', (req, res) => {
-  const assignmentId = Number(req.params.assignmentId);
-  const a = db.assignmentById({ assignmentId });
-  if (req.query.assignment_type) a.assignment_type = req.query.assignment_type;
-  const standards = db.courseStandards({ assignmentId });
-  res.render('app/assignments/edit-row.njk', { a, standards });
-});
-
-app.get('/assignments/:assignmentId/mastery-ic-name', (req, res) => {
-  const assignmentId = Number(req.params.assignmentId);
-  const { standard } = req.query;
-  const icName = db.masteryIcNameForStandard({ assignmentId, standard }) || '';
-  res.render('app/assignments/mastery-ic-name.njk', { icName });
-});
-
 app.get('/assignments/:assignmentId/view-row', (req, res) => {
   const a = db.assignmentById({ assignmentId: Number(req.params.assignmentId) });
   res.render('app/assignments/view-row.njk', { a });
 });
 
-app.put('/assignments/:assignmentId/point-value', (req, res) => {
-  const assignmentId = Number(req.params.assignmentId);
-  const { standard, points, assignment_type } = req.body;
-  const { icName } = req.body;
+function saveAssignmentField(assignmentId, updates) {
   const current = db.assignmentById({ assignmentId });
-  if (assignment_type === 'M') {
+  const type = updates.assignment_type ?? current.assignment_type;
+  const standard = updates.standard ?? current.standard;
+  const icName = updates.icName ?? current.ic_name;
+  const points = updates.points != null ? Number(updates.points) : Number(current.points);
+  if (type === 'M') {
     if (current.assignment_type !== 'M') db.clearAssignmentPointValue({ assignmentId });
     if (current.standard && current.standard !== standard) {
       db.deleteMasteryAssignmentStandard({ assignmentId, standard: current.standard });
     }
-    db.ensureMasteryAssignment({ assignmentId, standard, points: Number(points) });
+    db.ensureMasteryAssignment({ assignmentId, standard, points });
   } else {
     if (current.assignment_type === 'M') {
       db.deleteMasteryAssignmentStandard({ assignmentId, standard: current.standard });
     }
     db.clearAssignmentPointValue({ assignmentId });
-    db.ensureAssignmentPointValue({ assignmentId, standard, icName, points: Number(points) });
+    db.ensureAssignmentPointValue({ assignmentId, standard, icName, points });
   }
+}
+
+// Per-field editing endpoints for assignments
+app.get('/assignments/:assignmentId/type', (req, res) => {
+  const a = db.assignmentById({ assignmentId: Number(req.params.assignmentId) });
+  res.render('app/assignments/type-cell.njk', { a, editing: req.query.edit === '1' });
+});
+
+app.put('/assignments/:assignmentId/type', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  saveAssignmentField(assignmentId, { assignment_type: req.body.assignment_type });
   const a = db.assignmentById({ assignmentId });
-  res.render('app/assignments/view-row.njk', { a });
+  res.render('app/assignments/type-cell.njk', { a, editing: false });
+});
+
+app.get('/assignments/:assignmentId/standard', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const a = db.assignmentById({ assignmentId });
+  const standards = req.query.edit === '1' ? db.courseStandards({ assignmentId }) : [];
+  res.render('app/assignments/standard-cell.njk', {
+    a,
+    standards,
+    editing: req.query.edit === '1',
+  });
+});
+
+app.put('/assignments/:assignmentId/standard', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  saveAssignmentField(assignmentId, { standard: req.body.standard });
+  const a = db.assignmentById({ assignmentId });
+  res.render('app/assignments/standard-cell.njk', { a, editing: false });
+});
+
+app.get('/assignments/:assignmentId/ic-name', (req, res) => {
+  const a = db.assignmentById({ assignmentId: Number(req.params.assignmentId) });
+  res.render('app/assignments/ic-name-cell.njk', { a, editing: req.query.edit === '1' });
+});
+
+app.put('/assignments/:assignmentId/ic-name', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  saveAssignmentField(assignmentId, { icName: req.body.icName });
+  const a = db.assignmentById({ assignmentId });
+  res.render('app/assignments/ic-name-cell.njk', { a, editing: false });
+});
+
+app.get('/assignments/:assignmentId/points', (req, res) => {
+  const a = db.assignmentById({ assignmentId: Number(req.params.assignmentId) });
+  res.render('app/assignments/points-cell.njk', { a, editing: req.query.edit === '1' });
+});
+
+app.put('/assignments/:assignmentId/points', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  saveAssignmentField(assignmentId, { points: req.body.points });
+  const a = db.assignmentById({ assignmentId });
+  res.render('app/assignments/points-cell.njk', { a, editing: false });
 });
 
 app.post('/assignments', async (req, res) => {

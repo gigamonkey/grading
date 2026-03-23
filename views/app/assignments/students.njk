@@ -7,17 +7,6 @@
   {% if assignment.points %} &middot; {{ assignment.points }} points{% endif %}
   {% if hasScoring %} &middot; <a href="/quiz-scoring/{{ assignment.assignment_id }}">Scoring</a>{% endif %}
 </p>
-<p>
-  <button hx-post="/assignments/{{ assignment.assignment_id }}/grade-js"
-          hx-target="#grade-status"
-          hx-swap="innerHTML"
-          hx-indicator="#grade-spinner">
-    Grade JS Unit Tests
-  </button>
-  <span id="grade-spinner" class="htmx-indicator">Grading...</span>
-  <span id="grade-status"></span>
-</p>
-
 <input type="text" id="student-filter" placeholder="Filter students..." autofocus
        style="margin-bottom: 0.5em; padding: 0.25em 0.5em;">
 <table class="data-table" data-column-filters>
@@ -27,6 +16,8 @@
       <th data-column-filter="1">Period</th>
       <th>Score</th>
       {% if assignment.points %}<th data-column-filter="3">Points</th>{% endif %}
+      <th>SHA</th>
+      <th>Submitted</th>
       <th></th>
     </tr>
   </thead>
