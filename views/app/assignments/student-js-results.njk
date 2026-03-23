@@ -7,26 +7,26 @@
   &middot; Period {{ student.period }}
 </p>
 
-<table class="data-table">
+<table class="data-table" data-column-filters>
   <thead>
     <tr>
-      <th>Function</th>
-      <th>Answered</th>
-      <th>Correct</th>
+      <th data-column-filter="0">Function</th>
+      <th data-column-filter="1">Answered</th>
+      <th data-column-filter="2">Correct</th>
     </tr>
   </thead>
   <tbody>
     {% for r in results %}
     <tr>
       <td><code>{{ r.question }}</code></td>
-      <td>
+      <td data-filter-value="{% if r.answered %}Yes{% else %}No{% endif %}">
         {% if r.answered %}
         <i class="bi bi-check-lg text-success"></i>
         {% else %}
         <i class="bi bi-x-lg text-danger"></i>
         {% endif %}
       </td>
-      <td>
+      <td data-filter-value="{% if not r.answered %}—{% elif r.correct %}Yes{% else %}No{% endif %}">
         {% if not r.answered %}&mdash;
         {% elif r.correct %}<i class="bi bi-check-lg text-success"></i>
         {% else %}<i class="bi bi-x-lg text-danger"></i>

@@ -58,7 +58,7 @@
         let visible = true;
         for (const [colStr, selectedValues] of Object.entries(activeFilters)) {
           const cell = row.cells[parseInt(colStr)];
-          if (cell && !selectedValues.has(cell.textContent.trim())) {
+          if (cell && !selectedValues.has(cellValue(cell))) {
             visible = false;
             break;
           }
@@ -194,16 +194,20 @@
 
   // Returns unique values for colIndex from rows that pass all active filters
   // except the filter on colIndex itself (so the dropdown shows what's available).
+  function cellValue(cell) {
+    return (cell.hasAttribute('data-filter-value') ? cell.getAttribute('data-filter-value') : cell.textContent).trim();
+  }
+
   function getColumnValues(table, colIndex, activeFilters) {
     const values = new Set();
     table.querySelectorAll('tbody tr').forEach((row) => {
       for (const [colStr, selectedValues] of Object.entries(activeFilters)) {
         if (parseInt(colStr) === colIndex) continue;
         const cell = row.cells[parseInt(colStr)];
-        if (cell && !selectedValues.has(cell.textContent.trim())) return;
+        if (cell && !selectedValues.has(cellValue(cell))) return;
       }
       const cell = row.cells[colIndex];
-      if (cell) values.add(cell.textContent.trim());
+      if (cell) values.add(cellValue(cell));
     });
     return Array.from(values).sort();
   }
