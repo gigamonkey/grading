@@ -1,11 +1,7 @@
 {% for s in students %}
 <tr{% if s.override %} class="override"{% endif %}>
   <td>
-    {% if hasScoring or hasJsResults %}
-    <a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ s.sortable_name }}</a>
-    {% else %}
     <a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a>
-    {% endif %}
     {% if hasScoring and s.github %}
     <span class="reload-status" style="display:inline-block; margin-left: 0.3em; opacity: 0.3;">
       <a href="#" title="Reload answers" style="color: inherit; font-size: 0.75em;"
@@ -20,8 +16,8 @@
     {% endif %}
   </td>
   <td>{{ s.period }}</td>
-  <td>{% if s.score != null %}{{ (s.score * 100) | round }}%{% else %}&mdash;{% endif %}</td>
-  {% if assignment.points %}<td>{% if s.points != null %}{{ s.points }} / {{ s.max_points }}{% else %}&mdash;{% endif %}</td>{% endif %}
+  <td>{% if s.score != null %}<a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ (s.score * 100) | round }}%</a>{% else %}&mdash;{% endif %}</td>
+  {% if assignment.points %}<td>{% if s.points != null %}<a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ s.points }} / {{ s.max_points }}</a>{% else %}&mdash;{% endif %}</td>{% endif %}
   <td>{% if s.override %}override{% endif %}</td>
 </tr>
 {% endfor %}
