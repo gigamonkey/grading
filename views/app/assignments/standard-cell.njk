@@ -1,18 +1,16 @@
 {% if editing %}
 <td class="editing">
-  <input type="text" name="standard" value="{{ a.standard or '' }}"
-         list="standards-list-{{ a.assignment_id }}"
-         hx-put="/assignments/{{ a.assignment_id }}/standard"
-         hx-trigger="change, keyup[key=='Enter']"
-         hx-target="closest td"
-         hx-swap="outerHTML"
-         autofocus onfocus="this.select()"
-         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/standard',{target:this.closest('td'),swap:'outerHTML'})}">
-  <datalist id="standards-list-{{ a.assignment_id }}">
+  <select name="standard"
+          hx-put="/assignments/{{ a.assignment_id }}/standard"
+          hx-target="closest td"
+          hx-swap="outerHTML"
+          autofocus
+          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();htmx.ajax('GET','/assignments/{{ a.assignment_id }}/standard',{target:this.closest('td'),swap:'outerHTML'})}">
+    <option value="">—</option>
     {% for s in standards %}
-    <option value="{{ s }}">
+    <option value="{{ s }}" {% if s == a.standard %}selected{% endif %}>{{ s }}</option>
     {% endfor %}
-  </datalist>
+  </select>
 </td>
 {% else %}
 <td class="editable"

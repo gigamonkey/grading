@@ -72,10 +72,14 @@ SELECT question_number, answer FROM scored_answers WHERE score = 1.0 and assignm
 
 
 -- :name courseStandards :list
-SELECT DISTINCT standard FROM assignment_point_values
-JOIN assignments USING (assignment_id)
-WHERE course_id = (
-  SELECT course_id FROM assignments WHERE assignment_id = $assignmentId
+SELECT DISTINCT standard FROM (
+  SELECT standard FROM assignment_point_values
+  JOIN assignments USING (assignment_id)
+  WHERE course_id = (SELECT course_id FROM assignments WHERE assignment_id = $assignmentId)
+  UNION
+  SELECT standard FROM mastery_assignments
+  JOIN assignments USING (assignment_id)
+  WHERE course_id = (SELECT course_id FROM assignments WHERE assignment_id = $assignmentId)
 )
 ORDER BY standard;
 
