@@ -453,3 +453,6 @@ td.copyable:hover { background: #f0f0f0; }
 
 .delete-icon { opacity: 0.25; cursor: pointer; font-size: 0.85em; }
 .delete-icon:hover { opacity: 0.7; color: #c00; }
+
+.text-success { color: #198754; }
+.text-danger { color: #dc3545; }

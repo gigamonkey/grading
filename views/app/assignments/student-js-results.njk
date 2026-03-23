@@ -1,0 +1,39 @@
+{% extends "app/layout.njk" %}
+{% block title %}{{ student.sortable_name }} - {{ assignment.title }}{% endblock %}
+{% block content %}
+<h1>{{ student.sortable_name }} {% if totalScore != null %}<small>{{ (totalScore * 100) | round }}%</small>{% endif %}</h1>
+<p>
+  <a href="/assignments/{{ assignment.assignment_id }}/students">{{ assignment.title }}</a>
+  &middot; Period {{ student.period }}
+</p>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Function</th>
+      <th>Answered</th>
+      <th>Correct</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in results %}
+    <tr>
+      <td><code>{{ r.question }}</code></td>
+      <td>
+        {% if r.answered %}
+        <i class="bi bi-check-lg text-success"></i>
+        {% else %}
+        <i class="bi bi-x-lg text-danger"></i>
+        {% endif %}
+      </td>
+      <td>
+        {% if not r.answered %}&mdash;
+        {% elif r.correct %}<i class="bi bi-check-lg text-success"></i>
+        {% else %}<i class="bi bi-x-lg text-danger"></i>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

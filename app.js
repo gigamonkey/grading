@@ -7,6 +7,7 @@ import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
 import { API } from './api.js';
 import { Repo } from './modules/repo.js';
+import { loadTestcases, runTestsWithError } from './modules/test-javascript.js';
 import { camelify } from './modules/util.js';
 
 dotenv.config();
@@ -63,7 +64,22 @@ app.get('/assignments/:assignmentId/students', (req, res) => {
   const assignment = db.assignmentById({ assignmentId });
   const students = db.assignmentStudentScores({ assignmentId });
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
-  res.render('app/assignments/students.njk', { assignment, students, hasScoring });
+  const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
+  res.render('app/assignments/students.njk', { assignment, students, hasScoring, hasJsResults });
+});
+
+app.get('/assignments/:assignmentId/students-tbody', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const assignment = db.assignmentById({ assignmentId });
+  const students = db.assignmentStudentScores({ assignmentId });
+  const hasScoring = !!db.hasFormAssessment({ assignmentId });
+  const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
+  res.render('app/assignments/students-tbody.njk', {
+    assignment,
+    students,
+    hasScoring,
+    hasJsResults,
+  });
 });
 
 app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
@@ -71,6 +87,22 @@ app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
   const userId = req.params.userId;
   const assignment = db.assignmentById({ assignmentId });
   const student = db.studentById({ userId });
+
+  // Check for JS unit test results first
+  const jsResults = db.studentJsTestResults({ assignmentId, github: student.github });
+  if (jsResults.length > 0) {
+    const totalScore = jsResults.length
+      ? jsResults.filter((r) => r.answered).reduce((sum, r) => sum + r.correct, 0) /
+        jsResults.length
+      : null;
+    return res.render('app/assignments/student-js-results.njk', {
+      assignment,
+      student,
+      results: jsResults,
+      totalScore,
+    });
+  }
+
   const rows = db.studentQuizAnswers({ assignmentId, github: student.github });
   // Group rows by question (mchoices have multiple rows per question)
   const questions = [];
@@ -164,6 +196,82 @@ app.post('/assignments', async (req, res) => {
     res.send('');
   } catch (e) {
     res.render('app/assignments/tbody.njk', { assignments: [], error: e.message });
+  }
+});
+
+async function gradeJavascriptUnitTests(assignmentId) {
+  const data = camelify(await api.assignment(assignmentId));
+  const { url, kind, courseId, title, openDate } = data;
+
+  if (kind !== 'coding') {
+    throw new Error(`Assignment kind is "${kind}", expected "coding".`);
+  }
+
+  const config = await api.codingConfig(url);
+  const branch = url.slice(1);
+  const filename = `${url.slice(1)}/${config.files[0]}`;
+
+  const testcasesCode = await api.jsTestcases(url);
+  const testcases = loadTestcases(testcasesCode);
+  const questions = Object.keys(testcases.allCases).length;
+
+  const students = db.studentsByCourse({ courseId });
+
+  let graded = 0;
+  db.transaction(() => {
+    db.ensureAssignment({ assignmentId, openDate, courseId, title });
+    db.clearJavascriptUnitTest({ assignmentId });
+    db.clearScoredQuestionAssignment({ assignmentId });
+    db.insertScoredQuestionAssignment({ assignmentId, questions });
+
+    for (const student of students) {
+      if (!student.github) continue;
+      try {
+        const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+        const sha = repo.sha(branch, filename);
+        if (!sha) continue;
+
+        const timestamp = repo.timestamp(sha);
+        const code = repo.contents(sha, filename);
+
+        const { results, error } = runTestsWithError(testcases, code);
+        const testResults = error
+          ? Object.fromEntries(Object.keys(testcases.allCases).map((n) => [n, null]))
+          : results;
+
+        for (const [question, result] of Object.entries(testResults)) {
+          const answered = result === null ? 0 : 1;
+          const correct = result === null ? 0 : result.every((r) => r.passed) ? 1 : 0;
+          db.insertJavascriptUnitTest({
+            assignmentId,
+            github: student.github,
+            question,
+            answered,
+            correct,
+            timestamp,
+            sha,
+          });
+        }
+        graded++;
+      } catch (e) {
+        console.log(`Error grading ${student.github}: ${e.message}`);
+      }
+    }
+  });
+
+  return { graded, total: students.length, questions };
+}
+
+app.post('/assignments/:assignmentId/grade-js', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  try {
+    const { graded, total, questions } = await gradeJavascriptUnitTests(assignmentId);
+    res.setHeader('HX-Trigger', 'gradesUpdated');
+    res.send(
+      `<span class="success">Graded ${graded}/${total} students on ${questions} questions.</span>`,
+    );
+  } catch (e) {
+    res.send(`<span class="error">${e.message}</span>`);
   }
 });
 
@@ -704,8 +812,9 @@ function quizScoringData(assignmentId, questionNumber) {
     : [];
 
   // Compute per-question accuracy stats
-  const totalStudents = unscoredAnswers.reduce((s, a) => s + a.student_count, 0)
-    + scoredAnswers.reduce((s, a) => s + a.student_count, 0);
+  const totalStudents =
+    unscoredAnswers.reduce((s, a) => s + a.student_count, 0) +
+    scoredAnswers.reduce((s, a) => s + a.student_count, 0);
   const correctStudents = scoredAnswers
     .filter((a) => a.score >= 1)
     .reduce((s, a) => s + a.student_count, 0);

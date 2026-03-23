@@ -7,6 +7,16 @@
   {% if assignment.points %} &middot; {{ assignment.points }} points{% endif %}
   {% if hasScoring %} &middot; <a href="/quiz-scoring/{{ assignment.assignment_id }}">Scoring</a>{% endif %}
 </p>
+<p>
+  <button hx-post="/assignments/{{ assignment.assignment_id }}/grade-js"
+          hx-target="#grade-status"
+          hx-swap="innerHTML"
+          hx-indicator="#grade-spinner">
+    Grade JS Unit Tests
+  </button>
+  <span id="grade-spinner" class="htmx-indicator">Grading...</span>
+  <span id="grade-status"></span>
+</p>
 
 <input type="text" id="student-filter" placeholder="Filter students..." autofocus
        style="margin-bottom: 0.5em; padding: 0.25em 0.5em;">
@@ -20,34 +30,10 @@
       <th></th>
     </tr>
   </thead>
-  <tbody>
-    {% for s in students %}
-    <tr{% if s.override %} class="override"{% endif %}>
-      <td>
-        {% if hasScoring %}
-        <a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ s.sortable_name }}</a>
-        {% else %}
-        <a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a>
-        {% endif %}
-        {% if hasScoring and s.github %}
-        <span class="reload-status" style="display:inline-block; margin-left: 0.3em; opacity: 0.3;">
-          <a href="#" title="Reload answers" style="color: inherit; font-size: 0.75em;"
-             hx-post="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/reload-answers"
-             hx-target="closest .reload-status"
-             hx-swap="innerHTML"
-             hx-indicator="closest .reload-status"
-             onclick="event.preventDefault()">
-            <i class="bi bi-arrow-clockwise"></i>
-          </a>
-        </span>
-        {% endif %}
-      </td>
-      <td>{{ s.period }}</td>
-      <td>{% if s.score != null %}{{ (s.score * 100) | round }}%{% else %}&mdash;{% endif %}</td>
-      {% if assignment.points %}<td>{% if s.points != null %}{{ s.points }} / {{ s.max_points }}{% else %}&mdash;{% endif %}</td>{% endif %}
-      <td>{% if s.override %}override{% endif %}</td>
-    </tr>
-    {% endfor %}
+  <tbody hx-get="/assignments/{{ assignment.assignment_id }}/students-tbody"
+         hx-trigger="gradesUpdated from:body"
+         hx-swap="innerHTML">
+    {% include "app/assignments/students-tbody.njk" %}
   </tbody>
 </table>
 <script>
