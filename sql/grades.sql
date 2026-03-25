@@ -1,3 +1,6 @@
+-- :name clear_form_assessment :affected
+DELETE FROM form_assessments WHERE assignment_id = :assignment_id;
+
 -- :name add_form_assessment :insert
 INSERT OR IGNORE INTO form_assessments (assignment_id) VALUES (:assignment_id);
 
