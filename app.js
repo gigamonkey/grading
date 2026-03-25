@@ -109,6 +109,17 @@ app.get('/assignments/:assignmentId/students-tbody', (req, res) => {
   });
 });
 
+app.get('/assignments/:assignmentId/students/:userId/row', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const assignment = db.assignmentById({ assignmentId });
+  const students = db.assignmentStudentScores({ assignmentId });
+  const s = students.find((r) => r.user_id === userId);
+  if (!s) return res.status(404).send('');
+  const hasScoring = !!db.hasFormAssessment({ assignmentId });
+  res.render('app/assignments/student-row.njk', { assignment, s, hasScoring });
+});
+
 app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
@@ -1156,6 +1167,7 @@ app.post('/assignments/:assignmentId/students/:userId/reload-answers', async (re
       db.clearStudentAnswersByGithub({ assignmentId, github: student.github });
       saveAnswers(student.github, assignmentId, answers, timestamp, sha);
     });
+    res.set('HX-Trigger', JSON.stringify({ 'answers-reloaded': userId }));
     res.send('<i class="bi bi-check-lg text-success"></i>');
   } catch (e) {
     res.send(`<span class="error">${e.message}</span>`);
