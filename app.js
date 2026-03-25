@@ -357,6 +357,7 @@ app.post('/assignments/reload-gradebook', (req, res) => {
       fs.unlinkSync(path.join(dir, file));
     }
 
+    res.set('HX-Trigger', 'gradebook-reloaded');
     res.send(
       `<span class="success">Loaded ${totalRecords} grades from ${files.length} file${files.length === 1 ? '' : 's'}.</span>`,
     );
@@ -588,9 +589,19 @@ app.get('/to-update', (_req, res) => {
   res.render('app/to-update.njk', { rows });
 });
 
+app.get('/to-update/tbody', (_req, res) => {
+  const rows = db.toUpdate({ period: null });
+  res.render('app/to-update/tbody.njk', { rows });
+});
+
 app.get('/mastery-to-update', (_req, res) => {
   const rows = db.masteryToUpdate({ period: null });
   res.render('app/mastery-to-update.njk', { rows });
+});
+
+app.get('/mastery-to-update/tbody', (_req, res) => {
+  const rows = db.masteryToUpdate({ period: null });
+  res.render('app/mastery-to-update/tbody.njk', { rows });
 });
 
 app.get('/ic-assignment/:icName', (req, res) => {

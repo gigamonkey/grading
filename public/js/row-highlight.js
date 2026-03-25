@@ -2,7 +2,7 @@
   const table = document.querySelector('[data-row-highlight]');
   if (!table) return;
   const tbody = table.querySelector('tbody');
-  const RAPID_MS = 500;
+  const RAPID_MS = 1000;
   let lastArrowTime = 0;
 
   function visibleRows() {

@@ -20,7 +20,8 @@
     {% for q in questions %}
     <tr>
       <td>{{ q.question_number + 1 }}</td>
-      <td>{{ q.label }}</td>
+      <td><span class="expandable-question" role="button">{{ q.label }}</span>
+        <div class="question-text" hidden>{{ q.question }}</div></td>
       <td>{% if q.answers.length %}{{ q.answers | join(", ") }}{% else %}&mdash;{% endif %}</td>
       <td data-filter-value="{% if q.answers.length == 0 %}—{% elif q.score == null %}Unscored{% elif q.score == 1 %}Right{% elif q.score == 0 %}Wrong{% else %}{{ q.score }}{% endif %}">
         {% if q.answers.length == 0 %}&mdash;
@@ -34,4 +35,19 @@
     {% endfor %}
   </tbody>
 </table>
+
+<style>
+  .expandable-question { cursor: pointer; text-decoration: underline dotted; }
+  .question-text { margin-top: 0.25rem; font-size: 0.9em; color: #555; }
+</style>
+<script>
+  document.querySelector('.data-table').addEventListener('click', (e) => {
+    const label = e.target.closest('.expandable-question');
+    if (!label) return;
+    const text = label.nextElementSibling;
+    const wasVisible = !text.hidden;
+    document.querySelectorAll('.question-text:not([hidden])').forEach(el => el.hidden = true);
+    text.hidden = wasVisible;
+  });
+</script>
 {% endblock %}

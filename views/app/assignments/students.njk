@@ -6,6 +6,7 @@
   {% if assignment.standard %}Standard: {{ assignment.standard }}{% endif %}
   {% if assignment.points %} &middot; {{ assignment.points }} points{% endif %}
   {% if hasScoring %} &middot; <a href="/quiz-scoring/{{ assignment.assignment_id }}">Scoring</a>{% endif %}
+  {% if assignment.ic_name %} &middot; <a href="/ic-assignment/{{ assignment.ic_name }}">IC: {{ assignment.ic_name }}</a>{% endif %}
 </p>
 <input type="text" id="student-filter" placeholder="Filter students..." autofocus
        style="margin-bottom: 0.5em; padding: 0.25em 0.5em;">
