@@ -28,6 +28,9 @@ delete from expressions where assignment_id = $assignmentId;
 -- :name clearJavascriptUnitTest :run
 delete from javascript_unit_tests where assignment_id = $assignmentId;
 
+-- :name clearJavascriptUnitTestForStudent :run
+delete from javascript_unit_tests where assignment_id = $assignmentId and github = $github;
+
 -- :name studentJsTestResults :all
 select question, answered, correct
 from javascript_unit_tests

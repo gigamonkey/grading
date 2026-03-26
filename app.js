@@ -117,7 +117,8 @@ app.get('/assignments/:assignmentId/students/:userId/row', (req, res) => {
   const s = students.find((r) => r.user_id === userId);
   if (!s) return res.status(404).send('');
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
-  res.render('app/assignments/student-row.njk', { assignment, s, hasScoring });
+  const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
+  res.render('app/assignments/student-row.njk', { assignment, s, hasScoring, hasJsResults });
 });
 
 app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
@@ -1168,6 +1169,63 @@ app.post('/assignments/:assignmentId/students/:userId/reload-answers', async (re
       saveAnswers(student.github, assignmentId, answers, timestamp, sha);
     });
     res.set('HX-Trigger', JSON.stringify({ 'answers-reloaded': userId }));
+    res.send('<i class="bi bi-check-lg text-success"></i>');
+  } catch (e) {
+    res.send(`<span class="error">${e.message}</span>`);
+  }
+});
+
+app.post('/assignments/:assignmentId/students/:userId/reload-js', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  try {
+    const student = db.studentById({ userId });
+    if (!student?.github) {
+      return res.send('<span class="error">No GitHub username for student.</span>');
+    }
+    const data = camelify(await api.assignment(assignmentId));
+    const { url, kind } = data;
+    if (kind !== 'coding') {
+      return res.send(`<span class="error">Not a coding assignment.</span>`);
+    }
+    const config = await api.codingConfig(url);
+    const branch = url.slice(1);
+    const filename = `${url.slice(1)}/${config.files[0]}`;
+
+    const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+    const sha = repo.sha(branch, filename);
+    if (!sha) {
+      return res.send('<span class="error">No code found.</span>');
+    }
+    const timestamp = repo.timestamp(sha);
+    const code = repo.contents(sha, filename);
+
+    const testcasesCode = await api.jsTestcases(url);
+    const testcases = loadTestcases(testcasesCode);
+
+    const { results, error } = runTestsWithError(testcases, code);
+    const testResults = error
+      ? Object.fromEntries(Object.keys(testcases.allCases).map((n) => [n, null]))
+      : results;
+
+    db.transaction(() => {
+      db.clearJavascriptUnitTestForStudent({ assignmentId, github: student.github });
+      for (const [question, result] of Object.entries(testResults)) {
+        const answered = result === null ? 0 : 1;
+        const correct = result === null ? 0 : result.every((r) => r.passed) ? 1 : 0;
+        db.insertJavascriptUnitTest({
+          assignmentId,
+          github: student.github,
+          question,
+          answered,
+          correct,
+          timestamp,
+          sha,
+        });
+      }
+    });
+
+    res.set('HX-Trigger', JSON.stringify({ 'js-reloaded': userId }));
     res.send('<i class="bi bi-check-lg text-success"></i>');
   } catch (e) {
     res.send(`<span class="error">${e.message}</span>`);

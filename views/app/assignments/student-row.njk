@@ -1,13 +1,13 @@
 <tr id="student-row-{{ s.user_id }}"{% if s.override %} class="override"{% endif %}
     hx-get="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/row"
-    hx-trigger="answers-reloaded[event.detail.value=='{{ s.user_id }}'] from:body"
+    hx-trigger="answers-reloaded[event.detail.value=='{{ s.user_id }}'] from:body, js-reloaded[event.detail.value=='{{ s.user_id }}'] from:body"
     hx-swap="outerHTML">
   <td>
     <a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a>
-    {% if hasScoring and s.github %}
+    {% if (hasScoring or hasJsResults) and s.github %}
     <span class="reload-status" style="display:inline-block; margin-left: 0.3em; opacity: 0.3;">
-      <a href="#" title="Reload answers" style="color: inherit; font-size: 0.75em;"
-         hx-post="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/reload-answers"
+      <a href="#" title="Reload and grade" style="color: inherit; font-size: 0.75em;"
+         hx-post="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/{% if hasScoring %}reload-answers{% else %}reload-js{% endif %}"
          hx-target="closest .reload-status"
          hx-swap="innerHTML"
          hx-indicator="closest .reload-status"
