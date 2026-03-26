@@ -7,6 +7,7 @@
   {% if assignment.points %} &middot; {{ assignment.points }} points{% endif %}
   {% if hasScoring %} &middot; <a href="/quiz-scoring/{{ assignment.assignment_id }}">Scoring</a>{% endif %}
   {% if assignment.ic_name %} &middot; <a href="/ic-assignment/{{ assignment.ic_name }}">IC: {{ assignment.ic_name }}</a>{% endif %}
+  {% if provenance %} &middot; Graded via: {{ provenance | replace("_", " ") }}{% endif %}
 </p>
 <input type="text" id="student-filter" placeholder="Filter students..." autofocus
        style="margin-bottom: 0.5em; padding: 0.25em 0.5em;">
@@ -28,6 +29,10 @@
     {% include "app/assignments/students-tbody.njk" %}
   </tbody>
 </table>
+<style>
+  .editable-score { cursor: pointer; text-decoration: underline dotted; }
+  .editable-score input { width: 4em; font-size: inherit; padding: 0 0.2em; }
+</style>
 <script>
 document.getElementById('student-filter').addEventListener('input', function () {
   const filter = this.value.toLowerCase();
@@ -35,6 +40,49 @@ document.getElementById('student-filter').addEventListener('input', function () 
   rows.forEach(row => {
     const name = row.cells[0].textContent.toLowerCase();
     row.style.display = name.includes(filter) ? '' : 'none';
+  });
+});
+
+document.querySelector('.data-table').addEventListener('click', (e) => {
+  const span = e.target.closest('.editable-score');
+  if (!span || span.querySelector('input')) return;
+  const current = span.dataset.score;
+  const display = current !== '' ? (current * 100).toFixed(0) : '';
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = '0';
+  input.max = '100';
+  input.step = 'any';
+  input.value = display;
+  span.textContent = '';
+  span.appendChild(input);
+  input.focus();
+  input.select();
+
+  function submit() {
+    const val = input.value.trim();
+    if (val === '' || val === display) {
+      span.textContent = current !== '' ? display + '%' : '\u2014';
+      return;
+    }
+    const score = Number(val) / 100;
+    if (isNaN(score) || score < 0 || score > 1) {
+      span.textContent = current !== '' ? display + '%' : '\u2014';
+      return;
+    }
+    const assignmentId = span.dataset.assignmentId;
+    const userId = span.dataset.userId;
+    htmx.ajax('POST', `/assignments/${assignmentId}/students/${userId}/direct-score`, {
+      target: span,
+      swap: 'innerHTML',
+      values: { score },
+    });
+  }
+
+  input.addEventListener('blur', submit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { span.textContent = current !== '' ? display + '%' : '\u2014'; }
   });
 });
 </script>

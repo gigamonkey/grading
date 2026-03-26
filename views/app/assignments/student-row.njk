@@ -1,6 +1,6 @@
 <tr id="student-row-{{ s.user_id }}"{% if s.override %} class="override"{% endif %}
     hx-get="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/row"
-    hx-trigger="answers-reloaded[event.detail.value=='{{ s.user_id }}'] from:body, js-reloaded[event.detail.value=='{{ s.user_id }}'] from:body"
+    hx-trigger="answers-reloaded[event.detail.value=='{{ s.user_id }}'] from:body, js-reloaded[event.detail.value=='{{ s.user_id }}'] from:body, score-updated[event.detail.value=='{{ s.user_id }}'] from:body"
     hx-swap="outerHTML">
   <td>
     <a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a>
@@ -18,7 +18,9 @@
     {% endif %}
   </td>
   <td>{{ s.period }}</td>
-  <td>{% if s.score != null %}<a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ (s.score * 100) | round }}%</a>{% else %}&mdash;{% endif %}</td>
+  <td>{% if provenance == 'direct_scores' %}
+    <span class="editable-score" data-user-id="{{ s.user_id }}" data-assignment-id="{{ assignment.assignment_id }}" data-score="{{ s.score if s.score != null else '' }}">{% if s.score != null %}{{ (s.score * 100) | round }}%{% else %}&mdash;{% endif %}</span>
+  {% elif s.score != null %}<a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ (s.score * 100) | round }}%</a>{% else %}&mdash;{% endif %}</td>
   {% if assignment.points %}<td>{% if s.points != null %}<a href="/assignments/{{ assignment.assignment_id }}/students/{{ s.user_id }}/answers">{{ s.points }} / {{ s.max_points }}</a>{% else %}&mdash;{% endif %}</td>{% endif %}
   <td>{% if s.sha %}<code title="{{ s.sha }}">{{ s.sha | truncate(7, true, '') }}</code>{% else %}&mdash;{% endif %}</td>
   <td>{% if s.graded_at %}{{ s.graded_at | epochDate }}{% else %}&mdash;{% endif %}</td>

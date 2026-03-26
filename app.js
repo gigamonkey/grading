@@ -92,7 +92,8 @@ app.get('/assignments/:assignmentId/students', (req, res) => {
   const students = db.assignmentStudentScores({ assignmentId });
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
   const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
-  res.render('app/assignments/students.njk', { assignment, students, hasScoring, hasJsResults });
+  const provenance = db.assignmentProvenance({ assignmentId })?.provenance;
+  res.render('app/assignments/students.njk', { assignment, students, hasScoring, hasJsResults, provenance });
 });
 
 app.get('/assignments/:assignmentId/students-tbody', (req, res) => {
@@ -118,7 +119,20 @@ app.get('/assignments/:assignmentId/students/:userId/row', (req, res) => {
   if (!s) return res.status(404).send('');
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
   const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
-  res.render('app/assignments/student-row.njk', { assignment, s, hasScoring, hasJsResults });
+  const provenance = db.assignmentProvenance({ assignmentId })?.provenance;
+  res.render('app/assignments/student-row.njk', { assignment, s, hasScoring, hasJsResults, provenance });
+});
+
+app.post('/assignments/:assignmentId/students/:userId/direct-score', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const score = Number(req.body.score);
+  if (Number.isNaN(score) || score < 0 || score > 1) {
+    return res.status(400).send('Invalid score');
+  }
+  db.ensureDirectScore({ assignmentId, userId, score });
+  res.set('HX-Trigger', JSON.stringify({ 'score-updated': userId }));
+  res.send(`${(score * 100).toFixed(0)}%`);
 });
 
 app.get('/assignments/:assignmentId/students/:userId/answers', (req, res) => {
