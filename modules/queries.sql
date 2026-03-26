@@ -460,19 +460,7 @@ WHERE ap.user_id = $userId
 ORDER BY a.date DESC, ap.title;
 
 -- :name assignmentProvenance :get
-SELECT provenance FROM (
-  SELECT 'expressions' provenance FROM expressions_scores WHERE assignment_id = $assignmentId
-    UNION
-  SELECT 'javascript_unit_tests' FROM javascript_unit_tests_scores WHERE assignment_id = $assignmentId
-    UNION
-  SELECT 'java_unit_tests' FROM java_unit_tests_scores WHERE assignment_id = $assignmentId
-    UNION
-  SELECT 'direct_scores' FROM direct_scores WHERE assignment_id = $assignmentId
-    UNION
-  SELECT 'form_assessment' FROM form_assessment_scores WHERE assignment_id = $assignmentId
-    UNION
-  SELECT 'checklist' FROM checklist_scores WHERE assignment_id = $assignmentId
-) LIMIT 1;
+SELECT provenance FROM recorded_scores WHERE assignment_id = $assignmentId LIMIT 1;
 
 -- :name assignmentStudentScores :all
 SELECT r.user_id, r.github, r.sortable_name, r.period, r.course_id,

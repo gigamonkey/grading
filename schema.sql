@@ -449,23 +449,25 @@ SELECT assignment_id, user_id, min(timestamp), sha
 FROM student_answers JOIN roster USING (github)
 GROUP BY assignment_id, github;
 
+-- Union of all scores with their provenance
+DROP VIEW IF EXISTS recorded_scores;
+CREATE VIEW recorded_scores AS
+SELECT *, 'expressions_scores' provenance FROM expressions_scores
+  UNION
+SELECT *, 'javascript_unit_tests_scores' FROM javascript_unit_tests_scores
+  UNION
+SELECT *, 'java_unit_tests_scores' FROM java_unit_tests_scores
+  UNION
+SELECT *, 'direct_scores' FROM direct_scores
+  UNION
+SELECT *, 'form_assessment_scores' FROM form_assessment_scores
+  UNION
+SELECT *, 'checklist_scores' FROM checklist_scores;
+
 -- This view only contains scores that actually exist. If a student hasn't done
 -- an assignment they will have no entry in this table.
 DROP VIEW IF EXISTS assignment_scores;
 CREATE VIEW assignment_scores AS
-WITH recorded_scores AS (
-  SELECT *, 'expressions_scores' provenance FROM expressions_scores
-    UNION
-  SELECT *, 'javascript_unit_tests_scores' FROM javascript_unit_tests_scores
-    UNION
-  SELECT *, 'java_unit_tests_scores' FROM java_unit_tests_scores
-    UNION
-  SELECT *, 'direct_scores' FROM direct_scores
-    UNION
-  SELECT *, 'form_assessment_scores' FROM form_assessment_scores
-    UNION
-  SELECT *, 'checklist_scores' FROM checklist_scores
-)
 SELECT
   assignment_id,
   user_id,

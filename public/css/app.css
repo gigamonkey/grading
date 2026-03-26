@@ -489,3 +489,6 @@ td.copyable:hover { background: #f0f0f0; }
 .text-success { color: #198754; }
 .text-warning { color: #cc8800; }
 .text-danger { color: #dc3545; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; display: inline-block; }

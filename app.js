@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -9,6 +10,7 @@ import express from 'express';
 import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
 import { API } from './api.js';
+import { numCorrect, scoreTest } from './modules/grading.js';
 import { Repo } from './modules/repo.js';
 import { loadTestcases, runTestsWithError } from './modules/test-javascript.js';
 import { camelify } from './modules/util.js';
@@ -93,7 +95,15 @@ app.get('/assignments/:assignmentId/students', (req, res) => {
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
   const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
   const provenance = db.assignmentProvenance({ assignmentId })?.provenance;
-  res.render('app/assignments/students.njk', { assignment, students, hasScoring, hasJsResults, provenance });
+  const hasJavaResults = provenance === 'java_unit_tests_scores';
+  res.render('app/assignments/students.njk', {
+    assignment,
+    students,
+    hasScoring,
+    hasJsResults,
+    hasJavaResults,
+    provenance,
+  });
 });
 
 app.get('/assignments/:assignmentId/students-tbody', (req, res) => {
@@ -102,11 +112,14 @@ app.get('/assignments/:assignmentId/students-tbody', (req, res) => {
   const students = db.assignmentStudentScores({ assignmentId });
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
   const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
+  const provenance = db.assignmentProvenance({ assignmentId })?.provenance;
+  const hasJavaResults = provenance === 'java_unit_tests_scores';
   res.render('app/assignments/students-tbody.njk', {
     assignment,
     students,
     hasScoring,
     hasJsResults,
+    hasJavaResults,
   });
 });
 
@@ -120,7 +133,15 @@ app.get('/assignments/:assignmentId/students/:userId/row', (req, res) => {
   const hasScoring = !!db.hasFormAssessment({ assignmentId });
   const hasJsResults = !!db.scoredQuestionAssignment({ assignmentId });
   const provenance = db.assignmentProvenance({ assignmentId })?.provenance;
-  res.render('app/assignments/student-row.njk', { assignment, s, hasScoring, hasJsResults, provenance });
+  const hasJavaResults = provenance === 'java_unit_tests_scores';
+  res.render('app/assignments/student-row.njk', {
+    assignment,
+    s,
+    hasScoring,
+    hasJsResults,
+    hasJavaResults,
+    provenance,
+  });
 });
 
 app.post('/assignments/:assignmentId/students/:userId/direct-score', (req, res) => {
@@ -462,7 +483,86 @@ app.post('/assignments/:assignmentId/grade-js', async (req, res) => {
     const { graded, total, questions } = await gradeJavascriptUnitTests(assignmentId);
     res.setHeader('HX-Trigger', 'gradesUpdated');
     res.send(
-      `<span class="success">Graded ${graded}/${total} students on ${questions} questions.</span>`,
+      `<i class="bi bi-check-circle-fill text-success" title="Graded ${graded}/${total} students on ${questions} questions"></i>`,
+    );
+  } catch (e) {
+    res.send(`<span class="error">${e.message}</span>`);
+  }
+});
+
+function runJavaGrader(args, stdin) {
+  const jar = process.env.BHS_CS_JAR;
+  if (!jar) throw new Error('BHS_CS_JAR environment variable not set.');
+  const cmd = `java -cp ${jar} com.gigamonkeys.bhs.grading.Grade ${args}`;
+  const opts = { encoding: 'utf-8', timeout: 600_000, maxBuffer: 50 * 1024 * 1024 };
+  if (stdin) opts.input = stdin;
+  const raw = execSync(cmd, opts);
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`Failed to parse Grade output: ${raw.slice(0, 500)}`);
+  }
+}
+
+async function gradeJavaUnitTests(assignmentId) {
+  const data = camelify(await api.assignment(assignmentId));
+  const { url, kind, courseId, title, openDate } = data;
+
+  if (kind !== 'coding') {
+    throw new Error(`Assignment kind is "${kind}", expected "coding".`);
+  }
+
+  const config = await api.codingConfig(url);
+  const file = config.files[0];
+  if (!file.endsWith('.java')) {
+    throw new Error(`Not a Java assignment (file: ${file}).`);
+  }
+
+  const tester = config.server.testClass;
+  const branch = url.slice(1);
+  const filename = `${branch}/${file}`;
+
+  const students = db.studentsByCourse({ courseId });
+  const repoPaths = students
+    .filter((s) => s.github)
+    .map((s) => `${process.env.BHS_CS_REPOS}/${s.github}.git/`)
+    .join('\n');
+
+  const output = runJavaGrader(
+    `--repos-from - --file ${filename} --tester ${tester} --branch ${branch} --latest --output json`,
+    repoPaths,
+  );
+  const firstWithResults = Object.values(output).find((e) => e.results);
+  const questions = firstWithResults ? Object.keys(firstWithResults.results).length : 0;
+
+  let graded = 0;
+  db.transaction(() => {
+    db.ensureAssignment({ assignmentId, openDate, courseId, title });
+    db.ensureAssignmentKind({ assignmentId, kind });
+    db.clearJavaUnitTest({ assignmentId });
+    db.clearScoredQuestionAssignment({ assignmentId });
+    db.insertScoredQuestionAssignment({ assignmentId, questions });
+
+    for (const [github, entry] of Object.entries(output)) {
+      const { results, sha, time } = entry;
+      const timestamp = time ? Math.floor(new Date(time).getTime() / 1000) : null;
+      const correct = results ? numCorrect(results) : 0;
+      const score = results ? scoreTest(results, questions) : 0;
+      db.insertJavaUnitTest({ assignmentId, github, correct, score, timestamp, sha });
+      graded++;
+    }
+  });
+
+  return { graded, total: students.length, questions };
+}
+
+app.post('/assignments/:assignmentId/grade-java', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  try {
+    const { graded, total, questions } = await gradeJavaUnitTests(assignmentId);
+    res.setHeader('HX-Trigger', 'gradesUpdated');
+    res.send(
+      `<i class="bi bi-check-circle-fill text-success" title="Graded ${graded}/${total} students on ${questions} questions"></i>`,
     );
   } catch (e) {
     res.send(`<span class="error">${e.message}</span>`);
@@ -1240,6 +1340,52 @@ app.post('/assignments/:assignmentId/students/:userId/reload-js', async (req, re
     });
 
     res.set('HX-Trigger', JSON.stringify({ 'js-reloaded': userId }));
+    res.send('<i class="bi bi-check-lg text-success"></i>');
+  } catch (e) {
+    res.send(`<span class="error">${e.message}</span>`);
+  }
+});
+
+app.post('/assignments/:assignmentId/students/:userId/reload-java', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  try {
+    const student = db.studentById({ userId });
+    if (!student?.github) {
+      return res.send('<span class="error">No GitHub username for student.</span>');
+    }
+    const data = camelify(await api.assignment(assignmentId));
+    const { url, kind } = data;
+    if (kind !== 'coding') {
+      return res.send('<span class="error">Not a coding assignment.</span>');
+    }
+    const config = await api.codingConfig(url);
+    const file = config.files[0];
+    if (!file.endsWith('.java')) {
+      return res.send('<span class="error">Not a Java assignment.</span>');
+    }
+    const tester = config.server.testClass;
+    const branch = url.slice(1);
+    const filename = `${branch}/${file}`;
+    const repoPath = `${process.env.BHS_CS_REPOS}/${student.github}.git/`;
+
+    const output = runJavaGrader(
+      `--repo ${repoPath} --file ${filename} --tester ${tester} --branch ${branch} --latest --output json`,
+    );
+
+    const entry = output[student.github];
+    if (!entry) {
+      return res.send('<span class="error">No results found.</span>');
+    }
+
+    const { results, sha, time } = entry;
+    const timestamp = Math.floor(new Date(time).getTime() / 1000);
+    const questions = db.scoredQuestionAssignment({ assignmentId })?.questions;
+    const correct = numCorrect(results);
+    const score = scoreTest(results, questions);
+    db.ensureJavaUnitTest({ assignmentId, github: student.github, correct, score, timestamp, sha });
+
+    res.set('HX-Trigger', JSON.stringify({ 'java-reloaded': userId }));
     res.send('<i class="bi bi-check-lg text-success"></i>');
   } catch (e) {
     res.send(`<span class="error">${e.message}</span>`);

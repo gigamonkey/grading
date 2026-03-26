@@ -19,10 +19,18 @@
     {% if a.has_scores %}
       <i class="bi bi-check-circle-fill text-success"></i>
     {% elif a.kind == 'coding' %}
-      <button class="btn-subtle" hx-post="/assignments/{{ a.assignment_id }}/grade-js"
-              hx-target="#grade-status-{{ a.assignment_id }}"
-              hx-swap="innerHTML">JS</button>
-      <span id="grade-status-{{ a.assignment_id }}"></span>
+      <span id="grade-status-{{ a.assignment_id }}">
+        <button class="btn-subtle" hx-post="/assignments/{{ a.assignment_id }}/grade-java"
+                hx-target="#grade-status-{{ a.assignment_id }}"
+                hx-swap="innerHTML"
+                hx-on::before-request="this.parentElement.innerHTML = '<i class=\'bi bi-arrow-repeat spinning\'></i>'"
+                >Java</button>
+        <button class="btn-subtle" hx-post="/assignments/{{ a.assignment_id }}/grade-js"
+                hx-target="#grade-status-{{ a.assignment_id }}"
+                hx-swap="innerHTML"
+                hx-on::before-request="this.parentElement.innerHTML = '<i class=\'bi bi-arrow-repeat spinning\'></i>'"
+                >JS</button>
+      </span>
     {% elif a.kind == 'questions' %}
       <a href="/quiz-scoring/{{ a.assignment_id }}"><button type="button" class="btn-subtle">Quiz</button></a>
     {% endif %}

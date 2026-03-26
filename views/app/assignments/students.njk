@@ -1,7 +1,20 @@
 {% extends "app/layout.njk" %}
 {% block title %}{{ assignment.title }} - Students{% endblock %}
 {% block content %}
-<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small>
+  {% if hasJavaResults or hasJsResults %}
+  <span style="font-size: 0.5em; opacity: 0.5;">
+    <a href="#" title="Regrade all students" style="color: inherit;"
+       hx-post="/assignments/{{ assignment.assignment_id }}/{% if hasJavaResults %}grade-java{% else %}grade-js{% endif %}"
+       hx-target="#bulk-grade-status"
+       hx-swap="innerHTML"
+       onclick="event.preventDefault()">
+      <i class="bi bi-arrow-clockwise"></i>
+    </a>
+    <span id="bulk-grade-status" style="font-size: 0.8em;"></span>
+  </span>
+  {% endif %}
+</h1>
 <p>
   {% if assignment.standard %}Standard: {{ assignment.standard }}{% endif %}
   {% if assignment.points %} &middot; {{ assignment.points }} points{% endif %}
