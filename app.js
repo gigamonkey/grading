@@ -734,7 +734,8 @@ app.get('/ic-assignment/:icName', (req, res) => {
   const icName = req.params.icName;
   const assignment = db.icAssignmentInfo({ icName });
   const rows = db.icAssignmentScores({ icName });
-  res.render('app/ic-assignment.njk', { icName, assignment, rows });
+  const existsInIc = !!db.icPointValue({ icName });
+  res.render('app/ic-assignment.njk', { icName, assignment, rows, existsInIc });
 });
 
 // Mastery IC Names

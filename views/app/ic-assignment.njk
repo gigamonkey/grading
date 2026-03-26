@@ -2,6 +2,7 @@
 {% block title %}{{ icName }} - Gradebook{% endblock %}
 {% block content %}
 <h1>{{ icName }} <span class="copyable" data-copy="{{ icName }}" onclick="navigator.clipboard.writeText(this.dataset.copy)" style="cursor: pointer;"><i class="bi bi-clipboard copy-icon" style="font-size: 0.5em; vertical-align: middle;"></i></span></h1>
+{% if not existsInIc and assignment %}<p class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Add to IC under standard “{{ assignment.standard }}”</p>{% elif not existsInIc %}<p class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Not found in IC gradebook</p>{% endif %}
 {% if assignment %}<p><a href="/assignments/{{ assignment.assignment_id }}/students">{{ assignment.title }}</a> &middot; {{ assignment.date }} &middot; {{ assignment.points }} points</p>{% endif %}
 <table class="ic-assignment-table" data-column-filters data-row-highlight>
   <thead>

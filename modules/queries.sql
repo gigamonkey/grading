@@ -476,7 +476,7 @@ WHERE a.assignment_id = $assignmentId
 ORDER BY r.sortable_name;
 
 -- :name icAssignmentInfo :get
-SELECT a.assignment_id, a.title, a.date, apv.points
+SELECT a.assignment_id, a.title, a.date, apv.points, apv.standard
 FROM assignment_point_values apv
 JOIN assignments a USING (assignment_id)
 WHERE apv.ic_name = $icName
