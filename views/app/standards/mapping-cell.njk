@@ -1,12 +1,12 @@
 {% if editing %}
 <td class="min-ic-editing">
   <select name="icName"
-          hx-put="/mastery-ic-names/{{ courseId | urlencode }}/{{ standard | urlencode }}"
+          hx-put="/standards/{{ courseId | urlencode }}/{{ standard | urlencode }}"
           hx-trigger="change, focusout"
           hx-target="closest td"
           hx-swap="outerHTML"
           autofocus
-          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.removeAttribute('hx-put');this.removeAttribute('hx-trigger');htmx.ajax('GET','/mastery-ic-names/{{ courseId | urlencode }}/{{ standard | urlencode }}',{target:this.closest('td'),swap:'outerHTML'})}">
+          hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.removeAttribute('hx-put');this.removeAttribute('hx-trigger');htmx.ajax('GET','/standards/{{ courseId | urlencode }}/{{ standard | urlencode }}',{target:this.closest('td'),swap:'outerHTML'})}">
     <option value="">-- none --</option>
     {% for ic in icNames %}
     <option value="{{ ic }}" {% if ic == icName %}selected{% endif %}>{{ ic }}</option>
@@ -15,7 +15,7 @@
 </td>
 {% else %}
 <td class="min-ic-name {% if not icName %}min-ic-empty{% endif %}"
-    hx-get="/mastery-ic-names/{{ courseId | urlencode }}/{{ standard | urlencode }}/edit"
+    hx-get="/standards/{{ courseId | urlencode }}/{{ standard | urlencode }}/edit"
     hx-trigger="click"
     hx-target="this"
     hx-swap="outerHTML">{{ icName or '—' }}</td>

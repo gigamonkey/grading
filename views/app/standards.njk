@@ -1,0 +1,24 @@
+{% extends "app/layout.njk" %}
+{% block title %}Standards - Gradebook{% endblock %}
+{% block content %}
+<h1>Standards</h1>
+<table data-column-filters>
+  <thead>
+    <tr><th data-column-filter="0">Course</th><th>Standard</th><th>Points</th><th>IC Name</th></tr>
+  </thead>
+  <tbody>
+    {% for s in standards %}
+    <tr>
+      <td>{{ s.course_id }}</td>
+      <td>{{ s.standard }}</td>
+      <td>{{ s.mastery_points }}{% if s.ic_points != null and s.ic_points != s.mastery_points %} <i class="bi bi-exclamation-triangle-fill text-warning" title="Expected: {{ s.mastery_points }}, IC: {{ s.ic_points }}"></i>{% endif %}</td>
+      {% set courseId = s.course_id %}
+      {% set standard = s.standard %}
+      {% set icName = s.ic_name %}
+      {% set editing = false %}
+      {% include "app/standards/mapping-cell.njk" %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

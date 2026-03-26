@@ -10,11 +10,10 @@
          hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/assignments/{{ a.assignment_id }}/ic-name',{target:this.closest('td'),swap:'outerHTML',values:{icName:this.value}})}">
 </td>
 {% elif a.standard %}
-<td class="editable"
+<td>{% if a.ic_name %}<a href="/ic-assignment/{{ a.ic_name | urlencode }}">{{ a.ic_name }}</a>{% else %}&nbsp;{% endif %} <i class="bi bi-pencil-fill" style="opacity: 0.25; cursor: pointer; font-size: 0.75em;"
     hx-get="/assignments/{{ a.assignment_id }}/ic-name?edit=1"
-    hx-trigger="dblclick"
-    hx-target="this"
-    hx-swap="outerHTML">{% if a.ic_name %}<a href="/ic-assignment/{{ a.ic_name | urlencode }}">{{ a.ic_name }}</a>{% else %}&nbsp;{% endif %}</td>
+    hx-target="closest td"
+    hx-swap="outerHTML"></i></td>
 {% else %}
 <td class="disabled-cell" title="Set standard first">{% if a.ic_name %}<a href="/ic-assignment/{{ a.ic_name | urlencode }}">{{ a.ic_name }}</a>{% endif %}</td>
 {% endif %}

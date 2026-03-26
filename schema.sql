@@ -579,7 +579,7 @@ CREATE TABLE IF NOT EXISTS server_grades (
 CREATE TABLE IF NOT EXISTS assignment_point_values (
   assignment_id INTEGER NOT NULL,
   standard TEXT NOT NULL,
-  ic_name TEXT NOT NULL,
+  ic_name TEXT NOT NULL UNIQUE,
   points INTEGER NOT NULL,
   PRIMARY KEY (assignment_id, standard)
 );

@@ -142,17 +142,26 @@ insert or replace into java_unit_tests
 values
   ($assignmentId, $github, $correct, $score, $timestamp, $sha);
 
+-- :name standardsWithIcNames :all
+SELECT s.course_id, s.standard, s.mastery_points, min.ic_name, ipv.points AS ic_points
+FROM standards s
+LEFT JOIN mastery_ic_names min USING (course_id, standard)
+LEFT JOIN ic_point_values ipv ON ipv.ic_name = min.ic_name
+ORDER BY s.course_id, s.standard;
+
 -- :name masteryIcNamesByCourse :all
-SELECT standard, ic_name
-FROM mastery_ic_names
-WHERE course_id = $courseId
-ORDER BY standard;
+SELECT min.standard, min.ic_name, s.mastery_points, ipv.points AS ic_points
+FROM mastery_ic_names min
+JOIN standards s USING (course_id, standard)
+LEFT JOIN ic_point_values ipv ON ipv.ic_name = min.ic_name
+WHERE min.course_id = $courseId
+ORDER BY min.standard;
 
 -- :name deleteMasteryIcName :run
 DELETE FROM mastery_ic_names WHERE course_id = $courseId AND standard = $standard;
 
--- :name standardsWithoutMasteryIcNames :list
-SELECT s.standard
+-- :name standardsWithoutMasteryIcNames :all
+SELECT s.standard, s.mastery_points
 FROM standards s
 LEFT JOIN mastery_ic_names min USING (course_id, standard)
 WHERE s.course_id = $courseId AND min.standard IS NULL
