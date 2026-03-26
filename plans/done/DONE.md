@@ -64,3 +64,8 @@
 
 - [x] Show existing mappings on `/mastery-ic-names` page in `app.js` and make
       them editable.
+
+- [x] Add a students summary page (can be at `/students/:user_id` that shows all
+      their grades on assignments sorted from most to least recent.
+
+- [x] Write a plan as requested in `plans/java-auto-grader.md`.
