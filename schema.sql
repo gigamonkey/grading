@@ -22,6 +22,12 @@ CREATE TABLE IF NOT EXISTS optional_assignments (
   PRIMARY KEY (assignment_id)
 );
 
+-- Server assignments explicitly marked as not for grading so they don't
+-- show up in the "browse server assignments" view.
+CREATE TABLE IF NOT EXISTS not_for_grade (
+  assignment_id INTEGER PRIMARY KEY
+);
+
 -- Assignments that individual students have been excused from doing
 CREATE TABLE IF NOT EXISTS excused_assignments (
   assignment_id INTEGER,

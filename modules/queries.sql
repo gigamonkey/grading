@@ -510,3 +510,9 @@ LEFT JOIN scored_answers sc ON sc.assignment_id = q.assignment_id
   AND sc.question_number = q.question_number AND sc.answer = na.answer
 WHERE q.assignment_id = $assignmentId
 ORDER BY q.question_number, sa.answer_number;
+
+-- :name markNotForGrade :insert
+INSERT OR IGNORE INTO not_for_grade (assignment_id) VALUES ($assignmentId);
+
+-- :name unmarkNotForGrade :run
+DELETE FROM not_for_grade WHERE assignment_id = $assignmentId;

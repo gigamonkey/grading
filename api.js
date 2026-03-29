@@ -3,20 +3,19 @@
  */
 
 class API {
-
   constructor(server, apiKey) {
     this.server = server;
     this.apiKey = apiKey;
   }
 
-  get(url, type='application/json') {
+  get(url, type = 'application/json') {
     return fetch(`${this.server}${url}`, {
       method: 'GET',
       headers: this.#headers(type),
     }).then(type === 'application/json' ? jsonIfOk : textIfOk);
   }
 
-  post(url, body, type='application/json') {
+  post(url, body, type = 'application/json') {
     return fetch(`${this.server}${url}`, {
       method: 'POST',
       headers: this.#headers(type),
@@ -24,7 +23,7 @@ class API {
     }).then(jsonIfOk);
   }
 
-  put(url, body, type='application/json') {
+  put(url, body, type = 'application/json') {
     return fetch(`${this.server}${url}`, {
       method: 'PUT',
       headers: this.#headers(type),
@@ -32,7 +31,7 @@ class API {
     }).then(jsonIfOk);
   }
 
-  delete(url, type='application/json') {
+  delete(url, type = 'application/json') {
     return fetch(`${this.server}${url}`, {
       method: 'DELETE',
       headers: this.#headers(type),
@@ -85,7 +84,9 @@ class API {
   }
 
   lessonPlanCreatedAt(course, lesson) {
-    return this.get(`/api/lesson-plan/${course}/${lesson}`).catch(r => undefined).then(d => d?.created_at);
+    return this.get(`/api/lesson-plan/${course}/${lesson}`)
+      .catch((r) => undefined)
+      .then((d) => d?.created_at);
   }
 
   lessonPlans(course) {
@@ -108,6 +109,10 @@ class API {
     return this.get(`/api/assignment/${assignmentId}`);
   }
 
+  assignments() {
+    return this.get('/api/assignments/');
+  }
+
   reflectionGradeData(assignmentId) {
     return this.get(`/api/reflection-grade-data/${assignmentId}`);
   }
@@ -123,17 +128,16 @@ class API {
   startedSpeedruns() {
     return this.get('/api/started-speedruns');
   }
-
 }
 
-const jsonIfOk = r => {
+const jsonIfOk = (r) => {
   if (r.ok) {
     return r.json();
   }
   throw r;
 };
 
-const textIfOk = r => {
+const textIfOk = (r) => {
   if (r.ok) {
     return r.text();
   }

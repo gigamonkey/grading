@@ -145,6 +145,28 @@ a { color: #1a1a2e; }
 .error { color: #c00; }
 .info { color: #060; }
 
+tr.not-for-grade { opacity: 0.5; }
+
+.server-assignments-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.server-actions { white-space: nowrap; }
+
+button.subtle {
+  background: none;
+  border: 1px solid #ccc;
+  color: #555;
+  padding: 0.15em 0.5em;
+  font-size: 0.85em;
+  cursor: pointer;
+  border-radius: 3px;
+}
+button.subtle:hover { background: #eee; }
+
 td.min-ic-name { cursor: pointer; }
 td.min-ic-name:hover { background: #eee; }
 td.min-ic-empty { color: #aaa; }

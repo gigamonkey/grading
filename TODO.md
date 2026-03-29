@@ -43,6 +43,12 @@ to merge the worktree branch back into `main` and clean up the worktree.
       criteria on the checklist page and potentially can reorder them by
       changing their `seq` values.
 
+- [ ] Add an option to the checklist grader to add a column with the nummer of
+      days with a commit between two dates and a coefficient of how it should be
+      factored into the score. It should use the @peterseibel/bells library to
+      count the number of school days between the start and and to use as the
+      exected number of commits.
+
 - [ ] Implement auto scoring of expressions assignments.
 
 ## Needs plan
@@ -74,11 +80,18 @@ wanted.
 This is where you put new items to actually implement a plan, after you haved
 written the plan.
 
+## In progress
+
+- [ ] Once `bhs-cs` gets its `/api/assignments/` endpoint, use it to create a page
+  that shows all assignments on the server in order to add them to the
+  gradebook.
+
+## Up next
+
 ## Done
 
 Move newly done items to the **bottom** of this list so is is kept in
 chronological order from oldest to newest.
-
 
 - [x] On the `/checklists` page, deleting a criterion column should update the
       points and scores for the whole table.

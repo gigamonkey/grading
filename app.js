@@ -64,6 +64,97 @@ app.get('/assignments/new', (_req, res) => {
   res.render('app/assignments/new.njk', {});
 });
 
+app.get('/assigned', async (req, res) => {
+  const { search, showNotForGrade } = req.query;
+  try {
+    const serverAssignments = await api.assignments();
+    const localIds = new Set(db.assignments().map((a) => a.assignment_id));
+    const notForGradeIds = new Set(db.notForGrade().map((a) => a.assignment_id));
+    let assignments = serverAssignments
+      .filter((a) => !localIds.has(a.assignment_id))
+      .map((a) => ({ ...a, notForGrade: notForGradeIds.has(a.assignment_id) }))
+      .sort((a, b) => (b.open_date ?? '').localeCompare(a.open_date ?? ''));
+    if (!showNotForGrade) {
+      assignments = assignments.filter((a) => !a.notForGrade);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      assignments = assignments.filter(
+        (a) =>
+          String(a.assignment_id).includes(q) ||
+          a.title.toLowerCase().includes(q) ||
+          a.course_id.toLowerCase().includes(q) ||
+          (a.kind && a.kind.toLowerCase().includes(q)),
+      );
+    }
+    if (req.headers['hx-request']) {
+      res.render('app/assigned-tbody.njk', { assignments, showNotForGrade });
+    } else {
+      res.render('app/assigned.njk', { assignments, search, showNotForGrade });
+    }
+  } catch (e) {
+    const template = req.headers['hx-request'] ? 'app/assigned-tbody.njk' : 'app/assigned.njk';
+    const error = e.message ?? `Server returned ${e.status}`;
+    res.render(template, { assignments: [], search, showNotForGrade, error });
+  }
+});
+
+app.get('/assigned/:assignmentId/add-form', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const { title, courseId, kind, openDate } = req.query;
+  const standards = db.standardsByCourse({ courseId });
+  res.render('app/assigned-add-form.njk', {
+    assignmentId,
+    title,
+    courseId,
+    kind,
+    openDate,
+    standards,
+  });
+});
+
+app.post('/assigned/:assignmentId/add', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const { standard, icName, points } = req.body;
+  try {
+    const assignment = await api.assignment(assignmentId);
+    db.ensureAssignment({
+      assignmentId: assignment.assignment_id,
+      openDate: assignment.open_date,
+      courseId: assignment.course_id,
+      title: assignment.title,
+    });
+    if (assignment.kind) {
+      db.ensureAssignmentKind({
+        assignmentId: assignment.assignment_id,
+        kind: assignment.kind,
+      });
+    }
+    db.ensureAssignmentPointValue({
+      assignmentId: assignment.assignment_id,
+      standard,
+      icName,
+      points: Number(points),
+    });
+    res.send('');
+  } catch (e) {
+    const error = e.message ?? `Server returned ${e.status}`;
+    res.status(422).send(`<tr><td colspan="6" class="error">${error}</td></tr>`);
+  }
+});
+
+app.post('/assigned/:assignmentId/not-for-grade', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  db.markNotForGrade({ assignmentId });
+  res.send('');
+});
+
+app.delete('/assigned/:assignmentId/not-for-grade', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  db.unmarkNotForGrade({ assignmentId });
+  res.send('');
+});
+
 app.get('/assignments/lookup', async (req, res) => {
   const { assignmentId } = req.query;
   try {
@@ -803,7 +894,6 @@ app.get('/standards/:courseId/:standard/edit', (req, res) => {
     editing: true,
   });
 });
-
 
 // Zeros
 app.get('/zeros', (_req, res) => {

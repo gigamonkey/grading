@@ -554,6 +554,15 @@ insert into normalized_answers (answer) values ($answer);
 insert into normalized_answers (answer) values ($answer);
 
 
+-- not_for_grade -------------------------------------------
+
+-- :name notForGrade :all
+select * from not_for_grade;
+
+-- :name insertNotForGrade :insert
+insert into not_for_grade (assignment_id) values ($assignmentId);
+
+
 -- optional_assignments ------------------------------------
 
 -- :name optionalAssignments :all

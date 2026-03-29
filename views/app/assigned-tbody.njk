@@ -1,0 +1,32 @@
+{% if error %}
+<tr><td colspan="6" class="error">Error: {{ error }}</td></tr>
+{% else %}
+{% for a in assignments %}
+<tr id="server-row-{{ a.assignment_id }}"{% if a.notForGrade %} class="not-for-grade"{% endif %}>
+  <td>{{ a.assignment_id }}</td>
+  <td>{{ a.title }}</td>
+  <td>{{ a.course_id }}</td>
+  <td>{{ a.kind }}</td>
+  <td>{{ a.open_date }}</td>
+  <td class="server-actions">
+    {% if a.notForGrade %}
+    <button class="subtle"
+      hx-delete="/assigned/{{ a.assignment_id }}/not-for-grade"
+      hx-target="#server-row-{{ a.assignment_id }}"
+      hx-swap="outerHTML">Undo</button>
+    {% else %}
+    <button class="subtle"
+      hx-get="/assigned/{{ a.assignment_id }}/add-form?title={{ a.title | urlencode }}&courseId={{ a.course_id }}&kind={{ a.kind }}&openDate={{ a.open_date }}"
+      hx-target="#server-row-{{ a.assignment_id }}"
+      hx-swap="outerHTML">For grade</button>
+    <button class="subtle"
+      hx-post="/assigned/{{ a.assignment_id }}/not-for-grade"
+      hx-target="#server-row-{{ a.assignment_id }}"
+      hx-swap="outerHTML">Not for grade</button>
+    {% endif %}
+  </td>
+</tr>
+{% else %}
+<tr><td colspan="6">No assignments to add.</td></tr>
+{% endfor %}
+{% endif %}

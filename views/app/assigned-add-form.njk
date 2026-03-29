@@ -1,0 +1,28 @@
+<tr id="server-row-{{ assignmentId }}">
+  <td>{{ assignmentId }}</td>
+  <td colspan="4">
+    <form hx-post="/assigned/{{ assignmentId }}/add"
+      hx-target="#server-row-{{ assignmentId }}"
+      hx-swap="outerHTML swap:0.2s">
+      <strong>{{ title }}</strong> ({{ courseId }})
+      <div class="inline-add-fields">
+        <label>Standard
+          <input type="text" name="standard" required list="standards-list-{{ assignmentId }}">
+          <datalist id="standards-list-{{ assignmentId }}">
+            {% for s in standards %}
+            <option value="{{ s }}">
+            {% endfor %}
+          </datalist>
+        </label>
+        <label>IC Name <input type="text" name="icName" value="{{ title }}" required></label>
+        <label>Points <input type="number" name="points" required></label>
+        <button type="submit">Save</button>
+        <button type="button"
+          hx-get="/assigned"
+          hx-target="#server-assignments-tbody"
+          hx-swap="innerHTML">Cancel</button>
+      </div>
+    </form>
+  </td>
+  <td></td>
+</tr>
