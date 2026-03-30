@@ -1010,7 +1010,9 @@ function gradeJavaSpeedrun(repo, branch, file, config, speedrun) {
     };
   });
 
-  const totalSeconds = entries.length > 0 ? (entries[entries.length - 1][1].elapsed ?? 0) : 0;
+  commits.sort((a, b) => a.totalElapsedSeconds - b.totalElapsedSeconds);
+
+  const totalSeconds = commits.length > 0 ? commits[commits.length - 1].totalElapsedSeconds : 0;
 
   return {
     commits,
