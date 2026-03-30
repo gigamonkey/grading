@@ -386,6 +386,20 @@ CREATE TABLE IF NOT EXISTS graded_speedruns (
   FOREIGN KEY (speedrun_id) REFERENCES completed_speedruns(speedrun_id) ON DELETE CASCADE
 ) WITHOUT ROWID;
 
+-- Cached per-commit test results for speedruns so we don't re-run tests on every view.
+CREATE TABLE IF NOT EXISTS speedrun_commits (
+  speedrun_id INTEGER NOT NULL,
+  sha TEXT NOT NULL,
+  timestamp TEXT,
+  delta_seconds INTEGER,
+  elapsed_seconds INTEGER,
+  passed INTEGER,
+  attempted INTEGER,
+  error TEXT,
+  PRIMARY KEY (speedrun_id, sha),
+  FOREIGN KEY (speedrun_id) REFERENCES completed_speedruns(speedrun_id) ON DELETE CASCADE
+);
+
 DROP VIEW IF EXISTS hydrated_speedruns;
 CREATE VIEW hydrated_speedruns AS
 SELECT

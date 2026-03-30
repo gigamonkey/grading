@@ -4,7 +4,7 @@
 {% set userJson = {period: student.period, userId: student.user_id, studentNumber: student.student_number, email: student.email, github: student.github, name: student.name, pronouns: student.pronouns, googleName: student.google_name, sortableName: student.sortable_name, lastName: student.last_name, firstName: student.first_name, birthdate: student.birthdate, courseId: student.course_id} %}
 <h1>{{ student.name }} <small>({{ student.sortable_name }})</small> <span class="copyable" data-copy="{{ userJson | dump | e }}" onclick="navigator.clipboard.writeText(this.dataset.copy)" style="cursor: pointer;"><i class="bi bi-clipboard copy-icon" style="font-size: 0.5em; vertical-align: middle;"></i></span></h1>
 
-<table class="info-table">
+<table class="info-table fit">
   <thead>
     <tr><th>Student #</th><th>Course</th><th>Period</th><th>Email</th><th>GitHub</th></tr>
   </thead>
@@ -20,7 +20,7 @@
 </table>
 
 <h2>Assignment Scores</h2>
-<table class="data-table">
+<table class="data-table fit">
   <thead>
     <tr>
       <th>Assignment</th>
@@ -46,7 +46,7 @@
 </table>
 
 <h2>Mastery Totals by Standard</h2>
-<table>
+<table class="fit">
   <thead>
     <tr><th>Standard</th><th>Points</th></tr>
   </thead>
@@ -60,7 +60,7 @@
 </table>
 
 <h2>All Mastery Points</h2>
-<table data-column-filters>
+<table class="fit" data-column-filters>
   <thead>
     <tr>
       <th data-column-filter="0">Standard</th>
@@ -87,6 +87,34 @@
     </tr>
     {% else %}
     <tr><td colspan="6">No mastery points.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Speedruns</h2>
+<table class="fit">
+  <thead>
+    <tr><th>Assignment</th><th>Finished</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    {% for s in speedruns %}
+    <tr>
+      <td>{{ s.title or s.assignment_id }}</td>
+      <td>{{ s.finished_at | epochDate }}</td>
+      <td>
+        <a href="/speedruns/{{ s.speedrun_id }}">
+        {% if s.ok == null %}
+          Ungraded
+        {% elif s.ok == 1 %}
+          <span class="text-success">Accepted</span>
+        {% else %}
+          <span class="text-danger">Rejected</span>
+        {% endif %}
+        </a>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">No speedruns.</td></tr>
     {% endfor %}
   </tbody>
 </table>

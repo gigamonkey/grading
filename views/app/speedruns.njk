@@ -1,10 +1,23 @@
 {% extends "app/layout.njk" %}
 {% block title %}Speedruns - Gradebook{% endblock %}
 {% block content %}
-<h1>Ungraded Speedruns</h1>
+<h1>Speedruns ({{ ungradedCount }} ungraded)</h1>
+<div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+  {% if firstUngraded %}
+  <a href="/speedruns/{{ firstUngraded.speedrun_id }}">Start grading</a>
+  {% endif %}
+  <button hx-post="/speedruns/sync" hx-target="#sync-result" hx-swap="innerHTML">Sync from server</button>
+  <span id="sync-result"></span>
+</div>
 <table data-column-filters>
   <thead>
-    <tr><th>Student</th><th>Assignment</th><th data-column-filter="2">Course</th><th>Finished At</th></tr>
+    <tr>
+      <th data-column-filter="0">Student</th>
+      <th data-column-filter="1">Assignment</th>
+      <th data-column-filter="2">Course</th>
+      <th>Finished At</th>
+      <th data-column-filter="4">Status</th>
+    </tr>
   </thead>
   <tbody>
     {% for s in speedruns %}
@@ -12,10 +25,21 @@
       <td><a href="/students/{{ s.user_id }}">{{ s.github }}</a></td>
       <td>{{ s.title or s.assignment_id }}</td>
       <td>{{ s.course_id }}</td>
-      <td>{{ s.finished_at }}</td>
+      <td>{{ s.finished_at | epochDate }}</td>
+      <td>
+        <a href="/speedruns/{{ s.speedrun_id }}">
+        {% if s.ok == null %}
+          Ungraded
+        {% elif s.ok == 1 %}
+          <span class="text-success">Accepted</span>
+        {% else %}
+          <span class="text-danger">Rejected</span>
+        {% endif %}
+        </a>
+      </td>
     </tr>
     {% else %}
-    <tr><td colspan="4">No ungraded speedruns.</td></tr>
+    <tr><td colspan="5">No speedruns.</td></tr>
     {% endfor %}
   </tbody>
 </table>

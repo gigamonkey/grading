@@ -11,6 +11,8 @@ Items here should be done in a branch which you should create. You may commit to
 the branch whenever you wish but the user will tell you when to merge the branch
 back into `main`.
 
+- [ ] Run biome on all JS and make sure everything is working.
+
 - [ ] Update `schema-cleanup.md` based on the current schema and code.
 
 ## Medium

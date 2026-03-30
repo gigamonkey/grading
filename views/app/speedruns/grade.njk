@@ -1,0 +1,13 @@
+{% extends "app/layout.njk" %}
+{% block title %}Grade Speedrun - {{ speedrun.github }} - Gradebook{% endblock %}
+{% block content %}
+<h1>{{ speedrun.course_id | upper }}: {{ speedrun.title }} &mdash; {{ speedrun.github }}</h1>
+<p>Speedrun {{ currentIndex }} of {{ total }}</p>
+
+<div id="speedrun-results"
+  hx-get="/speedruns/{{ speedrun.speedrun_id }}/results"
+  hx-trigger="load"
+  hx-swap="outerHTML">
+  <p><i class="bi bi-arrow-repeat spinning"></i> Grading speedrun&hellip;</p>
+</div>
+{% endblock %}

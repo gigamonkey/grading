@@ -1,0 +1,78 @@
+<div id="speedrun-results">
+  <p>
+    {% if graded %}
+      {% if graded.ok == 1 %}
+        <span class="text-success">Accepted</span> &mdash;
+      {% else %}
+        <span class="text-danger">Rejected</span> &mdash;
+      {% endif %}
+    {% endif %}
+    Total time: {{ timeline.totalTime }} &mdash;
+    Max passed: {{ timeline.maxPassed }} of {{ timeline.questions }}
+    {% if graded %}
+      &mdash; <button class="btn-subtle"
+        hx-post="/speedruns/{{ speedrun.speedrun_id }}/regrade">Regrade</button>
+    {% endif %}
+  </p>
+
+  {% if not graded %}
+  <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+    <button class="btn-accept"
+      hx-post="/speedruns/{{ speedrun.speedrun_id }}/grade"
+      hx-vals='{"ok": 1}'>
+      Accept
+    </button>
+    <button class="btn-reject"
+      hx-post="/speedruns/{{ speedrun.speedrun_id }}/grade"
+      hx-vals='{"ok": 0}'>
+      Reject
+    </button>
+    <button class="btn-skip"
+      hx-post="/speedruns/{{ speedrun.speedrun_id }}/skip">
+      Skip
+    </button>
+  </div>
+  {% endif %}
+
+  <table style="width: auto; white-space: nowrap;">
+    <thead>
+      <tr>
+        <th></th>
+        <th>SHA</th>
+        <th>Time</th>
+        <th>+Delta</th>
+        <th>Total</th>
+        <th>Passed</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in timeline.commits | reverse %}
+      {% if loop.last %}
+      <tr class="text-success">
+        <td><i class="bi bi-check-lg"></i></td>
+        <td><code>{{ c.shortSha }}</code></td>
+        <td>{{ c.date }}</td>
+        <td></td>
+        <td></td>
+        <td>Started speedrun</td>
+      </tr>
+      {% else %}
+      <tr class="{{ 'text-danger' if c.error else 'text-success' }}">
+        <td>{% if c.error %}<i class="bi bi-x-lg"></i>{% else %}<i class="bi bi-check-lg"></i>{% endif %}</td>
+        <td><code>{{ c.shortSha }}</code></td>
+        <td>{{ c.date }}</td>
+        <td>+{{ c.elapsed }}</td>
+        <td>{{ c.totalElapsed }}</td>
+        <td>
+          {% if c.error %}
+            Error: {{ c.error | truncate(80) }}
+          {% else %}
+            {{ c.passed }}/{{ c.attempted }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

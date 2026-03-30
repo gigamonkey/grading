@@ -2,8 +2,11 @@
 
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
+import { open } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -12,6 +15,7 @@ import { DB } from 'pugsql';
 import { API } from './api.js';
 import { numCorrect, scoreTest } from './modules/grading.js';
 import { Repo } from './modules/repo.js';
+import { durationString, getCommitData } from './modules/speedruns.js';
 import { loadTestcases, runTestsWithError } from './modules/test-javascript.js';
 import { camelify } from './modules/util.js';
 
@@ -677,7 +681,8 @@ app.get('/students/:userId', (req, res) => {
   const assignments = db.studentAssignmentScores({ userId });
   const masteryPoints = db.studentMasteryPoints({ userId });
   const masteryTotals = db.studentMasteryTotals({ userId });
-  res.render('app/students/student.njk', { student, assignments, masteryPoints, masteryTotals });
+  const speedruns = db.studentSpeedruns({ userId });
+  res.render('app/students/student.njk', { student, assignments, masteryPoints, masteryTotals, speedruns });
 });
 
 // Overrides
@@ -903,8 +908,308 @@ app.get('/zeros', (_req, res) => {
 
 // Speedruns
 app.get('/speedruns', (_req, res) => {
-  const speedruns = db.ungradedSpeedruns();
-  res.render('app/speedruns.njk', { speedruns });
+  const speedruns = db.allSpeedruns();
+  const firstUngraded = speedruns.find((s) => s.ok == null);
+  const ungradedCount = speedruns.filter((s) => s.ok == null).length;
+  res.render('app/speedruns.njk', { speedruns, ungradedCount, firstUngraded });
+});
+
+app.post('/speedruns/sync', async (_req, res) => {
+  try {
+    const result = await syncSpeedruns();
+    res.set('HX-Redirect', '/speedruns');
+    res.send('');
+  } catch (e) {
+    res.send(`<p class="text-danger">Sync error: ${e.message}</p>`);
+  }
+});
+
+async function countQuestions(url) {
+  const filename = `${homedir()}/hacks/bhs-cs/views/pages/${url}/index.njk`;
+  const file = await open(filename);
+  let questions = 0;
+  for await (const line of file.readLines()) {
+    if (line.match(/^\s*<div data-name/)) {
+      questions++;
+    }
+  }
+  return questions;
+}
+
+async function syncSpeedruns() {
+  const onServer = await api.completedSpeedruns();
+  const inGradebook = new Set(db.completedSpeedruns().map((r) => r.speedrun_id));
+  const speedrunnables = new Set(db.speedrunnables().map((r) => r.assignment_id));
+  const assignments = new Set(db.assignments().map((r) => r.assignment_id));
+
+  let inserted = 0;
+  const toFetch = new Set();
+
+  for (const s of onServer) {
+    if (!inGradebook.has(s.speedrun_id)) {
+      const github = db.github({ userId: s.user_id });
+      if (github) {
+        toFetch.add(github);
+        db.insertCompletedSpeedrun(camelify(s));
+        inserted++;
+      }
+    }
+  }
+
+  const serverAssignmentIds = new Set(onServer.map((s) => s.assignment_id));
+  for (const id of serverAssignmentIds) {
+    if (!speedrunnables.has(id)) {
+      const assignment = camelify(await api.assignment(id));
+      const kind = assignment.url.match(/itp/) ? 'javascript' : 'java';
+      const questions = await countQuestions(assignment.url);
+      db.insertSpeedrunnable({ assignmentId: id, kind, questions });
+    }
+    if (!assignments.has(id)) {
+      const assignment = camelify(await api.assignment(id));
+      const { assignmentId, openDate: date, courseId, title } = assignment;
+      db.insertAssignment({ assignmentId, date, courseId, title });
+    }
+  }
+
+  for (const github of toFetch) {
+    new Repo(`${process.env.BHS_CS_REPOS}/${github}.git`).fetch();
+  }
+
+  return { inserted, fetched: toFetch.size };
+}
+
+function gradeJavaSpeedrun(repo, branch, file, config, speedrun) {
+  const tester = config.server.testClass;
+  const filename = `${branch}/${file}`;
+  const output = runJavaGrader(
+    `--repo ${repo} --file ${filename} --tester ${tester} --branch ${branch} --range ${speedrun.first_sha}..${speedrun.last_sha} --output json`,
+  );
+
+  const entries = Object.entries(output);
+  const totalQuestions =
+    entries.length > 0
+      ? Math.max(...entries.map(([, e]) => (e.results ? Object.keys(e.results).length : 0)))
+      : speedrun.questions;
+
+  let maxPassed = 0;
+  const commits = entries.map(([label, e]) => {
+    const passed = e.results
+      ? Object.values(e.results).filter((cases) => cases.every((c) => c.passed)).length
+      : 0;
+    const total = e.results ? Object.keys(e.results).length : 0;
+    maxPassed = Math.max(maxPassed, passed);
+
+    return {
+      shortSha: e.sha || label,
+      date: e.time || '',
+      elapsed: e.delta != null ? durationString(Temporal.Duration.from({ seconds: e.delta })) : '',
+      totalElapsed:
+        e.elapsed != null ? durationString(Temporal.Duration.from({ seconds: e.elapsed })) : '',
+      elapsedSeconds: e.delta ?? 0,
+      totalElapsedSeconds: e.elapsed ?? 0,
+      passed,
+      attempted: total,
+      error: e.error || null,
+    };
+  });
+
+  commits.sort((a, b) => a.totalElapsedSeconds - b.totalElapsedSeconds);
+
+  const totalSeconds = commits.length > 0 ? commits[commits.length - 1].totalElapsedSeconds : 0;
+
+  return {
+    commits,
+    totalTime: durationString(Temporal.Duration.from({ seconds: totalSeconds })),
+    totalSeconds,
+    maxPassed,
+    questions: totalQuestions,
+  };
+}
+
+function buildTimelineFromCache(rows, questions) {
+  let maxPassed = 0;
+  const commits = rows.map((r) => {
+    const passed = r.passed ?? undefined;
+    if (passed != null) maxPassed = Math.max(maxPassed, passed);
+    return {
+      shortSha: r.sha,
+      date: r.timestamp || '',
+      elapsed:
+        r.delta_seconds != null
+          ? durationString(Temporal.Duration.from({ seconds: r.delta_seconds }))
+          : '',
+      totalElapsed:
+        r.elapsed_seconds != null
+          ? durationString(Temporal.Duration.from({ seconds: r.elapsed_seconds }))
+          : '',
+      elapsedSeconds: r.delta_seconds ?? 0,
+      totalElapsedSeconds: r.elapsed_seconds ?? 0,
+      passed: r.passed,
+      attempted: r.attempted,
+      error: r.error || null,
+    };
+  });
+
+  const totalSeconds = commits.length > 0 ? commits[commits.length - 1].totalElapsedSeconds : 0;
+
+  return {
+    commits,
+    totalTime: durationString(Temporal.Duration.from({ seconds: totalSeconds })),
+    totalSeconds,
+    maxPassed,
+    questions,
+  };
+}
+
+function cacheTimeline(speedrunId, timeline) {
+  for (const c of timeline.commits) {
+    db.insertSpeedrunCommit({
+      speedrunId,
+      sha: c.shortSha,
+      timestamp: c.date,
+      deltaSeconds: c.elapsedSeconds,
+      elapsedSeconds: c.totalElapsedSeconds,
+      passed: c.passed ?? null,
+      attempted: c.attempted ?? null,
+      error: c.error ?? null,
+    });
+  }
+}
+
+app.get('/speedruns/:speedrunId', (req, res) => {
+  const { speedrunId } = req.params;
+  const speedrun = db.specificSpeedrun({ speedrunId });
+  if (!speedrun) {
+    return res.status(404).send('Speedrun not found.');
+  }
+
+  const ungraded = db.ungradedSpeedruns();
+  const currentIndex = ungraded.findIndex((s) => s.speedrun_id === Number(speedrunId));
+  const total = ungraded.length;
+
+  res.render('app/speedruns/grade.njk', {
+    speedrun,
+    currentIndex: currentIndex + 1,
+    total,
+  });
+});
+
+app.get('/speedruns/:speedrunId/results', async (req, res) => {
+  const { speedrunId } = req.params;
+  const speedrun = db.specificSpeedrun({ speedrunId });
+  if (!speedrun) {
+    return res.status(404).send('Speedrun not found.');
+  }
+
+  const { url } = await api.assignment(speedrun.assignment_id);
+  const config = await api.codingConfig(url);
+  const file = config.files[0];
+  const repo = `${process.env.BHS_CS_REPOS}/${speedrun.github}.git/`;
+  const branch = url.slice(1);
+
+  // Check cache first
+  const cached = db.speedrunCommitsForSpeedrun({ speedrunId });
+  let timeline;
+  if (cached.length > 0) {
+    timeline = buildTimelineFromCache(cached, speedrun.questions);
+  } else {
+    const repoObj = new Repo(repo);
+
+    function extendedLastSha(lastSha) {
+      try {
+        return repoObj.nextChange(lastSha, branch);
+      } catch {
+        return null;
+      }
+    }
+
+    if (file.endsWith('.java')) {
+      timeline = gradeJavaSpeedrun(repo, branch, file, config, speedrun);
+
+      if (timeline.commits.length > 0 && timeline.maxPassed < timeline.questions) {
+        const next = extendedLastSha(speedrun.last_sha);
+        if (next) {
+          db.updateSpeedrunLastSha({ speedrunId, lastSha: next.sha });
+          timeline = gradeJavaSpeedrun(repo, branch, file, config, {
+            ...speedrun,
+            last_sha: next.sha,
+          });
+        }
+      }
+    } else {
+      const testcases = loadTestcases(await api.jsTestcases(url));
+      timeline = getCommitData(
+        repo,
+        branch,
+        file,
+        testcases,
+        speedrun.first_sha,
+        speedrun.last_sha,
+        branch,
+        speedrun.questions,
+      );
+
+      if (timeline.commits.length > 0 && timeline.maxPassed < timeline.questions) {
+        const next = extendedLastSha(speedrun.last_sha);
+        if (next) {
+          db.updateSpeedrunLastSha({ speedrunId, lastSha: next.sha });
+          timeline = getCommitData(
+            repo,
+            branch,
+            file,
+            testcases,
+            speedrun.first_sha,
+            next.sha,
+            branch,
+            speedrun.questions,
+          );
+        }
+      }
+    }
+
+    cacheTimeline(speedrunId, timeline);
+  }
+
+  const graded = db.gradedSpeedrun({ speedrunId });
+  res.render('app/speedruns/results.njk', { speedrun, timeline, graded });
+});
+
+app.post('/speedruns/:speedrunId/regrade', async (req, res) => {
+  const { speedrunId } = req.params;
+  db.deleteSpeedrunCommits({ speedrunId });
+  db.deleteGradedSpeedrun({ speedrunId });
+  res.set('HX-Redirect', `/speedruns/${speedrunId}`);
+  res.send('');
+});
+
+app.post('/speedruns/:speedrunId/grade', (req, res) => {
+  const { speedrunId } = req.params;
+  const currentId = Number(speedrunId);
+  const ok = Number(req.body.ok);
+  db.ensureGradedSpeedrun({ speedrunId, ok });
+
+  const ungraded = db.ungradedSpeedruns();
+  const next = ungraded.find((s) => s.speedrun_id > currentId) || ungraded[0];
+  if (next) {
+    res.set('HX-Redirect', `/speedruns/${next.speedrun_id}`);
+  } else {
+    res.set('HX-Redirect', '/speedruns');
+  }
+  res.send('');
+});
+
+app.post('/speedruns/:speedrunId/skip', (_req, res) => {
+  const ungraded = db.ungradedSpeedruns();
+  // Find the next one after the current
+  const currentId = Number(_req.params.speedrunId);
+  const currentIndex = ungraded.findIndex((s) => s.speedrun_id === currentId);
+  const next = ungraded[currentIndex + 1] || ungraded[0];
+  if (next && next.speedrun_id !== currentId) {
+    res.set('HX-Redirect', `/speedruns/${next.speedrun_id}`);
+  } else {
+    res.set('HX-Redirect', '/speedruns');
+  }
+  res.send('');
 });
 
 // Checklist grader
