@@ -1,9 +1,21 @@
 <div id="speedrun-results">
   <p>
+    {% if graded %}
+      {% if graded.ok == 1 %}
+        <span class="text-success">Accepted</span> &mdash;
+      {% else %}
+        <span class="text-danger">Rejected</span> &mdash;
+      {% endif %}
+    {% endif %}
     Total time: {{ timeline.totalTime }} &mdash;
     Max passed: {{ timeline.maxPassed }} of {{ timeline.questions }}
+    {% if graded %}
+      &mdash; <button class="btn-subtle"
+        hx-post="/speedruns/{{ speedrun.speedrun_id }}/regrade">Regrade</button>
+    {% endif %}
   </p>
 
+  {% if not graded %}
   <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
     <button class="btn-accept"
       hx-post="/speedruns/{{ speedrun.speedrun_id }}/grade"
@@ -20,6 +32,7 @@
       Skip
     </button>
   </div>
+  {% endif %}
 
   <table style="width: auto; white-space: nowrap;">
     <thead>

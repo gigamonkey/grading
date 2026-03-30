@@ -99,6 +99,11 @@ ORDER BY standard;
 -- :name ungradedSpeedruns :all
 select * from ungraded_speedruns;
 
+-- :name allSpeedruns :all
+select h.*, gs.ok from hydrated_speedruns h
+left join graded_speedruns gs using (speedrun_id)
+order by h.finished_at desc;
+
 -- :name openSpeedruns :all
 select * from open_speedruns;
 
@@ -138,6 +143,9 @@ update completed_speedruns set last_sha = $lastSha where speedrun_id = $speedrun
 
 -- :name speedrunCommitsForSpeedrun :all
 SELECT * FROM speedrun_commits WHERE speedrun_id = $speedrunId ORDER BY elapsed_seconds;
+
+-- :name deleteGradedSpeedrun :run
+DELETE FROM graded_speedruns WHERE speedrun_id = $speedrunId;
 
 -- :name deleteSpeedrunCommits :run
 DELETE FROM speedrun_commits WHERE speedrun_id = $speedrunId;

@@ -907,8 +907,10 @@ app.get('/zeros', (_req, res) => {
 
 // Speedruns
 app.get('/speedruns', (_req, res) => {
-  const speedruns = db.ungradedSpeedruns();
-  res.render('app/speedruns.njk', { speedruns });
+  const speedruns = db.allSpeedruns();
+  const firstUngraded = speedruns.find((s) => s.ok == null);
+  const ungradedCount = speedruns.filter((s) => s.ok == null).length;
+  res.render('app/speedruns.njk', { speedruns, ungradedCount, firstUngraded });
 });
 
 app.post('/speedruns/sync', async (_req, res) => {
@@ -1167,7 +1169,16 @@ app.get('/speedruns/:speedrunId/results', async (req, res) => {
     cacheTimeline(speedrunId, timeline);
   }
 
-  res.render('app/speedruns/results.njk', { speedrun, timeline });
+  const graded = db.gradedSpeedrun({ speedrunId });
+  res.render('app/speedruns/results.njk', { speedrun, timeline, graded });
+});
+
+app.post('/speedruns/:speedrunId/regrade', async (req, res) => {
+  const { speedrunId } = req.params;
+  db.deleteSpeedrunCommits({ speedrunId });
+  db.deleteGradedSpeedrun({ speedrunId });
+  res.set('HX-Redirect', `/speedruns/${speedrunId}`);
+  res.send('');
 });
 
 app.post('/speedruns/:speedrunId/grade', (req, res) => {

@@ -180,7 +180,11 @@
 
         label.appendChild(cb);
         const labelText = document.createElement('span');
-        labelText.innerHTML = '\u00a0' + (htmlByValue[val] !== val ? htmlByValue[val] + ' ' + val : val);
+        const html = htmlByValue[val];
+        const tmp = document.createElement('span');
+        tmp.innerHTML = html;
+        const visibleText = tmp.textContent.trim();
+        labelText.innerHTML = '\u00a0' + (visibleText !== val ? html + ' ' + val : html);
         label.appendChild(labelText);
         dropdown.appendChild(label);
       });
