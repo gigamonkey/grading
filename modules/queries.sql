@@ -133,6 +133,9 @@ select github from roster where user_id = $userId;
 -- :name clearServerGrades :run
 delete from server_grades;
 
+-- :name updateSpeedrunLastSha :run
+update completed_speedruns set last_sha = $lastSha where speedrun_id = $speedrunId;
+
 -- :name ensureGradedSpeedrun :insert
 insert or replace into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
 

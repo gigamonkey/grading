@@ -975,6 +975,52 @@ async function syncSpeedruns() {
   return { inserted, fetched: toFetch.size };
 }
 
+function gradeJavaSpeedrun(repo, branch, file, config, speedrun) {
+  const tester = config.server.testClass;
+  const filename = `${branch}/${file}`;
+  const output = runJavaGrader(
+    `--repo ${repo} --file ${filename} --tester ${tester} --branch ${branch} --range ${speedrun.first_sha}..${speedrun.last_sha} --output json`,
+  );
+
+  const entries = Object.entries(output);
+  const totalQuestions =
+    entries.length > 0
+      ? Math.max(...entries.map(([, e]) => (e.results ? Object.keys(e.results).length : 0)))
+      : speedrun.questions;
+
+  let maxPassed = 0;
+  const commits = entries.map(([label, e]) => {
+    const passed = e.results
+      ? Object.values(e.results).filter((cases) => cases.every((c) => c.passed)).length
+      : 0;
+    const total = e.results ? Object.keys(e.results).length : 0;
+    maxPassed = Math.max(maxPassed, passed);
+
+    return {
+      shortSha: e.sha || label,
+      date: e.time || '',
+      elapsed: e.delta != null ? durationString(Temporal.Duration.from({ seconds: e.delta })) : '',
+      totalElapsed:
+        e.elapsed != null ? durationString(Temporal.Duration.from({ seconds: e.elapsed })) : '',
+      elapsedSeconds: e.delta ?? 0,
+      totalElapsedSeconds: e.elapsed ?? 0,
+      passed,
+      attempted: total,
+      error: e.error || null,
+    };
+  });
+
+  const totalSeconds = entries.length > 0 ? (entries[entries.length - 1][1].elapsed ?? 0) : 0;
+
+  return {
+    commits,
+    totalTime: durationString(Temporal.Duration.from({ seconds: totalSeconds })),
+    totalSeconds,
+    maxPassed,
+    questions: totalQuestions,
+  };
+}
+
 app.get('/speedruns/:speedrunId', async (req, res) => {
   const { speedrunId } = req.params;
   const speedrun = db.specificSpeedrun({ speedrunId });
@@ -988,55 +1034,32 @@ app.get('/speedruns/:speedrunId', async (req, res) => {
   const repo = `${process.env.BHS_CS_REPOS}/${speedrun.github}.git/`;
   const branch = url.slice(1);
 
+  const repoObj = new Repo(repo);
+
+  // If the last commit doesn't pass all tests, the last_sha may be off by one
+  // due to an old server bug. Try extending the range by one commit.
+  function extendedLastSha(lastSha) {
+    try {
+      return repoObj.nextChange(lastSha, branch);
+    } catch {
+      return null;
+    }
+  }
+
   let timeline;
   if (file.endsWith('.java')) {
-    const tester = config.server.testClass;
-    const filename = `${branch}/${file}`;
-    const output = runJavaGrader(
-      `--repo ${repo} --file ${filename} --tester ${tester} --branch ${branch} --range ${speedrun.first_sha}..${speedrun.last_sha} --output json`,
-    );
+    timeline = gradeJavaSpeedrun(repo, branch, file, config, speedrun);
 
-    // Grade returns an object keyed by label (abbreviated sha); entries are oldest-first
-    const entries = Object.entries(output);
-    const totalQuestions =
-      entries.length > 0
-        ? Math.max(...entries.map(([, e]) => (e.results ? Object.keys(e.results).length : 0)))
-        : speedrun.questions;
-
-    let maxPassed = 0;
-    const commits = entries.map(([label, e]) => {
-      // results is { questionName: [{ passed, ... }, ...], ... }
-      // A question passes if all its test cases pass
-      const passed = e.results
-        ? Object.values(e.results).filter((cases) => cases.every((c) => c.passed)).length
-        : 0;
-      const total = e.results ? Object.keys(e.results).length : 0;
-      maxPassed = Math.max(maxPassed, passed);
-
-      return {
-        shortSha: e.sha || label,
-        date: e.time || '',
-        elapsed:
-          e.delta != null ? durationString(Temporal.Duration.from({ seconds: e.delta })) : '',
-        totalElapsed:
-          e.elapsed != null ? durationString(Temporal.Duration.from({ seconds: e.elapsed })) : '',
-        elapsedSeconds: e.delta ?? 0,
-        totalElapsedSeconds: e.elapsed ?? 0,
-        passed,
-        attempted: total,
-        error: e.error || null,
-      };
-    });
-
-    const totalSeconds = entries.length > 0 ? (entries[entries.length - 1][1].elapsed ?? 0) : 0;
-
-    timeline = {
-      commits,
-      totalTime: durationString(Temporal.Duration.from({ seconds: totalSeconds })),
-      totalSeconds,
-      maxPassed,
-      questions: totalQuestions,
-    };
+    if (timeline.commits.length > 0 && timeline.maxPassed < timeline.questions) {
+      const next = extendedLastSha(speedrun.last_sha);
+      if (next) {
+        db.updateSpeedrunLastSha({ speedrunId, lastSha: next.sha });
+        timeline = gradeJavaSpeedrun(repo, branch, file, config, {
+          ...speedrun,
+          last_sha: next.sha,
+        });
+      }
+    }
   } else {
     const testcases = loadTestcases(await api.jsTestcases(url));
     timeline = getCommitData(
@@ -1049,6 +1072,23 @@ app.get('/speedruns/:speedrunId', async (req, res) => {
       branch,
       speedrun.questions,
     );
+
+    if (timeline.commits.length > 0 && timeline.maxPassed < timeline.questions) {
+      const next = extendedLastSha(speedrun.last_sha);
+      if (next) {
+        db.updateSpeedrunLastSha({ speedrunId, lastSha: next.sha });
+        timeline = getCommitData(
+          repo,
+          branch,
+          file,
+          testcases,
+          speedrun.first_sha,
+          next.sha,
+          branch,
+          speedrun.questions,
+        );
+      }
+    }
   }
 
   const ungraded = db.ungradedSpeedruns();
