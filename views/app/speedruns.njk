@@ -2,9 +2,13 @@
 {% block title %}Speedruns - Gradebook{% endblock %}
 {% block content %}
 <h1>Ungraded Speedruns ({{ speedruns.length }})</h1>
-{% if speedruns.length > 0 %}
-<p><a href="/speedruns/{{ speedruns[0].speedrun_id }}">Start grading</a></p>
-{% endif %}
+<div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+  {% if speedruns.length > 0 %}
+  <a href="/speedruns/{{ speedruns[0].speedrun_id }}">Start grading</a>
+  {% endif %}
+  <button hx-post="/speedruns/sync" hx-target="#sync-result" hx-swap="innerHTML">Sync from server</button>
+  <span id="sync-result"></span>
+</div>
 <table data-column-filters>
   <thead>
     <tr><th>Student</th><th>Assignment</th><th data-column-filter="2">Course</th><th>Finished At</th></tr>

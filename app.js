@@ -2,6 +2,8 @@
 
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
+import { open } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { Temporal } from '@js-temporal/polyfill';
@@ -909,6 +911,70 @@ app.get('/speedruns', (_req, res) => {
   res.render('app/speedruns.njk', { speedruns });
 });
 
+app.post('/speedruns/sync', async (_req, res) => {
+  try {
+    const result = await syncSpeedruns();
+    res.set('HX-Redirect', '/speedruns');
+    res.send('');
+  } catch (e) {
+    res.send(`<p class="text-danger">Sync error: ${e.message}</p>`);
+  }
+});
+
+async function countQuestions(url) {
+  const filename = `${homedir()}/hacks/bhs-cs/views/pages/${url}/index.njk`;
+  const file = await open(filename);
+  let questions = 0;
+  for await (const line of file.readLines()) {
+    if (line.match(/^\s*<div data-name/)) {
+      questions++;
+    }
+  }
+  return questions;
+}
+
+async function syncSpeedruns() {
+  const onServer = await api.completedSpeedruns();
+  const inGradebook = new Set(db.completedSpeedruns().map((r) => r.speedrun_id));
+  const speedrunnables = new Set(db.speedrunnables().map((r) => r.assignment_id));
+  const assignments = new Set(db.assignments().map((r) => r.assignment_id));
+
+  let inserted = 0;
+  const toFetch = new Set();
+
+  for (const s of onServer) {
+    if (!inGradebook.has(s.speedrun_id)) {
+      const github = db.github({ userId: s.user_id });
+      if (github) {
+        toFetch.add(github);
+        db.insertCompletedSpeedrun(camelify(s));
+        inserted++;
+      }
+    }
+  }
+
+  const serverAssignmentIds = new Set(onServer.map((s) => s.assignment_id));
+  for (const id of serverAssignmentIds) {
+    if (!speedrunnables.has(id)) {
+      const assignment = camelify(await api.assignment(id));
+      const kind = assignment.url.match(/itp/) ? 'javascript' : 'java';
+      const questions = await countQuestions(assignment.url);
+      db.insertSpeedrunnable({ assignmentId: id, kind, questions });
+    }
+    if (!assignments.has(id)) {
+      const assignment = camelify(await api.assignment(id));
+      const { assignmentId, openDate: date, courseId, title } = assignment;
+      db.insertAssignment({ assignmentId, date, courseId, title });
+    }
+  }
+
+  for (const github of toFetch) {
+    new Repo(`${process.env.BHS_CS_REPOS}/${github}.git`).fetch();
+  }
+
+  return { inserted, fetched: toFetch.size };
+}
+
 app.get('/speedruns/:speedrunId', async (req, res) => {
   const { speedrunId } = req.params;
   const speedrun = db.specificSpeedrun({ speedrunId });
@@ -927,7 +993,7 @@ app.get('/speedruns/:speedrunId', async (req, res) => {
     const tester = config.server.testClass;
     const filename = `${branch}/${file}`;
     const output = runJavaGrader(
-      `--repo ${repo} --file ${filename} --tester ${tester} --range ${speedrun.first_sha}..${speedrun.last_sha} --output json`,
+      `--repo ${repo} --file ${filename} --tester ${tester} --branch ${branch} --range ${speedrun.first_sha}..${speedrun.last_sha} --output json`,
     );
 
     // Grade returns an object keyed by label (abbreviated sha); entries are oldest-first
