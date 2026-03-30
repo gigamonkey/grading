@@ -1163,11 +1163,12 @@ app.get('/speedruns/:speedrunId', async (req, res) => {
 
 app.post('/speedruns/:speedrunId/grade', (req, res) => {
   const { speedrunId } = req.params;
+  const currentId = Number(speedrunId);
   const ok = Number(req.body.ok);
   db.ensureGradedSpeedrun({ speedrunId, ok });
 
   const ungraded = db.ungradedSpeedruns();
-  const next = ungraded[0];
+  const next = ungraded.find((s) => s.speedrun_id > currentId) || ungraded[0];
   if (next) {
     res.set('HX-Redirect', `/speedruns/${next.speedrun_id}`);
   } else {
