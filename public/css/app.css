@@ -512,5 +512,12 @@ td.copyable:hover { background: #f0f0f0; }
 .text-warning { color: #cc8800; }
 .text-danger { color: #dc3545; }
 
+.btn-accept { background: #198754; }
+.btn-accept:hover { background: #157347; }
+.btn-reject { background: #dc3545; }
+.btn-reject:hover { background: #bb2d3b; }
+.btn-skip { background: #6c757d; }
+.btn-skip:hover { background: #5c636a; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 1s linear infinite; display: inline-block; }

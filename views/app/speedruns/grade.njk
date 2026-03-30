@@ -1,0 +1,57 @@
+{% extends "app/layout.njk" %}
+{% block title %}Grade Speedrun - {{ speedrun.github }} - Gradebook{% endblock %}
+{% block content %}
+<h1>{{ speedrun.course_id | upper }}: {{ speedrun.title }} &mdash; {{ speedrun.github }}</h1>
+<p>Speedrun {{ currentIndex }} of {{ total }}</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>SHA</th>
+      <th>Time</th>
+      <th>+Delta</th>
+      <th>Total</th>
+      <th>Passed</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in timeline.commits %}
+    <tr{% if c.error %} class="text-danger"{% elif c.passed == timeline.questions %} class="text-success"{% endif %}>
+      <td><code>{{ c.shortSha }}</code></td>
+      <td>{{ c.date }}</td>
+      <td>+{{ c.elapsed }}</td>
+      <td>{{ c.totalElapsed }}</td>
+      <td>
+        {% if c.error %}
+          Error: {{ c.error }}
+        {% else %}
+          {{ c.passed }}/{{ c.attempted }}
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p>
+  Total time: {{ timeline.totalTime }} &mdash;
+  Max passed: {{ timeline.maxPassed }} of {{ timeline.questions }}
+</p>
+
+<div style="display: flex; gap: 1rem; margin-top: 1rem;">
+  <button class="btn-accept"
+    hx-post="/speedruns/{{ speedrun.speedrun_id }}/grade"
+    hx-vals='{"ok": 1}'>
+    Accept
+  </button>
+  <button class="btn-reject"
+    hx-post="/speedruns/{{ speedrun.speedrun_id }}/grade"
+    hx-vals='{"ok": 0}'>
+    Reject
+  </button>
+  <button class="btn-skip"
+    hx-post="/speedruns/{{ speedrun.speedrun_id }}/skip">
+    Skip
+  </button>
+</div>
+{% endblock %}

@@ -1,7 +1,10 @@
 {% extends "app/layout.njk" %}
 {% block title %}Speedruns - Gradebook{% endblock %}
 {% block content %}
-<h1>Ungraded Speedruns</h1>
+<h1>Ungraded Speedruns ({{ speedruns.length }})</h1>
+{% if speedruns.length > 0 %}
+<p><a href="/speedruns/{{ speedruns[0].speedrun_id }}">Start grading</a></p>
+{% endif %}
 <table data-column-filters>
   <thead>
     <tr><th>Student</th><th>Assignment</th><th data-column-filter="2">Course</th><th>Finished At</th></tr>
@@ -9,7 +12,7 @@
   <tbody>
     {% for s in speedruns %}
     <tr>
-      <td><a href="/students/{{ s.user_id }}">{{ s.github }}</a></td>
+      <td><a href="/speedruns/{{ s.speedrun_id }}">{{ s.github }}</a></td>
       <td>{{ s.title or s.assignment_id }}</td>
       <td>{{ s.course_id }}</td>
       <td>{{ s.finished_at }}</td>

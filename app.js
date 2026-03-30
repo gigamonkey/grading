@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { Temporal } from '@js-temporal/polyfill';
 import { parse } from 'csv-parse/sync';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -12,6 +13,7 @@ import { DB } from 'pugsql';
 import { API } from './api.js';
 import { numCorrect, scoreTest } from './modules/grading.js';
 import { Repo } from './modules/repo.js';
+import { durationString, getCommitData } from './modules/speedruns.js';
 import { loadTestcases, runTestsWithError } from './modules/test-javascript.js';
 import { camelify } from './modules/util.js';
 
@@ -905,6 +907,123 @@ app.get('/zeros', (_req, res) => {
 app.get('/speedruns', (_req, res) => {
   const speedruns = db.ungradedSpeedruns();
   res.render('app/speedruns.njk', { speedruns });
+});
+
+app.get('/speedruns/:speedrunId', async (req, res) => {
+  const { speedrunId } = req.params;
+  const speedrun = db.specificSpeedrun({ speedrunId });
+  if (!speedrun) {
+    return res.status(404).send('Speedrun not found.');
+  }
+
+  const { url } = await api.assignment(speedrun.assignment_id);
+  const config = await api.codingConfig(url);
+  const file = config.files[0];
+  const repo = `${process.env.BHS_CS_REPOS}/${speedrun.github}.git/`;
+  const branch = url.slice(1);
+
+  let timeline;
+  if (file.endsWith('.java')) {
+    const tester = config.server.testClass;
+    const filename = `${branch}/${file}`;
+    const output = runJavaGrader(
+      `--repo ${repo} --file ${filename} --tester ${tester} --range ${speedrun.first_sha}..${speedrun.last_sha} --output json`,
+    );
+
+    // Grade returns an object keyed by label (abbreviated sha); entries are oldest-first
+    const entries = Object.entries(output);
+    const totalQuestions =
+      entries.length > 0
+        ? Math.max(...entries.map(([, e]) => (e.results ? Object.keys(e.results).length : 0)))
+        : speedrun.questions;
+
+    let maxPassed = 0;
+    const commits = entries.map(([label, e]) => {
+      // results is { questionName: [{ passed, ... }, ...], ... }
+      // A question passes if all its test cases pass
+      const passed = e.results
+        ? Object.values(e.results).filter((cases) => cases.every((c) => c.passed)).length
+        : 0;
+      const total = e.results ? Object.keys(e.results).length : 0;
+      maxPassed = Math.max(maxPassed, passed);
+
+      return {
+        shortSha: e.sha || label,
+        date: e.time || '',
+        elapsed:
+          e.delta != null ? durationString(Temporal.Duration.from({ seconds: e.delta })) : '',
+        totalElapsed:
+          e.elapsed != null ? durationString(Temporal.Duration.from({ seconds: e.elapsed })) : '',
+        elapsedSeconds: e.delta ?? 0,
+        totalElapsedSeconds: e.elapsed ?? 0,
+        passed,
+        attempted: total,
+        error: e.error || null,
+      };
+    });
+
+    const totalSeconds = entries.length > 0 ? (entries[entries.length - 1][1].elapsed ?? 0) : 0;
+
+    timeline = {
+      commits,
+      totalTime: durationString(Temporal.Duration.from({ seconds: totalSeconds })),
+      totalSeconds,
+      maxPassed,
+      questions: totalQuestions,
+    };
+  } else {
+    const testcases = loadTestcases(await api.jsTestcases(url));
+    timeline = getCommitData(
+      repo,
+      branch,
+      file,
+      testcases,
+      speedrun.first_sha,
+      speedrun.last_sha,
+      branch,
+      speedrun.questions,
+    );
+  }
+
+  const ungraded = db.ungradedSpeedruns();
+  const currentIndex = ungraded.findIndex((s) => s.speedrun_id === Number(speedrunId));
+  const total = ungraded.length;
+
+  res.render('app/speedruns/grade.njk', {
+    speedrun,
+    timeline,
+    currentIndex: currentIndex + 1,
+    total,
+  });
+});
+
+app.post('/speedruns/:speedrunId/grade', (req, res) => {
+  const { speedrunId } = req.params;
+  const ok = Number(req.body.ok);
+  db.ensureGradedSpeedrun({ speedrunId, ok });
+
+  const ungraded = db.ungradedSpeedruns();
+  const next = ungraded[0];
+  if (next) {
+    res.set('HX-Redirect', `/speedruns/${next.speedrun_id}`);
+  } else {
+    res.set('HX-Redirect', '/speedruns');
+  }
+  res.send('');
+});
+
+app.post('/speedruns/:speedrunId/skip', (_req, res) => {
+  const ungraded = db.ungradedSpeedruns();
+  // Find the next one after the current
+  const currentId = Number(_req.params.speedrunId);
+  const currentIndex = ungraded.findIndex((s) => s.speedrun_id === currentId);
+  const next = ungraded[currentIndex + 1] || ungraded[0];
+  if (next && next.speedrun_id !== currentId) {
+    res.set('HX-Redirect', `/speedruns/${next.speedrun_id}`);
+  } else {
+    res.set('HX-Redirect', '/speedruns');
+  }
+  res.send('');
 });
 
 // Checklist grader
