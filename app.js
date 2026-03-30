@@ -1073,7 +1073,25 @@ function cacheTimeline(speedrunId, timeline) {
   }
 }
 
-app.get('/speedruns/:speedrunId', async (req, res) => {
+app.get('/speedruns/:speedrunId', (req, res) => {
+  const { speedrunId } = req.params;
+  const speedrun = db.specificSpeedrun({ speedrunId });
+  if (!speedrun) {
+    return res.status(404).send('Speedrun not found.');
+  }
+
+  const ungraded = db.ungradedSpeedruns();
+  const currentIndex = ungraded.findIndex((s) => s.speedrun_id === Number(speedrunId));
+  const total = ungraded.length;
+
+  res.render('app/speedruns/grade.njk', {
+    speedrun,
+    currentIndex: currentIndex + 1,
+    total,
+  });
+});
+
+app.get('/speedruns/:speedrunId/results', async (req, res) => {
   const { speedrunId } = req.params;
   const speedrun = db.specificSpeedrun({ speedrunId });
   if (!speedrun) {
@@ -1149,16 +1167,7 @@ app.get('/speedruns/:speedrunId', async (req, res) => {
     cacheTimeline(speedrunId, timeline);
   }
 
-  const ungraded = db.ungradedSpeedruns();
-  const currentIndex = ungraded.findIndex((s) => s.speedrun_id === Number(speedrunId));
-  const total = ungraded.length;
-
-  res.render('app/speedruns/grade.njk', {
-    speedrun,
-    timeline,
-    currentIndex: currentIndex + 1,
-    total,
-  });
+  res.render('app/speedruns/results.njk', { speedrun, timeline });
 });
 
 app.post('/speedruns/:speedrunId/grade', (req, res) => {

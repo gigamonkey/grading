@@ -2,56 +2,12 @@
 {% block title %}Grade Speedrun - {{ speedrun.github }} - Gradebook{% endblock %}
 {% block content %}
 <h1>{{ speedrun.course_id | upper }}: {{ speedrun.title }} &mdash; {{ speedrun.github }}</h1>
-<p>Speedrun {{ currentIndex }} of {{ total }} &mdash;
-  Total time: {{ timeline.totalTime }} &mdash;
-  Max passed: {{ timeline.maxPassed }} of {{ timeline.questions }}
-</p>
+<p>Speedrun {{ currentIndex }} of {{ total }}</p>
 
-<div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-  <button class="btn-accept"
-    hx-post="/speedruns/{{ speedrun.speedrun_id }}/grade"
-    hx-vals='{"ok": 1}'>
-    Accept
-  </button>
-  <button class="btn-reject"
-    hx-post="/speedruns/{{ speedrun.speedrun_id }}/grade"
-    hx-vals='{"ok": 0}'>
-    Reject
-  </button>
-  <button class="btn-skip"
-    hx-post="/speedruns/{{ speedrun.speedrun_id }}/skip">
-    Skip
-  </button>
+<div id="speedrun-results"
+  hx-get="/speedruns/{{ speedrun.speedrun_id }}/results"
+  hx-trigger="load"
+  hx-swap="outerHTML">
+  <p><i class="bi bi-arrow-repeat spinning"></i> Grading speedrun&hellip;</p>
 </div>
-
-<table style="width: auto; white-space: nowrap;">
-  <thead>
-    <tr>
-      <th></th>
-      <th>SHA</th>
-      <th>Time</th>
-      <th>+Delta</th>
-      <th>Total</th>
-      <th>Passed</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for c in timeline.commits | reverse %}
-    <tr class="{{ 'text-danger' if c.error else 'text-success' }}">
-      <td>{% if c.error %}<i class="bi bi-x-lg"></i>{% else %}<i class="bi bi-check-lg"></i>{% endif %}</td>
-      <td><code>{{ c.shortSha }}</code></td>
-      <td>{{ c.date }}</td>
-      <td>+{{ c.elapsed }}</td>
-      <td>{{ c.totalElapsed }}</td>
-      <td>
-        {% if c.error %}
-          Error: {{ c.error | truncate(80) }}
-        {% else %}
-          {{ c.passed }}/{{ c.attempted }}
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
 {% endblock %}
