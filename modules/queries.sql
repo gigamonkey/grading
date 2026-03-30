@@ -136,6 +136,12 @@ delete from server_grades;
 -- :name updateSpeedrunLastSha :run
 update completed_speedruns set last_sha = $lastSha where speedrun_id = $speedrunId;
 
+-- :name speedrunCommitsForSpeedrun :all
+SELECT * FROM speedrun_commits WHERE speedrun_id = $speedrunId ORDER BY elapsed_seconds;
+
+-- :name deleteSpeedrunCommits :run
+DELETE FROM speedrun_commits WHERE speedrun_id = $speedrunId;
+
 -- :name ensureGradedSpeedrun :insert
 insert or replace into graded_speedruns (speedrun_id, ok) values ($speedrunId, $ok);
 

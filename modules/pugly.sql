@@ -786,6 +786,47 @@ values
   ($userId, $assignmentId, $standard, $score, $grade);
 
 
+-- speedrun_commits ----------------------------------------
+
+-- :name speedrunCommits :all
+select * from speedrun_commits;
+
+-- :name insertSpeedrunCommit :insert
+insert into speedrun_commits
+  (speedrun_id, sha, timestamp, delta_seconds, elapsed_seconds, passed, attempted, error)
+values
+  ($speedrunId, $sha, $timestamp, $deltaSeconds, $elapsedSeconds, $passed, $attempted, $error);
+
+-- :name speedrunCommit :get
+select * from speedrun_commits where speedrun_id = $speedrunId and sha = $sha;
+
+-- :name updateSpeedrunCommit :run
+update speedrun_commits set
+  (timestamp, delta_seconds, elapsed_seconds, passed, attempted, error) =
+  ($timestamp, $deltaSeconds, $elapsedSeconds, $passed, $attempted, $error)
+where
+  speedrun_id = $speedrunId and
+  sha = $sha
+
+-- :name speedrunCommitForCompletedSpeedrun :get
+select * from speedrun_commits where speedrun_id = $speedrunId;
+
+-- :name speedrunCommitsForCompletedSpeedrun :all
+select * from speedrun_commits where speedrun_id = $speedrunId;
+
+-- :name makeSpeedrunCommit :insert
+insert into speedrun_commits
+  (timestamp, delta_seconds, elapsed_seconds, passed, attempted, error)
+values
+  ($timestamp, $deltaSeconds, $elapsedSeconds, $passed, $attempted, $error);
+
+-- :name makeSpeedrunCommitWithDefaultValues :insert
+insert into speedrun_commits
+  (timestamp, delta_seconds, elapsed_seconds, passed, attempted, error)
+values
+  ($timestamp, $deltaSeconds, $elapsedSeconds, $passed, $attempted, $error);
+
+
 -- speedrunnable_standards ---------------------------------
 
 -- :name speedrunnableStandards :all

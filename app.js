@@ -1023,6 +1023,56 @@ function gradeJavaSpeedrun(repo, branch, file, config, speedrun) {
   };
 }
 
+function buildTimelineFromCache(rows, questions) {
+  let maxPassed = 0;
+  const commits = rows.map((r) => {
+    const passed = r.passed ?? undefined;
+    if (passed != null) maxPassed = Math.max(maxPassed, passed);
+    return {
+      shortSha: r.sha,
+      date: r.timestamp || '',
+      elapsed:
+        r.delta_seconds != null
+          ? durationString(Temporal.Duration.from({ seconds: r.delta_seconds }))
+          : '',
+      totalElapsed:
+        r.elapsed_seconds != null
+          ? durationString(Temporal.Duration.from({ seconds: r.elapsed_seconds }))
+          : '',
+      elapsedSeconds: r.delta_seconds ?? 0,
+      totalElapsedSeconds: r.elapsed_seconds ?? 0,
+      passed: r.passed,
+      attempted: r.attempted,
+      error: r.error || null,
+    };
+  });
+
+  const totalSeconds = commits.length > 0 ? commits[commits.length - 1].totalElapsedSeconds : 0;
+
+  return {
+    commits,
+    totalTime: durationString(Temporal.Duration.from({ seconds: totalSeconds })),
+    totalSeconds,
+    maxPassed,
+    questions,
+  };
+}
+
+function cacheTimeline(speedrunId, timeline) {
+  for (const c of timeline.commits) {
+    db.insertSpeedrunCommit({
+      speedrunId,
+      sha: c.shortSha,
+      timestamp: c.date,
+      deltaSeconds: c.elapsedSeconds,
+      elapsedSeconds: c.totalElapsedSeconds,
+      passed: c.passed ?? null,
+      attempted: c.attempted ?? null,
+      error: c.error ?? null,
+    });
+  }
+}
+
 app.get('/speedruns/:speedrunId', async (req, res) => {
   const { speedrunId } = req.params;
   const speedrun = db.specificSpeedrun({ speedrunId });
@@ -1036,61 +1086,67 @@ app.get('/speedruns/:speedrunId', async (req, res) => {
   const repo = `${process.env.BHS_CS_REPOS}/${speedrun.github}.git/`;
   const branch = url.slice(1);
 
-  const repoObj = new Repo(repo);
-
-  // If the last commit doesn't pass all tests, the last_sha may be off by one
-  // due to an old server bug. Try extending the range by one commit.
-  function extendedLastSha(lastSha) {
-    try {
-      return repoObj.nextChange(lastSha, branch);
-    } catch {
-      return null;
-    }
-  }
-
+  // Check cache first
+  const cached = db.speedrunCommitsForSpeedrun({ speedrunId });
   let timeline;
-  if (file.endsWith('.java')) {
-    timeline = gradeJavaSpeedrun(repo, branch, file, config, speedrun);
-
-    if (timeline.commits.length > 0 && timeline.maxPassed < timeline.questions) {
-      const next = extendedLastSha(speedrun.last_sha);
-      if (next) {
-        db.updateSpeedrunLastSha({ speedrunId, lastSha: next.sha });
-        timeline = gradeJavaSpeedrun(repo, branch, file, config, {
-          ...speedrun,
-          last_sha: next.sha,
-        });
-      }
-    }
+  if (cached.length > 0) {
+    timeline = buildTimelineFromCache(cached, speedrun.questions);
   } else {
-    const testcases = loadTestcases(await api.jsTestcases(url));
-    timeline = getCommitData(
-      repo,
-      branch,
-      file,
-      testcases,
-      speedrun.first_sha,
-      speedrun.last_sha,
-      branch,
-      speedrun.questions,
-    );
+    const repoObj = new Repo(repo);
 
-    if (timeline.commits.length > 0 && timeline.maxPassed < timeline.questions) {
-      const next = extendedLastSha(speedrun.last_sha);
-      if (next) {
-        db.updateSpeedrunLastSha({ speedrunId, lastSha: next.sha });
-        timeline = getCommitData(
-          repo,
-          branch,
-          file,
-          testcases,
-          speedrun.first_sha,
-          next.sha,
-          branch,
-          speedrun.questions,
-        );
+    function extendedLastSha(lastSha) {
+      try {
+        return repoObj.nextChange(lastSha, branch);
+      } catch {
+        return null;
       }
     }
+
+    if (file.endsWith('.java')) {
+      timeline = gradeJavaSpeedrun(repo, branch, file, config, speedrun);
+
+      if (timeline.commits.length > 0 && timeline.maxPassed < timeline.questions) {
+        const next = extendedLastSha(speedrun.last_sha);
+        if (next) {
+          db.updateSpeedrunLastSha({ speedrunId, lastSha: next.sha });
+          timeline = gradeJavaSpeedrun(repo, branch, file, config, {
+            ...speedrun,
+            last_sha: next.sha,
+          });
+        }
+      }
+    } else {
+      const testcases = loadTestcases(await api.jsTestcases(url));
+      timeline = getCommitData(
+        repo,
+        branch,
+        file,
+        testcases,
+        speedrun.first_sha,
+        speedrun.last_sha,
+        branch,
+        speedrun.questions,
+      );
+
+      if (timeline.commits.length > 0 && timeline.maxPassed < timeline.questions) {
+        const next = extendedLastSha(speedrun.last_sha);
+        if (next) {
+          db.updateSpeedrunLastSha({ speedrunId, lastSha: next.sha });
+          timeline = getCommitData(
+            repo,
+            branch,
+            file,
+            testcases,
+            speedrun.first_sha,
+            next.sha,
+            branch,
+            speedrun.questions,
+          );
+        }
+      }
+    }
+
+    cacheTimeline(speedrunId, timeline);
   }
 
   const ungraded = db.ungradedSpeedruns();
