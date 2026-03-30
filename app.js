@@ -681,7 +681,8 @@ app.get('/students/:userId', (req, res) => {
   const assignments = db.studentAssignmentScores({ userId });
   const masteryPoints = db.studentMasteryPoints({ userId });
   const masteryTotals = db.studentMasteryTotals({ userId });
-  res.render('app/students/student.njk', { student, assignments, masteryPoints, masteryTotals });
+  const speedruns = db.studentSpeedruns({ userId });
+  res.render('app/students/student.njk', { student, assignments, masteryPoints, masteryTotals, speedruns });
 });
 
 // Overrides

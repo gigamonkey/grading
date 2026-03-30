@@ -475,6 +475,7 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
 }
 
 .info-table { width: auto; }
+table.fit { width: auto; white-space: nowrap; }
 
 .text-center { text-align: center; }
 

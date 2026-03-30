@@ -141,6 +141,12 @@ delete from server_grades;
 -- :name updateSpeedrunLastSha :run
 update completed_speedruns set last_sha = $lastSha where speedrun_id = $speedrunId;
 
+-- :name studentSpeedruns :all
+SELECT h.*, gs.ok FROM hydrated_speedruns h
+LEFT JOIN graded_speedruns gs USING (speedrun_id)
+WHERE h.user_id = $userId
+ORDER BY h.finished_at DESC;
+
 -- :name speedrunCommitsForSpeedrun :all
 SELECT * FROM speedrun_commits WHERE speedrun_id = $speedrunId ORDER BY elapsed_seconds;
 
