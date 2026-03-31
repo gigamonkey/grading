@@ -1,27 +1,26 @@
 #!/usr/bin/env node
 
 import fs from 'node:fs';
-import glob from 'fast-glob';
 import path from 'node:path';
-import prettier from 'prettier';
 import { Command } from 'commander';
+import glob from 'fast-glob';
 import { JSDOM } from 'jsdom';
+import prettier from 'prettier';
 import { similarity } from './modules/lcs.js';
 
 const verbose = false;
-
 
 const { Node } = new JSDOM('').window;
 
 const loadStaticBody = (text) => {
   const body = new JSDOM(text).window.document.body;
-  return prettier.format(clean(body), { parser: "html" });
+  return prettier.format(clean(body), { parser: 'html' });
 };
 
 const loadDynamicBody = (text, code) => {
   const dom = new JSDOM(text, {
-    runScripts: "dangerously", // allows us to run code
-    resources: "usable"
+    runScripts: 'dangerously', // allows us to run code
+    resources: 'usable',
   });
 
   const doc = dom.window.document;
@@ -29,8 +28,8 @@ const loadDynamicBody = (text, code) => {
 
   const body = doc.body;
   dom.window.eval(code);
-  body.removeAttribute("class");
-  return prettier.format(clean(body), { parser: "html" });
+  body.removeAttribute('class');
+  return prettier.format(clean(body), { parser: 'html' });
 };
 
 const clean = (body) => {
@@ -38,7 +37,6 @@ const clean = (body) => {
   cleanNodes(body);
   return body.outerHTML;
 };
-
 
 const cleanNodes = (node) => {
   for (let i = node.childNodes.length - 1; i >= 0; i--) {
@@ -54,7 +52,7 @@ const cleanNodes = (node) => {
       cleanNodes(child);
     }
   }
-}
+};
 
 /**
  *
@@ -74,13 +72,13 @@ const compare = async (staticHTML, dynamicText, code) => {
   } catch (e) {
     return { ok: false, error: e.message };
   }
-}
+};
 
 const significantChild = (node) => nonEmptyText(node) || node.nodeType === 1;
 
-const nonEmptyText = (node) => node.nodeType === 3 && node.textContent.trim().length > 0
+const nonEmptyText = (node) => node.nodeType === 3 && node.textContent.trim().length > 0;
 
-const significantChildren = (node) => [...node.childNodes].filter(significantChild);
+const _significantChildren = (node) => [...node.childNodes].filter(significantChild);
 
 new Command()
   .description('Compare static HTML to dynamically generated HTML')
@@ -88,7 +86,7 @@ new Command()
   .argument('<dynamic>', 'Filename of dynamic HTML')
   .argument('<repos>', 'Directory containing repos.')
   .action(async (staticFile, dynamicFile, repos) => {
-    const staticHTML = await loadStaticBody(fs.readFileSync(staticFile, { encoding: 'utf-8' }))
+    const staticHTML = await loadStaticBody(fs.readFileSync(staticFile, { encoding: 'utf-8' }));
     const dynamicText = fs.readFileSync(dynamicFile, { encoding: 'utf-8' });
 
     const scripts = glob.sync(`${repos}/*/projects/dom-assignment/public/scripts/script.js`);
@@ -96,7 +94,7 @@ new Command()
     scripts.forEach(async (scriptFile) => {
       const github = path.relative(repos, scriptFile).split(path.sep)[0];
       const code = fs.readFileSync(scriptFile, { encoding: 'utf-8' });
-      const comp = await compare(staticHTML, dynamicText, code)
+      const comp = await compare(staticHTML, dynamicText, code);
       const r = { github };
       if (comp.ok) {
         r.score = comp.similarity.total;

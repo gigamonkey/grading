@@ -1,42 +1,41 @@
 #!/usr/bin/env node
 
+import { Command } from 'commander';
 import { DB } from 'pugsql';
-import { Command, Option } from 'commander';
 import { camelify } from './modules/util.js';
 
 const { keys, fromEntries } = Object;
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const dumpAll = (u) => console.log(u);
 
 const dumpOne = (field) => {
   return (u) => console.log(u[field]);
-}
+};
 
 const dumpFields = (keys) => {
   return (u) => {
-    console.log(fromEntries(keys.map(k => [k, u[k]])));
+    console.log(fromEntries(keys.map((k) => [k, u[k]])));
   };
 };
 
 const dumpNameAndNumber = (u) => {
   console.log(`${u.firstName} ${u.lastName} (#${u.studentNumber})`);
-}
+};
 
 const main = async (q, opts) => {
   const fields = keys(opts);
-  const dump = 'nameAndNumber' in opts
-        ? dumpNameAndNumber
-        : fields.length === 0
+  const dump =
+    'nameAndNumber' in opts
+      ? dumpNameAndNumber
+      : fields.length === 0
         ? dumpAll
         : fields.length === 1
-        ? dumpOne(fields[0])
-        : dumpFields(fields);
+          ? dumpOne(fields[0])
+          : dumpFields(fields);
   //db.findUser({q: `%${q.toUpperCase()}%`}).map(camelify).forEach(dump);
-  db.findUser({q}).map(camelify).forEach(dump);
+  db.findUser({ q }).map(camelify).forEach(dump);
 };
 
 new Command()

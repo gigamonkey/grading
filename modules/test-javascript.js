@@ -1,13 +1,9 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
 import vm from 'node:vm';
 import { textIfOk } from './fetch-helpers.js';
-import { getSha, getTimestamp, numCorrect } from './grading.js';
-import { loadJSON, loadSnakeCaseJSON } from './util.js';
 
-const { entries, fromEntries, keys } = Object;
+const { entries, fromEntries } = Object;
 
 const SIGNIFICANT_DIGITS = 10;
 
@@ -46,13 +42,10 @@ const equals = (o1, o2) => {
 
 // Compute numeric equality to a given number of significant digits.
 const numericEquals = (a, b, digits) => {
-
   if (a === b) {
     return true;
-
   } else {
-
-    const epsilon = Math.pow(10, -digits);
+    const epsilon = 10 ** -digits;
 
     // Handle 0s specially since log10(0) is -Infinity which will be different
     // from log10(n) for any non-zero n. But we want to consider 0 and some
@@ -67,7 +60,7 @@ const numericEquals = (a, b, digits) => {
     if (aExp !== bExp) {
       return false;
     } else {
-      const scale = Math.pow(10, -(aExp + 1));
+      const scale = 10 ** -(aExp + 1);
       return Math.abs((a - b) * scale) <= epsilon;
     }
   }
@@ -179,17 +172,16 @@ const runTestsWithError = (testcases, code) => {
     };
   } catch (e) {
     return {
-      error: e
+      error: e,
     };
-  };
+  }
 };
 
 const runTests = (testcases, code) => {
   return runTestsWithError(testcases, code).results;
-}
+};
 
-
-const fetchTestcases = async (url, server='https://bhs-cs.gigamonkeys.com') => {
+const fetchTestcases = async (url, server = 'https://bhs-cs.gigamonkeys.com') => {
   const code = await fetch(`${server}/${url}/testcases.js`).then(textIfOk);
   const testcasesScript = new vm.Script(code);
   const ctx = {};

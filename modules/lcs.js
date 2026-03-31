@@ -19,18 +19,18 @@ const lcsLength = (a, b) => {
  * in the LCS), total (the percent of the average length of a and b that's in
  * the LCS), and edit (the edit distance using only inserts and deletes between
  * a and b).
-  */
+ */
 const similarity = (a, b) => {
   const shared = lcsLength(a, b);
   return {
     aToB: safeDivide(shared, a.length),
     bToA: safeDivide(shared, b.length),
-    total: safeDivide(shared, ((a.length + b.length) / 2)),
+    total: safeDivide(shared, (a.length + b.length) / 2),
     edit: 2 * shared - (a.length + b.length),
   };
 };
 
-const safeDivide = (a, b) => b == 0 ? 1 : a / b;
+const safeDivide = (a, b) => (b === 0 ? 1 : a / b);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Internals
@@ -51,17 +51,16 @@ const lcsMatrix = (a, b) => {
 
 // Reconstruct the LCS from the matrix.
 const lcsReconstruct = (matrix, a, b) => {
-  const result = []
+  const result = [];
 
-  let j = 0
-  let i = 0
+  let j = 0;
+  let i = 0;
 
   while (j < b.length && i < a.length) {
-
     const { here, right, down, diag } = neighbors(matrix, i, j);
 
-    if (right === down && down == diag && diag === (here - 1)) {
-      result.push(a[i])
+    if (right === down && down === diag && diag === here - 1) {
+      result.push(a[i]);
       i++;
       j++;
     } else if (down === here) {
@@ -78,10 +77,10 @@ const lcsReconstruct = (matrix, a, b) => {
 const neighbors = (m, i, j) => {
   return {
     here: m[j][i],
-    right: m[j][i+1],
-    down: m[j+1][i],
-    diag: m[j+1][i+1],
+    right: m[j][i + 1],
+    down: m[j + 1][i],
+    diag: m[j + 1][i + 1],
   };
 };
 
-export { lcs, similarity, lcsLength, lcsMatrix }
+export { lcs, similarity, lcsLength, lcsMatrix };

@@ -85,7 +85,7 @@ class API {
 
   lessonPlanCreatedAt(course, lesson) {
     return this.get(`/api/lesson-plan/${course}/${lesson}`)
-      .catch((r) => undefined)
+      .catch((_r) => undefined)
       .then((d) => d?.created_at);
   }
 

@@ -1,16 +1,12 @@
 #!/usr/bin/env node
 
-import { DB } from 'pugsql';
 import { env } from 'node:process';
 import { Command } from 'commander';
+import { DB } from 'pugsql';
 import { API } from './api.js';
-import { writeFileSync } from 'node:fs';
-import path from 'node:path';
-import { camelify, dumpJSON, groupBy, mapValues } from './modules/util.js';
+import { camelify } from './modules/util.js';
 
-const db = new DB('db.db')
-      .addQueries('modules/pugly.sql')
-      .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 new Command()
   .description('Sync grades currently on server into table in db for comparison.')

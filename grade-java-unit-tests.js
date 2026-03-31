@@ -1,17 +1,14 @@
 #!/usr/bin/env node
 
-import glob from 'fast-glob';
-import { existsSync } from 'fs';
-import { Command } from 'commander';
-import { DB } from 'pugsql';
-import { basename, dirname, join } from 'node:path';
-import { getSha, getTimestamp, numCorrect, simpleScoreTest, scoreTest, scoreWeighted } from './modules/grading.js';
-import { loadJSON, loadSnakeCaseJSON, count, values } from './modules/util.js';
 import { statSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
+import { Command } from 'commander';
+import glob from 'fast-glob';
+import { DB } from 'pugsql';
+import { getSha, getTimestamp, numCorrect, scoreTest, scoreWeighted } from './modules/grading.js';
+import { count, loadJSON, loadSnakeCaseJSON, values } from './modules/util.js';
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 new Command()
   .description('Score results.json files from TestRunner')
@@ -20,11 +17,12 @@ new Command()
   .option('-u, --user <user>', 'Single user to grade.')
   .option('-n, --dry-run', "Don't write to database.")
   .action((dir, opts) => {
-
-    const { assignmentId, openDate, title, courseId } = loadSnakeCaseJSON(join(dir, 'assignment.json'));
+    const { assignmentId, openDate, title, courseId } = loadSnakeCaseJSON(
+      join(dir, 'assignment.json'),
+    );
 
     const scoring = loadJSON(join(dir, 'scoring.json'));
-    const questions = count(values(scoring), w => w > 0);
+    const questions = count(values(scoring), (w) => w > 0);
 
     // console.log(`questions: ${questions}`);
 
@@ -36,7 +34,6 @@ new Command()
     const results = glob.sync(`${dir}/**/results.json`);
 
     db.transaction(() => {
-
       if (!opts.dryRun && !opts.user) {
         db.ensureAssignment({ assignmentId, openDate, courseId, title });
         // FIXME: Not sure what's right here. If we want to just update one
@@ -46,8 +43,8 @@ new Command()
         // code and tested it. In that case we clear everything out and reload
         // everything. Maybe the right thing is to use an ensure rather than
         // insert method in the loop below.
-        db.clearJavaUnitTest({assignmentId});
-        db.clearScoredQuestionAssignment({assignmentId});
+        db.clearJavaUnitTest({ assignmentId });
+        db.clearScoredQuestionAssignment({ assignmentId });
         db.insertScoredQuestionAssignment({ assignmentId, questions });
       }
 
@@ -56,20 +53,20 @@ new Command()
         const github = basename(d);
 
         if (!opts.user || opts.user === github) {
-
           const timestamp = getTimestamp(d);
           const sha = getSha(d);
           try {
             const results = statSync(file).size > 0 ? loadJSON(file) : [];
             const correct = numCorrect(results);
-            const score = opts.partialCredit ? scoreTest(results, questions) : scoreWeighted(results, scoring);
+            const score = opts.partialCredit
+              ? scoreTest(results, questions)
+              : scoreWeighted(results, scoring);
             if (!opts.dryRun) {
               console.log(`Inserting ${github} ${score}`);
-              db.insertJavaUnitTest({assignmentId, github, correct, score, timestamp, sha});
+              db.insertJavaUnitTest({ assignmentId, github, correct, score, timestamp, sha });
             } else {
               //console.log(JSON.stringify({assignmentId, github, correct, score, timestamp, sha}));
               console.log(`${github}\t${score.toFixed(2)}`);
-
             }
           } catch (e) {
             console.log(`Processing ${file}`);

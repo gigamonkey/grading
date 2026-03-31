@@ -4,35 +4,38 @@
  * Load answers to a form-based assessment into database.
  */
 
-import child_process from 'node:child_process';
 import fs from 'node:fs';
-import glob from 'fast-glob';
-import process from 'node:process';
-import { API } from './api.js';
-import { Command } from 'commander';
-import { DB } from 'pugsql';
-import { average, camelify, count, loadJSON, loadSnakeCaseJSON, mapValues, values } from './modules/util.js';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname } from 'node:path';
 import { env } from 'node:process';
+import { Command } from 'commander';
+import glob from 'fast-glob';
+import { DB } from 'pugsql';
+import { API } from './api.js';
 import { getSha, getTimestamp } from './modules/grading.js';
-import { promisify } from 'node:util';
+import { camelify, loadJSON } from './modules/util.js';
 
-
-const { entries, groupBy } = Object;
-
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 // Maybe better things to do here?
-const normalize = (answer) => answer.trim();
+const _normalize = (answer) => answer.trim();
 
 class DbSink {
   saveAnswer(github, assignmentId, questionNumber, answerNumber, rawAnswer, timestamp, sha) {
-    db.ensureStudentAnswer({github, assignmentId, questionNumber, answerNumber, rawAnswer, timestamp, sha});
+    db.ensureStudentAnswer({
+      github,
+      assignmentId,
+      questionNumber,
+      answerNumber,
+      rawAnswer,
+      timestamp,
+      sha,
+    });
     if (rawAnswer) {
       db.ensureNormalizedAnswer({
-        assignmentId, questionNumber, rawAnswer, answer: rawAnswer.trim(),
+        assignmentId,
+        questionNumber,
+        rawAnswer,
+        answer: rawAnswer.trim(),
       });
     }
   }
@@ -41,7 +44,13 @@ class DbSink {
 class ConsoleSink {
   saveAnswer(github, assignmentId, questionNumber, answerNumber, rawAnswer, timestamp, sha) {
     console.log({
-      github, assignmentId, questionNumber, answerNumber, rawAnswer, timestamp, sha
+      github,
+      assignmentId,
+      questionNumber,
+      answerNumber,
+      rawAnswer,
+      timestamp,
+      sha,
     });
   }
 }
@@ -49,7 +58,9 @@ class ConsoleSink {
 const saveAnswers = (sink, github, assignmentId, answers, timestamp, sha) => {
   answers.forEach((answer, num) => {
     if (Array.isArray(answer)) {
-      answer.forEach((a, i) => sink.saveAnswer(github, assignmentId, num, i, a, timestamp, sha));
+      for (const [i, a] of answer.entries()) {
+        sink.saveAnswer(github, assignmentId, num, i, a, timestamp, sha);
+      }
     } else {
       sink.saveAnswer(github, assignmentId, num, 0, answer, timestamp, sha);
     }
@@ -65,7 +76,6 @@ new Command()
   .option('-s, --server <url>', 'Server URL', env.BHS_CS_SERVER)
   .option('-k, --api-key <key>', 'API key', env.BHS_CS_API_KEY)
   .action(async (assignmentId, dir, opts) => {
-
     const api = new API(opts.server, opts.apiKey);
     const { openDate, title, courseId } = camelify(await api.assignment(assignmentId));
 
@@ -74,15 +84,14 @@ new Command()
     const sink = opts.dryRun ? new ConsoleSink() : new DbSink();
 
     db.transaction(() => {
-
       if (!opts.dryRun) {
-        db.ensureAssignment({assignmentId, openDate, courseId, title});
+        db.ensureAssignment({ assignmentId, openDate, courseId, title });
 
         // Maybe we just want to ensure the assignment exists. Clearing
         // everything deletes all the scored answers, etc.
-        db.ensureFormAssessment({assignmentId});
+        db.ensureFormAssessment({ assignmentId });
 
-        db.clearStudentAnswers({assignmentId});
+        db.clearStudentAnswers({ assignmentId });
 
         // Clear first to delete everything via cascade.
         //db.clearFormAssessment({assignmentId});
@@ -94,7 +103,6 @@ new Command()
         const github = basename(d);
 
         if (!opts.user || opts.user === github) {
-
           const timestamp = getTimestamp(d);
           const sha = getSha(d);
 

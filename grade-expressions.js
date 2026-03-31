@@ -9,22 +9,20 @@
  *  -
  */
 
-import { DB } from 'pugsql';
 import child_process from 'node:child_process';
 import fs from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import process from 'node:process';
 import { promisify } from 'node:util';
 import { Command } from 'commander';
 import glob from 'fast-glob';
+import { DB } from 'pugsql';
 import { getSha, getTimestamp } from './modules/grading.js';
 import { average, count, loadJSON, mapValues, values } from './modules/util.js';
-import process from 'node:process';
 
 const { entries, groupBy } = Object;
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const exec = promisify(child_process.exec);
 
@@ -77,15 +75,14 @@ new Command()
     const { assignment_id: assignmentId, questions } = loadJSON(join(dir, 'assignment.json'));
 
     if (!questions) {
-      console.log("Must supply number of questions in assigments.json");
+      console.log('Must supply number of questions in assigments.json');
       process.exit(1);
     }
 
     const results = glob.sync(`${dir}/**/expressions.json`);
 
     db.transaction(() => {
-
-      if (!opts.dryRun) db.clearExpression({assignmentId});
+      if (!opts.dryRun) db.clearExpression({ assignmentId });
 
       results.forEach((file) => {
         const d = dirname(file);
@@ -96,7 +93,7 @@ new Command()
           const answers = fs.statSync(file).size > 0 ? loadJSON(file) : [];
           const grouped = groupBy(answers, (a) => a.name);
           const summarized = mapValues(grouped, summarizeAttempts);
-          const row = {assignmentId, github, ...summary(summarized, questions), timestamp, sha };
+          const row = { assignmentId, github, ...summary(summarized, questions), timestamp, sha };
           if (opts.dryRun) {
             console.log(row);
           } else {

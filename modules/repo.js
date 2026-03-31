@@ -1,8 +1,7 @@
-import path from 'path';
+import path from 'node:path';
 import { exec } from './util.js';
 
 class Repo {
-
   constructor(directory) {
     this.directory = directory;
   }
@@ -48,7 +47,10 @@ class Repo {
   changes(start, end, branch) {
     const range = `${start}^...${end}`;
     const cmd = `log --pretty=tformat:'%H %at' ${range} -- ${branch}`;
-    return this.git(cmd).trim().split('\n').map(s => this.parseCommit(s));
+    return this.git(cmd)
+      .trim()
+      .split('\n')
+      .map((s) => this.parseCommit(s));
   }
 
   // FIXME: this should probably just do everything in the branch and then if we
@@ -56,12 +58,18 @@ class Repo {
   // an optional path argument
   branchChanges(branch) {
     const cmd = `log --pretty=tformat:'%H %at' ${branch} -- ${branch}`;
-    return this.git(cmd).trim().split('\n').map(s => this.parseCommit(s));
+    return this.git(cmd)
+      .trim()
+      .split('\n')
+      .map((s) => this.parseCommit(s));
   }
 
   branchPathChanges(branch, path) {
     const cmd = `log --pretty=tformat:'%H %at' ${branch} -- ${path}`;
-    return this.git(cmd).trim().split('\n').map(s => this.parseCommit(s));
+    return this.git(cmd)
+      .trim()
+      .split('\n')
+      .map((s) => this.parseCommit(s));
   }
 
   nextChange(sha, branch) {
@@ -72,7 +80,7 @@ class Repo {
 
   parseCommit(line) {
     if (line.trim() !== '') {
-      const [ sha, timestamp ] = line.split(' ');
+      const [sha, timestamp] = line.split(' ');
       return { sha, timestamp: Number(timestamp) };
     } else {
       throw new Error(`Can't parse ${line} into commit`);

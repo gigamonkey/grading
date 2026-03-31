@@ -1,27 +1,30 @@
 #!/usr/bin/env node
 
-import { API } from './api.js';
-import { Assignments } from './modules/assignments.js';
+import { env } from 'node:process';
 import { Command } from 'commander';
 import { DB } from 'pugsql';
-import { Repo } from './modules/repo.js'
-import { env } from 'node:process';
-import { lcs, similarity } from './modules/lcs.js';
-import { readFileSync } from 'fs';
+import { API } from './api.js';
+import { Assignments } from './modules/assignments.js';
+import { similarity } from './modules/lcs.js';
+import { Repo } from './modules/repo.js';
 import { execFilter } from './modules/util.js';
 
 const DIFF_LINE = /^[-+] /;
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const newRecord = () => {
-  return { code: '', change: undefined, changes: 0, totalSimChange: 0, moreSimilar: 0, lessSimilar: 0 };
-}
+  return {
+    code: '',
+    change: undefined,
+    changes: 0,
+    totalSimChange: 0,
+    moreSimilar: 0,
+    lessSimilar: 0,
+  };
+};
 
 const emitTimeline = async (data) => {
-
   const { author1, author2, changes } = data;
 
   const latest = {
@@ -48,7 +51,7 @@ const emitTimeline = async (data) => {
       myLatest.lessSimilar++;
     }
 
-    const change = { author, timestamp, elapsed, after, changeInSimilarity, ...sim};
+    const change = { author, timestamp, elapsed, after, changeInSimilarity, ...sim };
 
     myLatest.code = code;
     myLatest.change = change;
@@ -56,11 +59,12 @@ const emitTimeline = async (data) => {
     myLatest.totalSimChange += changeInSimilarity;
     const { _, ...rest } = myLatest.change;
     console.log(rest);
-    const diff = c.repo.diff(c.sha)
-          .replaceAll('\r', '')
-          .split(/\n/)
-          .filter(line => DIFF_LINE.test(line))
-          .join('\n');
+    const diff = c.repo
+      .diff(c.sha)
+      .replaceAll('\r', '')
+      .split(/\n/)
+      .filter((line) => DIFF_LINE.test(line))
+      .join('\n');
 
     console.log(diff);
     console.log();
@@ -75,36 +79,37 @@ const emitTimeline = async (data) => {
       [`${author1} to ${author2}`]: finalSimilarity.aToB,
       [`${author2} to ${author1}`]: finalSimilarity.bToA,
       twoWay: finalSimilarity.total,
-    }
+    },
   };
   console.log(summary);
 };
 
 const withAverage = (record) => {
-  const { code, change, totalSimChange, ...rest } = record;
+  const { code: _code, change: _change, totalSimChange, ...rest } = record;
   rest.averageSimilarityChange = totalSimChange / record.changes;
   return rest;
-}
-
+};
 
 const changesInRepo = (repo, branch, dir, file) => {
   const author = repo.name();
   const path = `${dir}/${file}`;
-  return repo.branchPathChanges(branch, `${dir}/${file}`).map(commit => ({ author, repo, branch, path, ...commit }));
+  return repo
+    .branchPathChanges(branch, `${dir}/${file}`)
+    .map((commit) => ({ author, repo, branch, path, ...commit }));
 };
 
 const normalize = async (code) => {
-  const command = "java";
-  const args = ["-jar", "google-java-format-1.30.0-all-deps.jar", "-"];
+  const command = 'java';
+  const args = ['-jar', 'google-java-format-1.30.0-all-deps.jar', '-'];
 
   let formatted;
   try {
     formatted = await execFilter(command, args, code);
-  } catch (e) {
+  } catch (_e) {
     formatted = code;
   }
   return formatted.replaceAll('\r', '');
-}
+};
 
 const combinedChanges = (repo1, repo2, branch, dir, file) => {
   const r1 = new Repo(repo1);
@@ -131,7 +136,6 @@ const main = async (assignmentId, repo1, repo2, opts) => {
   const allChanges = combinedChanges(repo1, repo2, branch, dir, file);
 
   await emitTimeline(allChanges);
-
 };
 
 new Command()

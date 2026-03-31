@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
-import { DB } from 'pugsql';
-import { Command } from 'commander';
-import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
+import * as readline from 'node:readline/promises';
+import { Command } from 'commander';
+import { DB } from 'pugsql';
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const pickOne = async (rl, items, display, prompt) => {
   if (items.length === 0) return null;
   if (items.length === 1) return items[0];
 
-  items.forEach((item, i) => console.log(`  ${i + 1}. ${display(item)}`));
+  for (const [i, item] of items.entries()) {
+    console.log(`  ${i + 1}. ${display(item)}`);
+  }
   const answer = await rl.question(prompt);
   const num = parseInt(answer, 10);
   if (Number.isNaN(num) || num < 1 || num > items.length) {
@@ -75,7 +75,4 @@ const main = async () => {
   console.log(`Override set: ${student.sortable_name} / ${assignment.title} = ${score}`);
 };
 
-new Command()
-  .description('Add a score override for a student assignment')
-  .action(main)
-  .parse();
+new Command().description('Add a score override for a student assignment').action(main).parse();

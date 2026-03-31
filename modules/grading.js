@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { count, sum, values, entries } from './util.js';
+import { count, entries, sum, values } from './util.js';
 
 // Utility functions for grading scripts.
 
@@ -29,7 +29,6 @@ const scoreTest = (results, numQuestions) => sum(values(results).map(scoreQuesti
  */
 const scoreQuestion = (cases) => sum(cases.map((c) => (c.passed ? 1 : 0))) / cases.length;
 
-
 /*
  * Score the results using a set of weights per question.
  */
@@ -46,7 +45,10 @@ const scoreWeighted = (results, scoring) => {
   //   if (!fullyCorrect(r)) { console.log(name); }
   // });
 
-  return sum(entries(results).map(([name, r]) => fullyCorrect(r) ? scoring[name] : 0)) / sum(values(scoring));
+  return (
+    sum(entries(results).map(([name, r]) => (fullyCorrect(r) ? scoring[name] : 0))) /
+    sum(values(scoring))
+  );
 };
 
 /*
@@ -73,4 +75,12 @@ const getSha = (dir) => {
   }
 };
 
-export { getTimestamp, getSha, numCorrect, simpleScoreTest, scoreTest, scoreQuestion, scoreWeighted };
+export {
+  getTimestamp,
+  getSha,
+  numCorrect,
+  simpleScoreTest,
+  scoreTest,
+  scoreQuestion,
+  scoreWeighted,
+};

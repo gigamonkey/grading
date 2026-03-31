@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 
-import { DB } from 'pugsql';
-import { Command } from 'commander';
-import * as readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
+import * as readline from 'node:readline/promises';
+import { Command } from 'commander';
+import { DB } from 'pugsql';
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const main = async (courseId) => {
   const standards = db.standardsWithoutMasteryIcNames({ courseId });
@@ -20,14 +18,18 @@ const main = async (courseId) => {
   const icNames = db.availableMasteryIcNames({ courseId });
 
   if (icNames.length === 0) {
-    console.log('No available IC names to map (all are already used by assignment_point_values or mastery_ic_names).');
+    console.log(
+      'No available IC names to map (all are already used by assignment_point_values or mastery_ic_names).',
+    );
     return;
   }
 
   const rl = readline.createInterface({ input, output });
 
   console.log('\nAvailable IC names:');
-  icNames.forEach((name, i) => console.log(`  ${i + 1}. ${name}`));
+  for (const [i, name] of icNames.entries()) {
+    console.log(`  ${i + 1}. ${name}`);
+  }
 
   for (const standard of standards) {
     process.stdout.write(`\nStandard: ${standard}\n`);

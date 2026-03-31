@@ -7,9 +7,7 @@
 import { DB } from 'pugsql';
 
 try {
-  new DB('db.db')
-    .addQueries('modules/pugly.sql')
-    .addQueries('modules/queries.sql');
+  new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
   console.log('ok.');
 } catch (e) {
   console.error(e.message);

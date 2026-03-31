@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import path from 'node:path';
-import { API } from './api.js';
-import { Command } from 'commander';
-import { env } from 'node:process';
-import { homedir } from 'node:os';
-import { open } from 'node:fs/promises';
 import { writeFileSync } from 'node:fs';
+import { open } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import path from 'node:path';
+import { env } from 'node:process';
+import { Command } from 'commander';
+import { API } from './api.js';
 
 const countQuestions = async (url) => {
   const filename = `${homedir()}/hacks/bhs-cs/views/pages/${url}/index.njk`;
@@ -20,7 +20,7 @@ const countQuestions = async (url) => {
     }
   }
   return questions;
-}
+};
 
 const main = async (assignment, dir, opts) => {
   const api = new API(opts.server, opts.apiKey);
@@ -28,7 +28,7 @@ const main = async (assignment, dir, opts) => {
   if (data.kind === 'coding') {
     data.questions = await countQuestions(data.url);
   }
-  writeFileSync(path.join(dir, "assignment.json"), JSON.stringify(data, null, 2), 'utf-8');
+  writeFileSync(path.join(dir, 'assignment.json'), JSON.stringify(data, null, 2), 'utf-8');
 };
 
 new Command()
