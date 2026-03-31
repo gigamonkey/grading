@@ -1,25 +1,15 @@
 #!/usr/bin/env node
 
-import { env } from 'node:process';
-import { API } from './api.js';
-import { DB } from 'pugsql';
-import { statSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
-import { Command } from 'commander';
-import glob from 'fast-glob';
-import { getSha, getTimestamp, numCorrect, scoreTest } from './modules/grading.js';
-import { camelify, dumpJSON, loadJSON } from './modules/util.js';
-
+import { env, stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
+import { Command } from 'commander';
+import { DB } from 'pugsql';
+import { API } from './api.js';
+import { camelify } from './modules/util.js';
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
-
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const ensureAssignment = async (assignmentId, opts) => {
-
   const assignment = db.assignment({ assignmentId });
 
   if (assignment) {
@@ -31,7 +21,7 @@ const ensureAssignment = async (assignmentId, opts) => {
       db.ensureAssignment(assignment);
       return assignment;
     } else {
-      throw new Error("No assignment for id " + assignmentId);
+      throw new Error(`No assignment for id ${assignmentId}`);
     }
   }
 };
@@ -45,7 +35,7 @@ new Command()
   .action(async (assignmentId, opts) => {
     const rl = readline.createInterface({ input, output });
     const assignment = await ensureAssignment(assignmentId, opts);
-    const standards = db.courseStandards({assignmentId});
+    const standards = db.courseStandards({ assignmentId });
     const { courseId, title } = assignment;
 
     standards.forEach((s, i) => {
@@ -55,19 +45,18 @@ new Command()
     const a = await rl.question('Which standard (or new): ');
     const n = Number(a);
 
-    const standard = isNaN(n) ? a : standards[n - 1];
+    const standard = Number.isNaN(n) ? a : standards[n - 1];
 
-    const soFar = db.weightedAssignmentsForStandard({courseId, standard});
+    const soFar = db.weightedAssignmentsForStandard({ courseId, standard });
 
     console.log('Assignments so far:');
-    soFar.forEach(({date, title, weight}) => {
+    soFar.forEach(({ date, title, weight }) => {
       console.log(`  ${date} - ${title}: ${weight.toFixed(1)}`);
     });
 
     const weight = Number(await rl.question(`Weight for ${title}: `));
 
-    db.insertAssignmentWeight({assignmentId, standard, weight});
+    db.insertAssignmentWeight({ assignmentId, standard, weight });
     rl.close();
-
   })
   .parse();

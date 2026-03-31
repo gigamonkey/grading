@@ -1,16 +1,12 @@
-import path from 'node:path';
-import { env } from 'node:process';
 import { Temporal } from '@js-temporal/polyfill';
-import { Command } from 'commander';
 import { Repo } from './repo.js';
 import { runTestsWithError } from './test-javascript.js';
-import { camelify, exec } from './util.js';
 
 const UNITS = ['second', 'minute', 'hour'];
 
 const { Instant, Duration, Now } = Temporal;
 
-const { keys, values } = Object;
+const { values } = Object;
 
 const numAttempted = (results) => values(results).filter((cases) => cases !== null).length;
 
@@ -61,7 +57,7 @@ const durationString = (duration, minUnit = 'second') => {
 
   for (let i = maxUnitIndex; i >= minUnitIndex; i--) {
     const unit = UNITS[i];
-    const v = d[unit + 's'];
+    const v = d[`${unit}s`];
 
     if (i === maxUnitIndex) {
       if (i === minUnitIndex) {
@@ -101,7 +97,7 @@ const showCommits = (repoDir, path, file, testcases, start, end, branch, questio
     } else {
       const attempted = numAttempted(results);
       const passed = numPassed(results);
-      if (passed == questions) {
+      if (passed === questions) {
         finishedAt = { ...c, totalElapsed, commitsPerQuestion: (arr.length - i) / questions };
       }
       maxPassed = Math.max(maxPassed, passed);
@@ -153,8 +149,8 @@ const summarizeBranch = (repoDir, path, file, testcases, branch, questions) => {
 
   commits.forEach((c, i, arr) => {
     const { sha, timestamp } = c;
-    const totalElapsed = timestamp - arr[0]?.timestamp ?? 0;
-    const elapsed = i > 0 ? timestamp - arr[i - 1]?.timestamp : 0;
+    const _totalElapsed = timestamp - arr[0]?.timestamp ?? 0;
+    const _elapsed = i > 0 ? timestamp - arr[i - 1]?.timestamp : 0;
     const code = repo.contents(sha, `${path}/${file}`);
     //console.log('Running tests');
     const { results, error } = runTestsWithError(testcases, code);
@@ -163,7 +159,7 @@ const summarizeBranch = (repoDir, path, file, testcases, branch, questions) => {
       sparkline += 'X';
       errors++;
     } else {
-      const attempted = numAttempted(results);
+      const _attempted = numAttempted(results);
       const passed = numPassed(results);
       if (passed > maxPassed) {
         sparkline += '*';
@@ -203,7 +199,7 @@ const analyzeSpeedrun = (repoDir, path, file, testcases, start, end, branch, que
 
     // Because we are going from most recent backwards, setting this each time
     // will leave it pointing to the first commit that passed all the tests
-    if (passed == questions) {
+    if (passed === questions) {
       finished = {
         sha,
         timestamp,

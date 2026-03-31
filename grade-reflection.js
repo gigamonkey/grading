@@ -5,25 +5,14 @@
  */
 
 import { env } from 'node:process';
-import { DB } from 'pugsql';
-import child_process from 'node:child_process';
-import fs from 'node:fs';
-import { basename, dirname, join } from 'node:path';
-import { promisify } from 'node:util';
 import { Command } from 'commander';
-import glob from 'fast-glob';
-import { getSha, getTimestamp } from './modules/grading.js';
-import { average, camelify, count, loadJSON, mapValues, values } from './modules/util.js';
-import process from 'node:process';
+import { DB } from 'pugsql';
 import { API } from './api.js';
+import { camelify } from './modules/util.js';
 
-const { entries, groupBy } = Object;
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
-
-const latePenalty = (row, penalty) => (row.on_time || row.late_excuse) ? 0 : penalty;
+const latePenalty = (row, penalty) => (row.on_time || row.late_excuse ? 0 : penalty);
 
 const computeScore = (row, minimumWords, late) => {
   const { user_id: userId, assignment_id: assignmentId } = row;
@@ -41,21 +30,19 @@ new Command()
   .argument('<assignmentId>', 'Assignment id of reflection')
   .option('-l, --late <late>', 'Points off late responses.', Number, 0.5)
   .option('-n, --dry-run', "Don't write to database.")
-  .option('-v, --verbose', "Verbose output with dry-run.")
+  .option('-v, --verbose', 'Verbose output with dry-run.')
   .option('-s, --server <url>', 'Server URL', env.BHS_CS_SERVER)
   .option('-k, --api-key <key>', 'API key', env.BHS_CS_API_KEY)
   .action(async (assignmentId, opts) => {
-
     const api = new API(opts.server, opts.apiKey);
     const { openDate, courseId, title } = camelify(await api.assignment(assignmentId));
     const { minimumWords, data } = await api.reflectionGradeData(assignmentId);
 
     db.transaction(() => {
-
       if (!opts.dryRun) {
         db.ensureAssignment({ assignmentId, openDate, courseId, title });
-        db.clearDirectScores({assignmentId});
-        db.ensureAssignmentWeight({assignmentId, standard: 'Reflections', weight: 1.0});
+        db.clearDirectScores({ assignmentId });
+        db.ensureAssignmentWeight({ assignmentId, standard: 'Reflections', weight: 1.0 });
       }
 
       data.forEach((row) => {
@@ -67,7 +54,7 @@ new Command()
             console.log(score);
           }
         } else {
-          db.insertDirectScore(score)
+          db.insertDirectScore(score);
         }
       });
     });

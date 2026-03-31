@@ -1,7 +1,6 @@
 import { execSync, spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import fs, { readFileSync } from 'node:fs';
 import { argv } from 'node:process';
-import fs from 'node:fs';
 
 const { fromEntries, entries, keys, values, groupBy } = Object;
 
@@ -43,8 +42,11 @@ const dumpTSV = (objs) => {
 
 const loadTSV = (file) => {
   const text = fs.readFileSync(file, 'utf-8');
-  return text.split('\n').filter(line => line).map(line => line.split('\t'));
-}
+  return text
+    .split('\n')
+    .filter((line) => line)
+    .map((line) => line.split('\t'));
+};
 
 const fps = (n) => {
   return n >= 0.85 ? 4 : n >= 0.7 ? 3 : n >= 0.45 ? 2 : n >= 0.2 ? 1 : 0;
@@ -56,8 +58,8 @@ const numbers = (a, b) => {
 };
 
 const median = (ns) => {
-  const sorted = ns.toSorted();
-  if (ns.length == 0) {
+  const _sorted = ns.toSorted();
+  if (ns.length === 0) {
     return undefined;
   } else if (ns.length % 2 === 0) {
     const i = ns.length / 2;
@@ -68,9 +70,9 @@ const median = (ns) => {
 };
 
 const percentileRank = (ns, n) => {
-  const cf = count(ns, x => x <= n);
-  const f = count(ns, x => x === n);
-  return 100 * (cf - (0.5 * f)) / ns.length;
+  const cf = count(ns, (x) => x <= n);
+  const f = count(ns, (x) => x === n);
+  return (100 * (cf - 0.5 * f)) / ns.length;
 };
 
 const stats = (data) => {
@@ -82,8 +84,10 @@ const stats = (data) => {
     median: median(data),
     min: data.reduce((acc, n) => Math.min(n, acc), Infinity),
     max: data.reduce((acc, n) => Math.max(n, acc), -Infinity),
-    rank: function (n) { return percentileRank(this.data, n) },
-  }
+    rank: function (n) {
+      return percentileRank(this.data, n);
+    },
+  };
 };
 
 const exec = (command, cwd) => {
@@ -101,8 +105,12 @@ const execFilter = async (command, args, stdin) => {
     child.stdout.setEncoding('utf8');
     child.stderr.setEncoding('utf8');
 
-    child.stdout.on('data', (chunk) => stdout += chunk);
-    child.stderr.on('data', (chunk) => stderr += chunk);
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
 
     child.on('close', (code) => {
       if (code === 0) {
@@ -118,8 +126,7 @@ const execFilter = async (command, args, stdin) => {
     child.stdin.write(stdin);
     child.stdin.end();
   });
-}
-
+};
 
 export {
   argv,

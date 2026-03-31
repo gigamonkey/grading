@@ -1,20 +1,18 @@
 #!/usr/bin/env node
 
-import { DB } from 'pugsql';
 import { readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import vm from 'node:vm';
 import { Command } from 'commander';
 import glob from 'fast-glob';
+import { DB } from 'pugsql';
 import { textIfOk } from './modules/fetch-helpers.js';
 import { getSha, getTimestamp, numCorrect } from './modules/grading.js';
-import { loadJSON, loadSnakeCaseJSON } from './modules/util.js';
+import { loadSnakeCaseJSON } from './modules/util.js';
 
 const { entries, fromEntries, keys } = Object;
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const get = (name, context) => {
   try {
@@ -209,9 +207,17 @@ const dumpResults = (assignmentId, github, timestamp, sha, results, dryRun) => {
     const answered = result === null ? 0 : 1;
     const correct = result === null ? 0 : isCorrect(result);
     if (!dryRun) {
-      db.insertJavascriptUnitTest({assignmentId, github, question, answered, correct, timestamp, sha });
+      db.insertJavascriptUnitTest({
+        assignmentId,
+        github,
+        question,
+        answered,
+        correct,
+        timestamp,
+        sha,
+      });
     } else {
-      console.log({assignmentId, github, question, answered, correct, timestamp, sha });
+      console.log({ assignmentId, github, question, answered, correct, timestamp, sha });
     }
   });
 };
@@ -223,7 +229,9 @@ new Command()
   .argument('<dir>', 'Code directory.')
   .option('-n, --dry-run', "Don't write to database.")
   .action(async (dir, opts) => {
-    const { assignmentId, openDate, title, courseId, url } = loadSnakeCaseJSON(join(dir, 'assignment.json'));
+    const { assignmentId, openDate, title, courseId, url } = loadSnakeCaseJSON(
+      join(dir, 'assignment.json'),
+    );
 
     try {
       const testcases = await fetchTestcases(url);
@@ -233,11 +241,10 @@ new Command()
       console.log(`questions: ${questions}`);
 
       db.transaction(() => {
-
         if (!opts.dryRun) {
           db.ensureAssignment({ assignmentId, openDate, courseId, title });
-          db.clearJavascriptUnitTest({assignmentId});
-          db.clearScoredQuestionAssignment({assignmentId});
+          db.clearJavascriptUnitTest({ assignmentId });
+          db.clearScoredQuestionAssignment({ assignmentId });
           db.insertScoredQuestionAssignment({ assignmentId, questions });
         }
 
@@ -257,10 +264,9 @@ new Command()
             dumpResults(assignmentId, github, timestamp, sha, emptyResults(testcases), opts.dryRun);
           }
         });
-      })
+      });
     } catch (e) {
       console.log(e);
     }
-
   })
   .parse();

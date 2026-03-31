@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { argv } from 'process';
-import { readFileSync } from 'fs';
-import { lcs, similarity } from './modules/lcs.js';
+import { readFileSync } from 'node:fs';
+import { argv } from 'node:process';
+import { similarity } from './modules/lcs.js';
 
-const enc = {encoding: 'utf-8'};
+const enc = { encoding: 'utf-8' };
 
 const reportSimilarity = (file1, file2) => {
   const text1 = readFileSync(file1, enc);

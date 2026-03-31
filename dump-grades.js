@@ -2,17 +2,15 @@
 
 // OBSOLETE given new grading structure.
 
-import { DB } from 'pugsql';
-import { env } from 'node:process';
-import { Command } from 'commander';
-import { API } from './api.js';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { Command } from 'commander';
+import { DB } from 'pugsql';
 import { dumpJSON } from './modules/util.js';
 
 const db = new DB('db.db').addQueries('modules/queries.sql');
 
-const intOrStar = (v) => v === '*' ? undefined : parseInt(v);
+const intOrStar = (v) => (v === '*' ? undefined : parseInt(v, 10));
 
 new Command()
   .description('Dump grades in JSON for a given assignment id.')
@@ -21,7 +19,6 @@ new Command()
   .option('--updates', 'Updates where db is different from server')
   .option('-n, --dry-run', "Don't write to file.")
   .action((assignment, opts) => {
-
     const assignmentId = intOrStar(assignment);
     const { user: userId, updates } = opts;
 
@@ -29,31 +26,34 @@ new Command()
     let filename;
 
     if (assignmentId && userId) {
-      data = db.gradesForUserAndAssignment({assignmentId, userId});
+      data = db.gradesForUserAndAssignment({ assignmentId, userId });
       filename = `${userId}-${assignmentId}`;
     } else if (assignmentId) {
-      data = db.gradesForAssignment({assignmentId});
+      data = db.gradesForAssignment({ assignmentId });
       filename = assignmentId;
     } else if (userId) {
-      data = db.gradesForUser({userId});
+      data = db.gradesForUser({ userId });
       filename = userId;
     } else if (updates) {
       data = db.gradeUpdates();
-      filename = "updates";
+      filename = 'updates';
     } else {
       data = db.allGrades();
       filename = 'all';
     }
 
     if (!data) {
-      console.warn("No data!!!");
+      console.warn('No data!!!');
     } else {
       if (opts.dryRun) {
         dumpJSON(data);
       } else {
-        writeFileSync(path.join('grades', `${filename}.json`), JSON.stringify(data, null, 2), 'utf-8');
+        writeFileSync(
+          path.join('grades', `${filename}.json`),
+          JSON.stringify(data, null, 2),
+          'utf-8',
+        );
       }
     }
-
   })
   .parse();

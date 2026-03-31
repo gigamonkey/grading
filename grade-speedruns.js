@@ -1,33 +1,26 @@
 #!/usr/bin/env node
 
-import { DB } from 'pugsql';
-import { env } from 'node:process';
-import { Command } from 'commander';
-import { API } from './api.js';
-import { writeFileSync } from 'node:fs';
-import path from 'node:path';
-import { camelify, exec } from './modules/util.js';
+import { env, stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
+import { Command } from 'commander';
+import { DB } from 'pugsql';
+import { API } from './api.js';
 import { showCommits } from './modules/speedruns.js';
 import { loadTestcases } from './modules/test-javascript.js';
+import { exec } from './modules/util.js';
 
-const { keys } = Object;
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const _ids = (speedruns) => new Set(speedruns.map((s) => s.speedrun_id));
 
-const ids = (speedruns) => new Set(speedruns.map(s => s.speedrun_id));
-
-const className = (n) => n.includes('.') ? n : `com.gigamonkeys.bhs.assignments.${n}`;
+const className = (n) => (n.includes('.') ? n : `com.gigamonkeys.bhs.assignments.${n}`);
 
 const main = async (opts) => {
   const api = new API(opts.server, opts.apiKey);
   const rl = readline.createInterface({ input, output });
   const ungraded = db.ungradedSpeedruns();
 
-  let num = ungraded.length;
+  const num = ungraded.length;
   let i = 0;
   for (const s of ungraded) {
     const { url } = await api.assignment(s.assignment_id);
@@ -37,14 +30,23 @@ const main = async (opts) => {
     const repo = `../github/${s.github}.git/`;
     const path = url.slice(1);
 
-    console.log({...s, url});
+    console.log({ ...s, url });
 
     if (s.kind === 'java') {
       const testClass = className(config.server.testClass);
       showJavaSpeedrun(repo, path, file, testClass, s.first_sha, s.last_sha, s.questions);
     } else if (s.kind === 'javascript') {
       const testcases = loadTestcases(await api.jsTestcases(url));
-      showJavascriptSpeedrun(repo, path, file, testcases, s.first_sha, s.last_sha, path, s.questions);
+      showJavascriptSpeedrun(
+        repo,
+        path,
+        file,
+        testcases,
+        s.first_sha,
+        s.last_sha,
+        path,
+        s.questions,
+      );
     } else {
       console.log(`Unknown speedrun kind: ${s.kind}`);
     }
@@ -54,9 +56,9 @@ const main = async (opts) => {
     const a = await rl.question(`[${i} done; ${num - i} to go] Looks good? [y/n/s]: `);
     i++;
     if (a === 'y') {
-      insertGrade({speedrunId: s.speedrun_id, ok: 1}, opts.dryRun);
+      insertGrade({ speedrunId: s.speedrun_id, ok: 1 }, opts.dryRun);
     } else if (a === 'n') {
-      insertGrade({speedrunId: s.speedrun_id, ok: 0}, opts.dryRun);
+      insertGrade({ speedrunId: s.speedrun_id, ok: 0 }, opts.dryRun);
     } else {
       console.log('Skipping.');
     }
@@ -75,14 +77,21 @@ const insertGrade = (obj, dryRun) => {
 const showJavaSpeedrun = (repo, path, file, testClass, firstSha, lastSha, questions) => {
   const cmd = `java -cp classes:bhs-cs.jar Speedrun check ${repo} ${path} ${file} ${testClass} ${firstSha} ${lastSha} ${questions}`;
   console.log(`Running ${cmd}`);
-  console.log(exec(cmd, "."))
+  console.log(exec(cmd, '.'));
 };
 
-const showJavascriptSpeedrun = (repo, path, file, testcases, firstSha, lastSha, branch, questions) => {
+const showJavascriptSpeedrun = (
+  repo,
+  path,
+  file,
+  testcases,
+  firstSha,
+  lastSha,
+  branch,
+  questions,
+) => {
   showCommits(repo, path, file, testcases, firstSha, lastSha, branch, questions);
 };
-
-
 
 new Command()
   .description('Grade speedruns by dumping trace of progress.')

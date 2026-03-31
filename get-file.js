@@ -1,23 +1,22 @@
 #!/usr/bin/env node
 
-import { homedir } from 'node:os';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { open } from 'node:fs/promises';
-import { Repo } from './modules/repo.js';
-import { DB } from 'pugsql';
+import { homedir } from 'node:os';
+import path from 'node:path';
 import { env } from 'node:process';
 import { Command, Option } from 'commander';
+import { DB } from 'pugsql';
 import { API } from './api.js';
-import { writeFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
-import path from 'node:path';
-import { camelify, camelToKebab, exec } from './modules/util.js';
+import { Repo } from './modules/repo.js';
+import { camelify, camelToKebab } from './modules/util.js';
 
-const { keys } = Object;
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
-const db = new DB('db.db')
-      .addQueries('modules/pugly.sql')
-      .addQueries('modules/queries.sql');
-
-const slug = (s) => camelToKebab(s).replaceAll(/\s+/g, '-').replaceAll(/[^-\w]/g, '');
+const slug = (s) =>
+  camelToKebab(s)
+    .replaceAll(/\s+/g, '-')
+    .replaceAll(/[^-\w]/g, '');
 
 const countQuestions = async (url) => {
   const filename = `${homedir()}/hacks/bhs-cs/views/pages/${url}/index.njk`;
@@ -30,22 +29,22 @@ const countQuestions = async (url) => {
     }
   }
   return questions;
-}
+};
 
-const getHandles = ({user, period, course}) => {
+const getHandles = ({ user, period, course }) => {
   if (user) {
-    return db.githubForUser({user});
+    return db.githubForUser({ user });
   } else if (period) {
-    return db.githubForPeriod({period});
+    return db.githubForPeriod({ period });
   } else if (course) {
-    return db.githubForCourse({course});
+    return db.githubForCourse({ course });
   }
 };
 
-const saveFile = (filename, contents) => {
+const _saveFile = (filename, contents) => {
   mkdirSync(path.dirname(filename), { recursive: true });
   writeFileSync(filename, contents);
-}
+};
 
 const getBranchAndFile = async (api, url, kind) => {
   if (kind === 'coding') {
@@ -55,7 +54,7 @@ const getBranchAndFile = async (api, url, kind) => {
       dir: url.slice(1),
       file: config.files[0],
     };
-  } else if (kind == 'questions') {
+  } else if (kind === 'questions') {
     return {
       branch: 'main',
       dir: url.slice(1),
@@ -76,7 +75,7 @@ const main = async (assignmentId, directory, opts) => {
     directory = `${courseId}/${assignmentId}-${slug(title)}`;
   }
 
-  const assignmentFile = path.join(directory, "assignment.json")
+  const assignmentFile = path.join(directory, 'assignment.json');
 
   if (kind === 'coding' && !existsSync(assignmentFile)) {
     data.questions = await countQuestions(url);
@@ -102,21 +101,21 @@ const main = async (assignmentId, directory, opts) => {
       if (sha) {
         const timestamp = repo.timestamp(sha);
         const contents = repo.contents(sha, filename);
-        writeFileSync(path.join(dir, "timestamp.txt"), `${timestamp}\n`);
-        writeFileSync(path.join(dir, "sha.txt"), `${sha}\n`);
+        writeFileSync(path.join(dir, 'timestamp.txt'), `${timestamp}\n`);
+        writeFileSync(path.join(dir, 'sha.txt'), `${sha}\n`);
         writeFileSync(path.join(dir, file), contents);
-        if (existsSync(path.join(dir, "missing.txt"))) {
-          unlinkSync(path.join(dir, "missing.txt"));
+        if (existsSync(path.join(dir, 'missing.txt'))) {
+          unlinkSync(path.join(dir, 'missing.txt'));
         }
         console.log(`Wrote files in ${dir}`);
       } else {
-        writeFileSync(path.join(dir, "missing.txt"), '');
+        writeFileSync(path.join(dir, 'missing.txt'), '');
         console.log(`Wrote missing.txt in ${dir}`);
       }
     }
   } catch (e) {
     console.log(e);
- }
+  }
 };
 
 new Command()

@@ -18,7 +18,7 @@ const countQuestions = async (url) => {
     }
   }
   return questions;
-}
+};
 
 const main = async (assignmentId, opts) => {
   const api = new API(opts.server, opts.apiKey);

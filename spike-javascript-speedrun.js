@@ -1,24 +1,14 @@
 #!/usr/bin/env node
 
-import { Temporal } from '@js-temporal/polyfill';
-import { DB } from 'pugsql';
 import { env } from 'node:process';
 import { Command } from 'commander';
+import { DB } from 'pugsql';
 import { API } from './api.js';
-import { writeFileSync } from 'node:fs';
-import path from 'node:path';
-import { camelify, exec } from './modules/util.js';
-import * as readline from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
 import { Repo } from './modules/repo.js';
-import { loadTestcases, runTests } from './modules/test-javascript.js';
 import { showCommits } from './modules/speedruns.js';
+import { loadTestcases } from './modules/test-javascript.js';
 
-const { keys, values } = Object;
-
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
+const _db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
 const main = async (github, assignmentId, start, opts) => {
   const api = new API(opts.server, opts.apiKey);

@@ -2,28 +2,22 @@
 
 import { open } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { DB } from 'pugsql';
 import { env } from 'node:process';
 import { Command } from 'commander';
+import { DB } from 'pugsql';
 import { API } from './api.js';
-import { writeFileSync } from 'node:fs';
-import path from 'node:path';
-import { camelify } from './modules/util.js';
 import { Repo } from './modules/repo.js';
+import { camelify } from './modules/util.js';
 
-const { keys } = Object;
+const db = new DB('db.db').addQueries('modules/pugly.sql').addQueries('modules/queries.sql');
 
-const db = new DB('db.db')
-  .addQueries('modules/pugly.sql')
-  .addQueries('modules/queries.sql');
-
-const ids = (rows, id) => new Set(rows.map(r => r[id]));
+const ids = (rows, id) => new Set(rows.map((r) => r[id]));
 
 const addSpeedrunnable = async (assignment, dryRun) => {
   const { assignmentId, url } = assignment;
-  const kind =  url.match(/itp/) ? 'javascript' : 'java';
+  const kind = url.match(/itp/) ? 'javascript' : 'java';
   const questions = await countQuestions(url);
-  const record = {assignmentId, kind, questions};
+  const record = { assignmentId, kind, questions };
   if (dryRun) {
     console.log(record);
   } else {
@@ -52,7 +46,7 @@ const countQuestions = async (url) => {
     }
   }
   return questions;
-}
+};
 
 const existing = async (api, opts) => {
   if (opts.started) {
@@ -80,8 +74,9 @@ const main = async (opts) => {
 
   for (const s of onServer) {
     if (!inGradebook.has(s.speedrun_id)) {
-      const github = db.github({userId: s.user_id});
-      if (github) { // I think the only way this is not defined is when I do one
+      const github = db.github({ userId: s.user_id });
+      if (github) {
+        // I think the only way this is not defined is when I do one
         console.log(`Inserting ${label} speedrun ${s.speedrun_id} for ${github}`);
         toFetch.add(github);
         if (opts.dryRun) {

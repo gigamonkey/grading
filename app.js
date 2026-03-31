@@ -88,7 +88,7 @@ app.get('/assigned', async (req, res) => {
           String(a.assignment_id).includes(q) ||
           a.title.toLowerCase().includes(q) ||
           a.course_id.toLowerCase().includes(q) ||
-          (a.kind && a.kind.toLowerCase().includes(q)),
+          a.kind?.toLowerCase().includes(q),
       );
     }
     if (req.headers['hx-request']) {
@@ -443,7 +443,7 @@ app.post('/assignments/:assignmentId/refresh-kind', async (req, res) => {
   res.render('app/assignments/view-row.njk', { a });
 });
 
-app.post('/assignments/reload-gradebook', (req, res) => {
+app.post('/assignments/reload-gradebook', (_req, res) => {
   const dir = process.env.GRADEBOOK_DIR;
   if (!dir) {
     res.send('<span class="error">GRADEBOOK_DIR not set in .env</span>');
@@ -594,7 +594,7 @@ function runJavaGrader(args, stdin) {
   const raw = execSync(cmd, opts);
   try {
     return JSON.parse(raw);
-  } catch (e) {
+  } catch (_e) {
     throw new Error(`Failed to parse Grade output: ${raw.slice(0, 500)}`);
   }
 }
@@ -682,7 +682,13 @@ app.get('/students/:userId', (req, res) => {
   const masteryPoints = db.studentMasteryPoints({ userId });
   const masteryTotals = db.studentMasteryTotals({ userId });
   const speedruns = db.studentSpeedruns({ userId });
-  res.render('app/students/student.njk', { student, assignments, masteryPoints, masteryTotals, speedruns });
+  res.render('app/students/student.njk', {
+    student,
+    assignments,
+    masteryPoints,
+    masteryTotals,
+    speedruns,
+  });
 });
 
 // Overrides
@@ -835,7 +841,7 @@ app.get('/ic-assignment/:icName', (req, res) => {
 });
 
 // Mastery IC Names
-app.get('/standards', (req, res) => {
+app.get('/standards', (_req, res) => {
   const standards = db.standardsWithIcNames();
   res.render('app/standards.njk', { standards });
 });
@@ -916,7 +922,7 @@ app.get('/speedruns', (_req, res) => {
 
 app.post('/speedruns/sync', async (_req, res) => {
   try {
-    const result = await syncSpeedruns();
+    const _result = await syncSpeedruns();
     res.set('HX-Redirect', '/speedruns');
     res.send('');
   } catch (e) {
