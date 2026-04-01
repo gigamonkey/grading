@@ -2,16 +2,9 @@
 
 Grading app. Talks to BHS CS server and manages grades database.
 
-## In pogress
+## In progress
 
 ## Backlog
-
-- Write a report about any places in the current code base where we directly
-  access files under `~/hacks/bhs-cs`. Discuss what we do with that access and
-  propose additions to the server API to let us get the info we need from the
-  API.
-
-- Run biome on all JS and make sure everything is working.
 
 - Update `schema-cleanup.md` based on the current schema and code.
 
@@ -49,12 +42,6 @@ Grading app. Talks to BHS CS server and manages grades database.
 
 - Write a plan for making `standards` a first class thing in the database with a
   UI for adding them.
-
-- Make a plan for cleaning up scripts whose functionality exists in the `app.js`
-  grading server or should. Probably start by updating
-  `reports/script-cleanup.md` focusing on scripts that are no longer needed
-  giving the grading server and ones whose functionality should be moved into
-  the grading server.
 
 ## Done
 
@@ -111,3 +98,24 @@ chronological order from oldest to newest.
 - Once `bhs-cs` gets its `/api/assignments/` endpoint, use it to create a page
   that shows all assignments on the server in order to add them to the
   gradebook.
+
+- Write a report about any places in the current code base where we directly
+  access files under `~/hacks/bhs-cs`. Discuss what we do with that access and
+  propose additions to the server API to let us get the info we need from the
+  API. (2026-03-30T19:21:42)
+
+- Run biome on all JS and make sure everything is working. (2026-03-30T19:45:13)
+
+- Make sure we don't make any uses of the server endpoint `/c/:classId/roster`,
+  `/api/classes/:classId/roster`, or
+  `/c/:courseId/s/:classId/responses/:promptId?format=json` which have been
+  moved to `/api/courses/:courseId/classes/:classId/responses/:promptId`,
+  `/c/:courseId/prompts/:promptId/data`, and
+  `/api/courses/:courseId/prompts/:promptId/data` (2026-03-30T19:55:36)
+
+- Make a plan for cleaning up scripts whose functionality exists in the `app.js`
+  grading server or should. Probably start by updating
+  `reports/script-cleanup.md` focusing on scripts that are no longer needed
+  giving the grading server and ones whose functionality should be moved into
+  the grading server. (2026-03-31T17:41:08)
+
