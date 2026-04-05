@@ -43,6 +43,8 @@ Grading app. Talks to BHS CS server and manages grades database.
 - Write a plan for making `standards` a first class thing in the database with a
   UI for adding them.
 
+- Write a plan for possibly incorporating the functionality of index.js into app.js.
+
 ## Done
 
 Move newly done items to the **bottom** of this list so is is kept in
