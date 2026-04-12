@@ -14,6 +14,7 @@ import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
 import { API } from './api.js';
 import { numCorrect, scoreTest } from './modules/grading.js';
+import mdfilter from './modules/mdfilter.js';
 import { Repo } from './modules/repo.js';
 import { durationString, getCommitData } from './modules/speedruns.js';
 import { loadTestcases, runTestsWithError } from './modules/test-javascript.js';
@@ -46,6 +47,8 @@ env.addFilter('epochDate', (ts) =>
       })
     : '',
 );
+
+mdfilter.install(env);
 
 // Dashboard
 app.get('/', (_req, res) => {
@@ -1432,6 +1435,214 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
     db.deleteChecklistMarksForCriterion({ assignmentId, seq });
   });
   renderChecklistTable(res, assignmentId);
+});
+
+// MD Grader
+
+function mdGraderData(assignmentId, userId, branch, filePath) {
+  const assignment = db.assignmentById({ assignmentId });
+  const criteria = db.checklistCriteriaForAssignment({ assignmentId });
+  const students = db.studentsByCourse({ courseId: assignment.course_id });
+  students.sort((a, b) => (a.github || '').localeCompare(b.github || ''));
+  const marks = db.checklistMarksForAssignment({ assignmentId });
+  const markMap = {};
+  for (const m of marks) {
+    if (!markMap[m.user_id]) markMap[m.user_id] = {};
+    markMap[m.user_id][m.seq] = m.value;
+  }
+  const totalPoints = criteria.reduce((sum, c) => sum + (c.points ?? 1), 0);
+
+  const studentIndex = userId ? students.findIndex((s) => s.user_id === userId) : 0;
+  const student = students[studentIndex];
+  const earned = criteria.reduce(
+    (sum, c) => sum + (markMap[student.user_id]?.[c.seq] === 'check' ? (c.points ?? 1) : 0),
+    0,
+  );
+
+  const prevUserId = studentIndex > 0 ? students[studentIndex - 1].user_id : null;
+  const nextUserId = studentIndex < students.length - 1 ? students[studentIndex + 1].user_id : null;
+
+  let mdHtml = '';
+  let fileError = null;
+  try {
+    const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+    const contents = repo.contents(branch, filePath);
+    mdHtml = env.getFilter('md')(contents, false);
+  } catch {
+    fileError = `Could not load ${filePath} from branch ${branch} for ${student.github}`;
+  }
+
+  return {
+    assignment,
+    assignmentId,
+    criteria,
+    student,
+    students,
+    studentIndex,
+    totalStudents: students.length,
+    markMap,
+    totalPoints,
+    earned,
+    prevUserId,
+    nextUserId,
+    branch,
+    filePath,
+    mdHtml,
+    fileError,
+  };
+}
+
+function renderMdGraderSidebar(res, assignmentId, userId, branch, filePath) {
+  const data = mdGraderData(assignmentId, userId, branch, filePath);
+  res.render('app/md-grader/_sidebar.njk', data);
+}
+
+app.get('/md-grader/:assignmentId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const branch = req.query.branch;
+  const filePath = req.query.path;
+  if (!branch || !filePath) {
+    const assignment = db.assignmentById({ assignmentId });
+    return res.render('app/md-grader/setup.njk', { assignment, assignmentId });
+  }
+  ensureDefaultCriteria(assignmentId);
+  const data = mdGraderData(assignmentId, null, branch, filePath);
+  res.render('app/md-grader/page.njk', data);
+});
+
+app.get('/md-grader/:assignmentId/student/:userId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const branch = req.query.branch;
+  const filePath = req.query.filePath;
+  const data = mdGraderData(assignmentId, userId, branch, filePath);
+  const content = env.render('app/md-grader/_content.njk', data);
+  const sidebar = env.render('app/md-grader/_sidebar.njk', data);
+  res.send(content + sidebar);
+});
+
+app.post('/md-grader/:assignmentId/criteria', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const label = req.body.criteriaLabel?.trim();
+  if (label) db.addChecklistCriterion({ assignmentId, criteriaLabel: label });
+  const userId = req.body.userId;
+  const branch = req.body.branch;
+  const filePath = req.body.filePath;
+  renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
+});
+
+app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const seq = Number(req.params.seq);
+  const branch = req.query.branch;
+  const filePath = req.query.filePath;
+
+  const current = db.getChecklistMark({ userId, assignmentId, seq });
+  const next = !current ? 'check' : current.value === 'check' ? 'x' : null;
+  if (next) {
+    db.upsertChecklistMark({ userId, assignmentId, seq, value: next });
+  } else {
+    db.deleteChecklistMark({ userId, assignmentId, seq });
+  }
+
+  const criteria = db.checklistCriteriaForAssignment({ assignmentId });
+  const marks = db.checklistMarksForAssignment({ assignmentId });
+  const userMarks = {};
+  for (const m of marks) {
+    if (m.user_id === userId) userMarks[m.seq] = m.value;
+  }
+  const totalPoints = criteria.reduce((sum, c) => sum + (c.points ?? 1), 0);
+  const earned = criteria.reduce(
+    (sum, c) => sum + (userMarks[c.seq] === 'check' ? (c.points ?? 1) : 0),
+    0,
+  );
+
+  const student = { user_id: userId };
+  res.render('app/md-grader/mark-response.njk', {
+    assignmentId,
+    student,
+    seq,
+    value: next,
+    earned,
+    totalPoints,
+    branch,
+    filePath,
+  });
+});
+
+app.get('/md-grader/:assignmentId/criteria/:seq/label', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.query.userId;
+  const branch = req.query.branch;
+  const filePath = req.query.filePath;
+  renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
+});
+
+app.get('/md-grader/:assignmentId/criteria/:seq/label/edit', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.query.userId;
+  const branch = req.query.branch;
+  const filePath = req.query.filePath;
+  const data = mdGraderData(assignmentId, userId, branch, filePath);
+  // Set the criterion being edited
+  const seq = Number(req.params.seq);
+  data.editingLabelSeq = seq;
+  res.render('app/md-grader/_sidebar.njk', data);
+});
+
+app.put('/md-grader/:assignmentId/criteria/:seq/label', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const criteriaLabel = req.body.criteriaLabel?.trim() || '';
+  if (criteriaLabel) db.updateChecklistCriterionLabel({ assignmentId, seq, criteriaLabel });
+  const userId = req.body.userId;
+  const branch = req.body.branch;
+  const filePath = req.body.filePath;
+  renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
+});
+
+app.get('/md-grader/:assignmentId/criteria/:seq/points', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.query.userId;
+  const branch = req.query.branch;
+  const filePath = req.query.filePath;
+  renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
+});
+
+app.get('/md-grader/:assignmentId/criteria/:seq/points/edit', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.query.userId;
+  const branch = req.query.branch;
+  const filePath = req.query.filePath;
+  const data = mdGraderData(assignmentId, userId, branch, filePath);
+  const seq = Number(req.params.seq);
+  data.editingPointsSeq = seq;
+  res.render('app/md-grader/_sidebar.njk', data);
+});
+
+app.put('/md-grader/:assignmentId/criteria/:seq/points', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const points = Number(req.body.points) || 1;
+  db.updateChecklistCriterionPoints({ assignmentId, seq, points });
+  const userId = req.body.userId;
+  const branch = req.body.branch;
+  const filePath = req.body.filePath;
+  renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
+});
+
+app.delete('/md-grader/:assignmentId/criteria/:seq', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  db.transaction(() => {
+    db.deleteChecklistCriterion({ assignmentId, seq });
+    db.deleteChecklistMarksForCriterion({ assignmentId, seq });
+  });
+  const userId = req.query.userId;
+  const branch = req.query.branch;
+  const filePath = req.query.filePath;
+  renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
 });
 
 // Quiz Scoring

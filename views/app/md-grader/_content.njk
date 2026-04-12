@@ -1,0 +1,10 @@
+<div class="md-grader-content" id="md-grader-content">
+  {% include "app/md-grader/_nav.njk" %}
+  <div class="md-grader-rendered">
+    {% if fileError %}
+      <p class="error">{{ fileError }}</p>
+    {% else %}
+      {{ mdHtml | safe }}
+    {% endif %}
+  </div>
+</div>

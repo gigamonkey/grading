@@ -522,3 +522,144 @@ td.copyable:hover { background: #f0f0f0; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinning { animation: spin 1s linear infinite; display: inline-block; }
+
+/* MD Grader */
+.md-grader {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.md-grader-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.md-grader-rendered {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  line-height: 1.6;
+  max-width: 60em;
+}
+
+.md-grader-rendered h1 { font-size: 1.6rem; margin-top: 0; }
+.md-grader-rendered h2 { font-size: 1.3rem; }
+.md-grader-rendered h3 { font-size: 1.1rem; }
+.md-grader-rendered pre {
+  background: #f5f5f5;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+}
+.md-grader-rendered code { font-size: 0.9em; }
+.md-grader-rendered blockquote {
+  border-left: 3px solid #ccc;
+  margin-left: 0;
+  padding-left: 1rem;
+  color: #555;
+}
+
+.md-grader-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.md-grader-nav button:disabled { opacity: 0.4; cursor: default; }
+
+.md-grader-position {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.md-grader-sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.md-grader-sidebar h3 { margin-top: 0; font-size: 1rem; }
+
+.md-grader-score { margin-bottom: 0.75rem; font-size: 0.9rem; color: #555; }
+
+.md-grader-criterion {
+  border-bottom: 1px solid #eee;
+  padding: 0.5rem 0;
+}
+
+.md-grader-criterion:last-child { border-bottom: none; }
+
+.md-grader-criterion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.md-grader-label {
+  flex: 1;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  position: relative;
+  padding: 0.15rem 0.3rem;
+  border-radius: 3px;
+}
+.md-grader-label:hover { background: #eee; }
+.md-grader-label.editing { background: #fff; font-weight: normal; }
+
+button.md-grader-delete-criterion {
+  display: none;
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  padding: 0 3px;
+  font-size: 0.6rem;
+  line-height: 1.2;
+  background: #c00;
+  color: #fff;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.md-grader-label:hover button.md-grader-delete-criterion { display: block; }
+
+.md-grader-points {
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #555;
+  background: #eee;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.md-grader-points:hover { background: #ddd; }
+.md-grader-points.editing { background: #fff; padding: 0; }
+
+.md-grader-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  font-size: 1.1rem;
+  user-select: none;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+.md-grader-mark:hover { background: #f0f0f0; }
+.md-grader-mark.check { color: #090; border-color: #090; background: #e6ffe6; }
+.md-grader-mark.x { color: #c00; border-color: #c00; background: #ffe6e6; }
+.md-grader-mark.empty { color: #ccc; }

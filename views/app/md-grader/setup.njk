@@ -1,0 +1,14 @@
+{% extends "app/layout.njk" %}
+{% block title %}MD Grader: {{ assignment.title }} - Gradebook{% endblock %}
+{% block content %}
+<h1>MD Grader: {{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+<form action="/md-grader/{{ assignmentId }}" method="get">
+  <label>Branch
+    <input type="text" name="branch" placeholder="e.g. main" required>
+  </label>
+  <label>File path
+    <input type="text" name="path" placeholder="e.g. essay.md" required>
+  </label>
+  <button type="submit">Start grading</button>
+</form>
+{% endblock %}

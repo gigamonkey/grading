@@ -1,0 +1,25 @@
+<div class="md-grader-sidebar" id="md-grader-sidebar">
+  <h3>Checklist</h3>
+  <div class="md-grader-score" id="md-grader-score">
+    {% include "app/md-grader/score.njk" %}
+  </div>
+  <div class="md-grader-criteria" id="md-grader-criteria">
+    {% for c in criteria %}
+      {% set seq = c.seq %}
+      {% set value = markMap[student.user_id][c.seq] if markMap[student.user_id] else null %}
+      <div class="md-grader-criterion">
+        <div class="md-grader-criterion-header">
+          {% set editing = (editingLabelSeq == c.seq) %}
+          {% include "app/md-grader/label.njk" %}
+          {% set editing = (editingPointsSeq == c.seq) %}
+          {% include "app/md-grader/points.njk" %}
+        </div>
+        {% include "app/md-grader/mark-cell.njk" %}
+      </div>
+    {% endfor %}
+  </div>
+  <button hx-post="/md-grader/{{ assignmentId }}/criteria"
+          hx-vals='{"criteriaLabel": "-", "userId": "{{ student.user_id }}", "branch": "{{ branch }}", "filePath": "{{ filePath }}"}'
+          hx-target="#md-grader-sidebar"
+          hx-swap="outerHTML"><i class="bi bi-plus-lg"></i> Add criterion</button>
+</div>

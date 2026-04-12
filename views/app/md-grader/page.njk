@@ -1,0 +1,9 @@
+{% extends "app/layout.njk" %}
+{% block title %}MD Grader: {{ assignment.title }} - Gradebook{% endblock %}
+{% block content %}
+<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+<div class="md-grader" id="md-grader">
+  {% include "app/md-grader/_content.njk" %}
+  {% include "app/md-grader/_sidebar.njk" %}
+</div>
+{% endblock %}

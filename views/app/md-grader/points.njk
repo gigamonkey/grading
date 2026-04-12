@@ -1,0 +1,20 @@
+{% if editing %}
+<span class="md-grader-points editing">
+  <input type="number" name="points" value="{{ c.points }}" min="0" step="1"
+         hx-put="/md-grader/{{ assignmentId }}/criteria/{{ seq }}/points"
+         hx-vals='{"userId": "{{ student.user_id }}", "branch": "{{ branch }}", "filePath": "{{ filePath }}"}'
+         hx-trigger="keyup[key=='Enter']"
+         hx-target="#md-grader-sidebar"
+         hx-swap="outerHTML"
+         style="width:4rem;margin:0"
+         autofocus onfocus="this.select()"
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/md-grader/{{ assignmentId }}/criteria/{{ seq }}/points?userId={{ student.user_id }}&branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}',{target:'#md-grader-sidebar',swap:'outerHTML'})}"
+         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/md-grader/{{ assignmentId }}/criteria/{{ seq }}/points',{target:'#md-grader-sidebar',swap:'outerHTML',values:{points:this.value,userId:'{{ student.user_id }}',branch:'{{ branch }}',filePath:'{{ filePath }}'}})}">
+</span>
+{% else %}
+<span class="md-grader-points"
+      hx-get="/md-grader/{{ assignmentId }}/criteria/{{ seq }}/points/edit?userId={{ student.user_id }}&branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}"
+      hx-trigger="click"
+      hx-target="#md-grader-sidebar"
+      hx-swap="outerHTML">{{ c.points }}pt{{ 's' if c.points != 1 }}</span>
+{% endif %}
