@@ -1,10 +1,16 @@
 <div class="md-grader-content" id="md-grader-content">
   {% include "app/md-grader/_nav.njk" %}
-  <div class="md-grader-rendered">
-    {% if fileError %}
+  {% if fileError %}
+    <div class="md-grader-rendered">
       <p class="error">{{ fileError }}</p>
-    {% else %}
+    </div>
+  {% else %}
+    <div class="md-grader-view-toggle">
+      <button class="md-grader-toggle active" data-show="rendered" onclick="document.querySelector('.md-grader-rendered').style.display='';document.querySelector('.md-grader-raw').style.display='none';this.classList.add('active');this.nextElementSibling.classList.remove('active')">Rendered</button><button class="md-grader-toggle" data-show="raw" onclick="document.querySelector('.md-grader-raw').style.display='';document.querySelector('.md-grader-rendered').style.display='none';this.classList.add('active');this.previousElementSibling.classList.remove('active')">Raw</button>
+    </div>
+    <div class="md-grader-rendered">
       {{ mdHtml | safe }}
-    {% endif %}
-  </div>
+    </div>
+    <pre class="md-grader-raw" style="display:none">{{ mdRaw }}</pre>
+  {% endif %}
 </div>

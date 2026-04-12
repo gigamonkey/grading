@@ -1463,11 +1463,12 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
   const nextUserId = studentIndex < students.length - 1 ? students[studentIndex + 1].user_id : null;
 
   let mdHtml = '';
+  let mdRaw = '';
   let fileError = null;
   try {
     const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
-    const contents = repo.contents(branch, filePath);
-    mdHtml = env.getFilter('md')(contents, false);
+    mdRaw = repo.contents(branch, filePath);
+    mdHtml = env.getFilter('md')(mdRaw, false);
   } catch {
     fileError = `Could not load ${filePath} from branch ${branch} for ${student.github}`;
   }
@@ -1488,6 +1489,7 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
     branch,
     filePath,
     mdHtml,
+    mdRaw,
     fileError,
   };
 }

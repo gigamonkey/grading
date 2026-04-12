@@ -663,3 +663,28 @@ button.md-grader-delete-criterion {
 .md-grader-mark.check { color: #090; border-color: #090; background: #e6ffe6; }
 .md-grader-mark.x { color: #c00; border-color: #c00; background: #ffe6e6; }
 .md-grader-mark.empty { color: #ccc; }
+
+.md-grader-view-toggle { margin-bottom: 0.5rem; }
+.md-grader-toggle {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  background: #eee;
+  color: #555;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+.md-grader-toggle:first-child { border-radius: 4px 0 0 4px; }
+.md-grader-toggle:last-child { border-radius: 0 4px 4px 0; border-left: none; }
+.md-grader-toggle.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+pre.md-grader-raw {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  max-width: 60em;
+}
