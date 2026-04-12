@@ -5,8 +5,11 @@
       <p class="error">{{ fileError }}</p>
     </div>
   {% else %}
-    <div class="md-grader-view-toggle">
-      <button class="md-grader-toggle active" data-show="rendered" onclick="document.querySelector('.md-grader-rendered').style.display='';document.querySelector('.md-grader-raw').style.display='none';this.classList.add('active');this.nextElementSibling.classList.remove('active')">Rendered</button><button class="md-grader-toggle" data-show="raw" onclick="document.querySelector('.md-grader-raw').style.display='';document.querySelector('.md-grader-rendered').style.display='none';this.classList.add('active');this.previousElementSibling.classList.remove('active')">Raw</button>
+    <div class="md-grader-toolbar">
+      <div class="md-grader-view-toggle">
+        <button class="md-grader-toggle active" data-show="rendered" onclick="document.querySelector('.md-grader-rendered').style.display='';document.querySelector('.md-grader-raw').style.display='none';this.classList.add('active');this.nextElementSibling.classList.remove('active')">Rendered</button><button class="md-grader-toggle" data-show="raw" onclick="document.querySelector('.md-grader-raw').style.display='';document.querySelector('.md-grader-rendered').style.display='none';this.classList.add('active');this.previousElementSibling.classList.remove('active')">Raw</button>
+      </div>
+      <span class="md-grader-word-count">{{ wordCount }} words</span>
     </div>
     <div class="md-grader-rendered">
       {{ mdHtml | safe }}

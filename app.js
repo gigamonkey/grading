@@ -1464,11 +1464,13 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
 
   let mdHtml = '';
   let mdRaw = '';
+  let wordCount = 0;
   let fileError = null;
   try {
     const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
     mdRaw = repo.contents(branch, filePath);
     mdHtml = env.getFilter('md')(mdRaw, false);
+    wordCount = mdRaw.split(/\s+/).filter(Boolean).length;
   } catch {
     fileError = `Could not load ${filePath} from branch ${branch} for ${student.github}`;
   }
@@ -1490,6 +1492,7 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
     filePath,
     mdHtml,
     mdRaw,
+    wordCount,
     fileError,
   };
 }

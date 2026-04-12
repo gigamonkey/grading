@@ -664,7 +664,14 @@ button.md-grader-delete-criterion {
 .md-grader-mark.x { color: #c00; border-color: #c00; background: #ffe6e6; }
 .md-grader-mark.empty { color: #ccc; }
 
-.md-grader-view-toggle { margin-bottom: 0.5rem; }
+.md-grader-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.md-grader-word-count { font-size: 0.85rem; color: #666; }
 .md-grader-toggle {
   padding: 0.3rem 0.75rem;
   font-size: 0.85rem;
