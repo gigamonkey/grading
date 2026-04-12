@@ -531,8 +531,7 @@ td.copyable:hover { background: #f0f0f0; }
 }
 
 .md-grader-content {
-  flex: 1;
-  min-width: 0;
+  width: 60em;
 }
 
 .md-grader-rendered {
@@ -541,7 +540,6 @@ td.copyable:hover { background: #f0f0f0; }
   border-radius: 8px;
   padding: 1.5rem 2rem;
   line-height: 1.6;
-  max-width: 60em;
 }
 
 .md-grader-rendered h1 { font-size: 1.6rem; margin-top: 0; }
@@ -693,5 +691,4 @@ pre.md-grader-raw {
   word-wrap: break-word;
   font-size: 0.85rem;
   line-height: 1.5;
-  max-width: 60em;
 }
