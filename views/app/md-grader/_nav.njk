@@ -1,6 +1,6 @@
 <div class="md-grader-nav" id="md-grader-nav">
   {% set base = '/md-grader/' + assignmentId + '/student/' %}
-  {% set qs = '?branch=' + (branch | urlencode) + '&path=' + (filePath | urlencode) %}
+  {% set qs = '?branch=' + (branch | urlencode) + '&filePath=' + (filePath | urlencode) %}
   {% if prevUserId %}
     <button hx-get="{{ base }}{{ prevUserId }}{{ qs }}"
             hx-target="#md-grader"
