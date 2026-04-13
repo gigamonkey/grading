@@ -1027,8 +1027,3 @@ insert into student_answers (raw_answer, timestamp, sha) values ($rawAnswer, $ti
 insert into student_answers (raw_answer, timestamp, sha) values ($rawAnswer, $timestamp, $sha);
 
 
-npm notice
-npm notice New patch version of npm available! 11.12.0 -> 11.12.1
-npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
-npm notice To update run: npm install -g npm@11.12.1
-npm notice

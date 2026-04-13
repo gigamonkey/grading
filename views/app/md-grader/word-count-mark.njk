@@ -1,8 +1,16 @@
 {% set params = item.parameters | parse_json if item.parameters else {} %}
 {% set minWords = params.minWords or 0 %}
+{% if fraction is defined and fraction is not none %}
+  {% set pct = fraction * 100 %}
+  {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+  {% set earnedPts = (fraction * item.points) | round(1) %}
+{% else %}
+  {% set pct = 0 %}
+  {% set earnedPts = 0 %}
+{% endif %}
 <div class="md-grader-wc-mark">
   <div class="md-grader-wc-bar">
-    <div class="md-grader-wc-fill" style="width:{{ [fraction * 100, 100] | min }}%"></div>
+    <div class="md-grader-wc-fill" style="width:{{ pct }}%"></div>
   </div>
-  <span class="md-grader-wc-info">{{ wordCount }}/{{ minWords }} words &mdash; {{ (fraction * item.points) | round(1) }}/{{ item.points }}pts</span>
+  <span class="md-grader-wc-info">{{ wordCount }}/{{ minWords }} words &mdash; {{ earnedPts }}/{{ item.points }}pts</span>
 </div>
