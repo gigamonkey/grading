@@ -333,6 +333,24 @@ CREATE TABLE IF NOT EXISTS roster (
   course_id TEXT
 );
 
+-- Students dropped from the roster. Same schema as roster so we can move
+-- students back and forth.
+CREATE TABLE IF NOT EXISTS dropped (
+  period INTEGER,
+  user_id TEXT,
+  student_number TEXT,
+  email TEXT,
+  github TEXT,
+  name TEXT,
+  pronouns TEXT,
+  google_name TEXT,
+  sortable_name TEXT,
+  last_name TEXT,
+  first_name TEXT,
+  birthdate TEXT,
+  course_id TEXT
+);
+
 -- Max point values per IC assignment, from row 2 of the gradebook CSV export.
 CREATE TABLE IF NOT EXISTS ic_point_values (
   ic_name TEXT PRIMARY KEY,

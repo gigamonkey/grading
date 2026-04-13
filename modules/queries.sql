@@ -301,6 +301,12 @@ WHERE ($search IS NULL OR upper(sortable_name) LIKE '%' || upper($search) || '%'
        OR upper(github) LIKE '%' || upper($search) || '%')
 ORDER BY period, sortable_name;
 
+-- :name insertDroppedStudent :run
+INSERT INTO dropped SELECT * FROM roster WHERE user_id = $userId;
+
+-- :name deleteRosterStudent :run
+DELETE FROM roster WHERE user_id = $userId;
+
 -- :name allOverrides :all
 SELECT so.user_id, r.sortable_name, r.github, r.period, r.course_id,
        so.assignment_id, a.title, so.score, so.reason

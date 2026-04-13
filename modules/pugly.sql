@@ -234,6 +234,30 @@ insert into direct_scores (score) values ($score);
 insert into direct_scores (score) values ($score);
 
 
+-- dropped -------------------------------------------------
+
+-- :name dropped :all
+select * from dropped;
+
+-- :name insertDropped :insert
+insert into dropped
+  (period, user_id, student_number, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+values
+  ($period, $userId, $studentNumber, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+
+-- :name makeDropped :insert
+insert into dropped
+  (period, user_id, student_number, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+values
+  ($period, $userId, $studentNumber, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+
+-- :name makeDroppedWithDefaultValues :insert
+insert into dropped
+  (period, user_id, student_number, email, github, name, pronouns, google_name, sortable_name, last_name, first_name, birthdate, course_id)
+values
+  ($period, $userId, $studentNumber, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
+
+
 -- excused_assignments -------------------------------------
 
 -- :name excusedAssignments :all

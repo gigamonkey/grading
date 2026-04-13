@@ -7,7 +7,8 @@
   <td><a href="/students/{{ s.user_id }}">{{ s.sortable_name }}</a></td>
   <td class="copyable" onclick="navigator.clipboard.writeText('{{ s.email }}')">{{ s.email.split('@')[0] }}@ <i class="bi bi-clipboard copy-icon"></i></td>
   <td>{{ s.github }}</td>
+  <td><i class="bi bi-x-circle delete-icon" hx-post="/students/{{ s.user_id }}/drop" hx-target="#students-tbody" hx-confirm="Drop {{ s.name }} from the roster?"></i></td>
 </tr>
 {% else %}
-<tr><td colspan="7">No students found.</td></tr>
+<tr><td colspan="8">No students found.</td></tr>
 {% endfor %}

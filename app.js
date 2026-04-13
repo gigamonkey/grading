@@ -701,6 +701,16 @@ app.get('/students/:userId', (req, res) => {
   });
 });
 
+app.post('/students/:userId/drop', (req, res) => {
+  const userId = req.params.userId;
+  db.transaction(() => {
+    db.insertDroppedStudent({ userId });
+    db.deleteRosterStudent({ userId });
+  });
+  const students = db.allStudents({ search: null });
+  res.render('app/students/tbody.njk', { students });
+});
+
 // Overrides
 app.get('/overrides', (_req, res) => {
   const overrides = db.allOverrides();
