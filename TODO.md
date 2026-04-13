@@ -121,3 +121,5 @@ chronological order from oldest to newest.
   giving the grading server and ones whose functionality should be moved into
   the grading server. (2026-03-31T17:41:08)
 
+- Add an assignment grader that takes an assignment number, a branch and a path and displays the markdown file at that path in that branch with a UI like the checklist grader but with the checklist in a column down the right side of the page. It should display one file at a time but when new checklist items are added they need to be graded for all the files. (2026-04-12T17:58:13)
+
