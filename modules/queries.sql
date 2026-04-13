@@ -563,21 +563,34 @@ WHERE assignment_id = $assignmentId AND seq = $seq;
 -- :name deleteRubricItem :run
 DELETE FROM rubric_items WHERE assignment_id = $assignmentId AND seq = $seq;
 
+-- :name upsertRubricSubmission :run
+INSERT INTO rubric_submissions (user_id, assignment_id, sha, timestamp)
+VALUES ($userId, $assignmentId, $sha, $timestamp)
+ON CONFLICT (user_id, assignment_id, sha) DO UPDATE SET timestamp = $timestamp;
+
 -- :name rubricMarksForAssignment :all
-SELECT * FROM rubric_marks WHERE assignment_id = $assignmentId;
+SELECT m.* FROM rubric_marks m
+JOIN (
+  SELECT user_id, assignment_id, sha
+  FROM rubric_submissions
+  WHERE assignment_id = $assignmentId
+  GROUP BY user_id, assignment_id
+  HAVING timestamp IS max(timestamp)
+) latest USING (user_id, assignment_id, sha)
+WHERE m.assignment_id = $assignmentId;
 
 -- :name getRubricMark :get
 SELECT * FROM rubric_marks
-WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
+WHERE user_id = $userId AND assignment_id = $assignmentId AND sha = $sha AND seq = $seq;
 
 -- :name upsertRubricMark :run
-INSERT INTO rubric_marks (user_id, assignment_id, seq, fraction)
-VALUES ($userId, $assignmentId, $seq, $fraction)
-ON CONFLICT (user_id, assignment_id, seq) DO UPDATE SET fraction = $fraction;
+INSERT INTO rubric_marks (user_id, assignment_id, sha, seq, fraction)
+VALUES ($userId, $assignmentId, $sha, $seq, $fraction)
+ON CONFLICT (user_id, assignment_id, sha, seq) DO UPDATE SET fraction = $fraction;
 
 -- :name deleteRubricMark :run
 DELETE FROM rubric_marks
-WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
+WHERE user_id = $userId AND assignment_id = $assignmentId AND sha = $sha AND seq = $seq;
 
 -- :name deleteRubricMarksForItem :run
 DELETE FROM rubric_marks WHERE assignment_id = $assignmentId AND seq = $seq;

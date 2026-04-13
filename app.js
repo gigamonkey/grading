@@ -1479,21 +1479,31 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
   let mdRaw = '';
   let wordCount = 0;
   let fileError = null;
+  let sha = null;
   try {
     const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+    sha = repo.sha(branch, filePath);
     mdRaw = repo.contents(branch, filePath);
     mdHtml = env.getFilter('md')(mdRaw, false);
     wordCount = mdRaw.split(/\s+/).filter(Boolean).length;
+    if (sha) {
+      const timestamp = repo.timestamp(sha);
+      db.upsertRubricSubmission({ userId: student.user_id, assignmentId, sha, timestamp });
+    }
   } catch {
     fileError = `Could not load ${filePath} from branch ${branch} for ${student.github}`;
+  }
+  if (!sha) {
+    sha = 'not-submitted';
+    db.upsertRubricSubmission({ userId: student.user_id, assignmentId, sha, timestamp: null });
   }
 
   // Auto-compute word_count marks
   for (const item of items) {
-    if (item.kind === 'word_count' && !fileError) {
+    if (item.kind === 'word_count') {
       const params = JSON.parse(item.parameters);
       const fraction = Math.min(wordCount / params.minWords, 1.0);
-      db.upsertRubricMark({ userId: student.user_id, assignmentId, seq: item.seq, fraction });
+      db.upsertRubricMark({ userId: student.user_id, assignmentId, sha, seq: item.seq, fraction });
       if (!markMap[student.user_id]) markMap[student.user_id] = {};
       markMap[student.user_id][item.seq] = fraction;
     }
@@ -1519,6 +1529,7 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
     nextUserId,
     branch,
     filePath,
+    sha,
     mdHtml,
     mdRaw,
     wordCount,
@@ -1595,15 +1606,16 @@ app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   const seq = Number(req.params.seq);
   const branch = req.query.branch;
   const filePath = req.query.filePath;
+  const sha = req.query.sha;
 
   // Three-state cycle: ungraded → 1.0 → 0.0 → delete (ungraded)
-  const current = db.getRubricMark({ userId, assignmentId, seq });
+  const current = db.getRubricMark({ userId, assignmentId, sha, seq });
   if (!current) {
-    db.upsertRubricMark({ userId, assignmentId, seq, fraction: 1.0 });
+    db.upsertRubricMark({ userId, assignmentId, sha, seq, fraction: 1.0 });
   } else if (current.fraction === 1.0) {
-    db.upsertRubricMark({ userId, assignmentId, seq, fraction: 0.0 });
+    db.upsertRubricMark({ userId, assignmentId, sha, seq, fraction: 0.0 });
   } else {
-    db.deleteRubricMark({ userId, assignmentId, seq });
+    db.deleteRubricMark({ userId, assignmentId, sha, seq });
   }
 
   const items = db.rubricItemsForAssignment({ assignmentId });
@@ -1618,7 +1630,7 @@ app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
     return sum + (fraction != null ? fraction * item.points : 0);
   }, 0);
 
-  const updatedMark = db.getRubricMark({ userId, assignmentId, seq });
+  const updatedMark = db.getRubricMark({ userId, assignmentId, sha, seq });
   const fraction = updatedMark ? updatedMark.fraction : undefined;
 
   const student = { user_id: userId };
@@ -1631,6 +1643,7 @@ app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
     totalPoints,
     branch,
     filePath,
+    sha,
   });
 });
 

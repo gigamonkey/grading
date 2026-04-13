@@ -296,12 +296,25 @@ CREATE TABLE IF NOT EXISTS rubric_items (
   PRIMARY KEY (assignment_id, seq)
 );
 
+-- Tracks which git commit was graded for each student/assignment.
+CREATE TABLE IF NOT EXISTS rubric_submissions (
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  sha TEXT NOT NULL,
+  timestamp INTEGER,
+  PRIMARY KEY (user_id, assignment_id, sha)
+);
+
+DROP TABLE IF EXISTS rubric_marks;
 CREATE TABLE IF NOT EXISTS rubric_marks (
   user_id TEXT NOT NULL,
   assignment_id INTEGER NOT NULL,
+  sha TEXT NOT NULL,
   seq INTEGER NOT NULL,
   fraction REAL NOT NULL DEFAULT 0, -- 0.0 to 1.0
-  PRIMARY KEY (user_id, assignment_id, seq)
+  PRIMARY KEY (user_id, assignment_id, sha, seq),
+  FOREIGN KEY (user_id, assignment_id, sha)
+    REFERENCES rubric_submissions(user_id, assignment_id, sha)
 );
 
 --------------------------------------------------------------------------------
@@ -500,7 +513,10 @@ FROM java_unit_tests JOIN roster USING (github)
 UNION ALL
 SELECT assignment_id, user_id, min(timestamp), sha
 FROM student_answers JOIN roster USING (github)
-GROUP BY assignment_id, github;
+GROUP BY assignment_id, github
+UNION ALL
+SELECT assignment_id, user_id, timestamp, sha
+FROM rubric_submissions;
 
 -- Union of all scores with their provenance
 DROP VIEW IF EXISTS recorded_scores;
@@ -823,12 +839,19 @@ WITH total AS (
   SELECT assignment_id, sum(points) total_points
   FROM rubric_items
   GROUP BY assignment_id
+),
+latest AS (
+  SELECT user_id, assignment_id, sha
+  FROM rubric_submissions
+  GROUP BY user_id, assignment_id
+  HAVING timestamp IS max(timestamp)
 )
 SELECT
   m.assignment_id,
   m.user_id,
   sum(m.fraction * i.points) / cast(t.total_points AS REAL) score
 FROM rubric_marks m
+JOIN latest l USING (user_id, assignment_id, sha)
 JOIN rubric_items i USING (assignment_id, seq)
 JOIN total t USING (assignment_id)
 GROUP BY m.assignment_id, m.user_id;

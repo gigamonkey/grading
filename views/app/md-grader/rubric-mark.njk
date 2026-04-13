@@ -1,6 +1,6 @@
 {% if fraction == 1 %}{% set markClass = 'check' %}{% elif fraction == 0 %}{% set markClass = 'x' %}{% else %}{% set markClass = 'empty' %}{% endif -%}
 <div class="md-grader-mark {{ markClass }}"
-     hx-put="/md-grader/{{ assignmentId }}/mark/{{ student.user_id }}/{{ seq }}?branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}"
+     hx-put="/md-grader/{{ assignmentId }}/mark/{{ student.user_id }}/{{ seq }}?branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}&sha={{ sha | urlencode }}"
      hx-trigger="click"
      hx-target="this"
      hx-swap="outerHTML">{% if fraction == 1 %}<i class="bi bi-check-lg"></i>{% elif fraction == 0 %}<i class="bi bi-x-lg"></i>{% else %}<i class="bi bi-dash"></i>{% endif %}</div>

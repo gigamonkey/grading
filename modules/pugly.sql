@@ -714,12 +714,17 @@ select * from rubric_marks;
 
 -- :name insertRubricMark :insert
 insert into rubric_marks
-  (user_id, assignment_id, seq, fraction)
+  (user_id, assignment_id, sha, seq, fraction)
 values
-  ($userId, $assignmentId, $seq, $fraction);
+  ($userId, $assignmentId, $sha, $seq, $fraction);
 
 -- :name rubricMark :get
-select * from rubric_marks where user_id = $userId and assignment_id = $assignmentId and seq = $seq;
+select * from rubric_marks
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  sha = $sha and
+  seq = $seq;
 
 -- :name updateRubricMark :run
 update rubric_marks set
@@ -728,20 +733,65 @@ update rubric_marks set
 where
   user_id = $userId and
   assignment_id = $assignmentId and
+  sha = $sha and
   seq = $seq
 
+-- :name rubricMarkForRubricSubmissionAndRubricSubmissionAndRubricSubmission :get
+select * from rubric_marks where user_id = $userId and assignment_id = $assignmentId and sha = $sha;
+
+-- :name rubricMarksForRubricSubmissionAndRubricSubmissionAndRubricSubmission :all
+select * from rubric_marks where user_id = $userId and assignment_id = $assignmentId and sha = $sha;
+
 -- :name insertRubricMarkWithDefaultValues :insert
-insert into rubric_marks (user_id, assignment_id, seq) values ($userId, $assignmentId, $seq);
+insert into rubric_marks
+  (user_id, assignment_id, sha, seq)
+values
+  ($userId, $assignmentId, $sha, $seq);
 
 -- :name updateRubricMarkFraction :run
 update rubric_marks set fraction = $fraction
 where
   user_id = $userId and
   assignment_id = $assignmentId and
+  sha = $sha and
   seq = $seq
 
 -- :name makeRubricMark :insert
 insert into rubric_marks (fraction) values ($fraction);
+
+
+-- rubric_submissions --------------------------------------
+
+-- :name rubricSubmissions :all
+select * from rubric_submissions;
+
+-- :name insertRubricSubmission :insert
+insert into rubric_submissions
+  (user_id, assignment_id, sha, timestamp)
+values
+  ($userId, $assignmentId, $sha, $timestamp);
+
+-- :name rubricSubmission :get
+select * from rubric_submissions
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  sha = $sha;
+
+-- :name updateRubricSubmission :run
+update rubric_submissions set
+  (timestamp) =
+  ($timestamp)
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  sha = $sha
+
+-- :name makeRubricSubmission :insert
+insert into rubric_submissions (timestamp) values ($timestamp);
+
+-- :name makeRubricSubmissionWithDefaultValues :insert
+insert into rubric_submissions (timestamp) values ($timestamp);
 
 
 -- score_overrides -----------------------------------------
