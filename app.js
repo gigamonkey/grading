@@ -49,6 +49,13 @@ env.addFilter('epochDate', (ts) =>
 );
 
 mdfilter.install(env);
+env.addFilter('parse_json', (s) => {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return {};
+  }
+});
 
 // Dashboard
 app.get('/', (_req, res) => {
@@ -1441,23 +1448,19 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
 
 function mdGraderData(assignmentId, userId, branch, filePath) {
   const assignment = db.assignmentById({ assignmentId });
-  const criteria = db.checklistCriteriaForAssignment({ assignmentId });
+  const items = db.rubricItemsForAssignment({ assignmentId });
   const students = db.studentsByCourse({ courseId: assignment.course_id });
   students.sort((a, b) => (a.github || '').localeCompare(b.github || ''));
-  const marks = db.checklistMarksForAssignment({ assignmentId });
+  const allMarks = db.rubricMarksForAssignment({ assignmentId });
   const markMap = {};
-  for (const m of marks) {
+  for (const m of allMarks) {
     if (!markMap[m.user_id]) markMap[m.user_id] = {};
-    markMap[m.user_id][m.seq] = m.value;
+    markMap[m.user_id][m.seq] = m.fraction;
   }
-  const totalPoints = criteria.reduce((sum, c) => sum + (c.points ?? 1), 0);
+  const totalPoints = items.reduce((sum, item) => sum + item.points, 0);
 
   const studentIndex = userId ? students.findIndex((s) => s.user_id === userId) : 0;
   const student = students[studentIndex];
-  const earned = criteria.reduce(
-    (sum, c) => sum + (markMap[student.user_id]?.[c.seq] === 'check' ? (c.points ?? 1) : 0),
-    0,
-  );
 
   const prevUserId = studentIndex > 0 ? students[studentIndex - 1].user_id : null;
   const nextUserId = studentIndex < students.length - 1 ? students[studentIndex + 1].user_id : null;
@@ -1475,10 +1478,26 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
     fileError = `Could not load ${filePath} from branch ${branch} for ${student.github}`;
   }
 
+  // Auto-compute word_count marks
+  for (const item of items) {
+    if (item.kind === 'word_count' && !fileError) {
+      const params = JSON.parse(item.parameters);
+      const fraction = Math.min(wordCount / params.minWords, 1.0);
+      db.upsertRubricMark({ userId: student.user_id, assignmentId, seq: item.seq, fraction });
+      if (!markMap[student.user_id]) markMap[student.user_id] = {};
+      markMap[student.user_id][item.seq] = fraction;
+    }
+  }
+
+  const earned = items.reduce((sum, item) => {
+    const fraction = markMap[student.user_id]?.[item.seq];
+    return sum + (fraction != null ? fraction * item.points : 0);
+  }, 0);
+
   return {
     assignment,
     assignmentId,
-    criteria,
+    items,
     student,
     students,
     studentIndex,
@@ -1510,7 +1529,6 @@ app.get('/md-grader/:assignmentId', (req, res) => {
     const assignment = db.assignmentById({ assignmentId });
     return res.render('app/md-grader/setup.njk', { assignment, assignmentId });
   }
-  ensureDefaultCriteria(assignmentId);
   const data = mdGraderData(assignmentId, null, branch, filePath);
   res.render('app/md-grader/page.njk', data);
 });
@@ -1526,10 +1544,35 @@ app.get('/md-grader/:assignmentId/student/:userId', (req, res) => {
   res.send(content + sidebar);
 });
 
-app.post('/md-grader/:assignmentId/criteria', (req, res) => {
+app.post('/md-grader/:assignmentId/rubric', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
-  const label = req.body.criteriaLabel?.trim();
-  if (label) db.addChecklistCriterion({ assignmentId, criteriaLabel: label });
+  const label = req.body.label?.trim();
+  if (label) {
+    db.addRubricItem({
+      assignmentId,
+      label,
+      points: Number(req.body.points) || 1,
+      kind: 'manual',
+      parameters: null,
+    });
+  }
+  const userId = req.body.userId;
+  const branch = req.body.branch;
+  const filePath = req.body.filePath;
+  renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
+});
+
+app.post('/md-grader/:assignmentId/word-count-item', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const minWords = Number(req.body.minWords) || 100;
+  const points = Number(req.body.points) || 1;
+  db.addRubricItem({
+    assignmentId,
+    label: `Min ${minWords} words`,
+    points,
+    kind: 'word_count',
+    parameters: JSON.stringify({ minWords }),
+  });
   const userId = req.body.userId;
   const branch = req.body.branch;
   const filePath = req.body.filePath;
@@ -1543,32 +1586,37 @@ app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   const branch = req.query.branch;
   const filePath = req.query.filePath;
 
-  const current = db.getChecklistMark({ userId, assignmentId, seq });
-  const next = !current ? 'check' : current.value === 'check' ? 'x' : null;
-  if (next) {
-    db.upsertChecklistMark({ userId, assignmentId, seq, value: next });
+  // Three-state cycle: ungraded → 1.0 → 0.0 → delete (ungraded)
+  const current = db.getRubricMark({ userId, assignmentId, seq });
+  if (!current) {
+    db.upsertRubricMark({ userId, assignmentId, seq, fraction: 1.0 });
+  } else if (current.fraction === 1.0) {
+    db.upsertRubricMark({ userId, assignmentId, seq, fraction: 0.0 });
   } else {
-    db.deleteChecklistMark({ userId, assignmentId, seq });
+    db.deleteRubricMark({ userId, assignmentId, seq });
   }
 
-  const criteria = db.checklistCriteriaForAssignment({ assignmentId });
-  const marks = db.checklistMarksForAssignment({ assignmentId });
+  const items = db.rubricItemsForAssignment({ assignmentId });
+  const marks = db.rubricMarksForAssignment({ assignmentId });
   const userMarks = {};
   for (const m of marks) {
-    if (m.user_id === userId) userMarks[m.seq] = m.value;
+    if (m.user_id === userId) userMarks[m.seq] = m.fraction;
   }
-  const totalPoints = criteria.reduce((sum, c) => sum + (c.points ?? 1), 0);
-  const earned = criteria.reduce(
-    (sum, c) => sum + (userMarks[c.seq] === 'check' ? (c.points ?? 1) : 0),
-    0,
-  );
+  const totalPoints = items.reduce((sum, item) => sum + item.points, 0);
+  const earned = items.reduce((sum, item) => {
+    const fraction = userMarks[item.seq];
+    return sum + (fraction != null ? fraction * item.points : 0);
+  }, 0);
+
+  const updatedMark = db.getRubricMark({ userId, assignmentId, seq });
+  const fraction = updatedMark ? updatedMark.fraction : undefined;
 
   const student = { user_id: userId };
   res.render('app/md-grader/mark-response.njk', {
     assignmentId,
     student,
     seq,
-    value: next,
+    fraction,
     earned,
     totalPoints,
     branch,
@@ -1576,7 +1624,7 @@ app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   });
 });
 
-app.get('/md-grader/:assignmentId/criteria/:seq/label', (req, res) => {
+app.get('/md-grader/:assignmentId/rubric/:seq/label', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.query.userId;
   const branch = req.query.branch;
@@ -1584,30 +1632,29 @@ app.get('/md-grader/:assignmentId/criteria/:seq/label', (req, res) => {
   renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
 });
 
-app.get('/md-grader/:assignmentId/criteria/:seq/label/edit', (req, res) => {
+app.get('/md-grader/:assignmentId/rubric/:seq/label/edit', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.query.userId;
   const branch = req.query.branch;
   const filePath = req.query.filePath;
   const data = mdGraderData(assignmentId, userId, branch, filePath);
-  // Set the criterion being edited
   const seq = Number(req.params.seq);
   data.editingLabelSeq = seq;
   res.render('app/md-grader/_sidebar.njk', data);
 });
 
-app.put('/md-grader/:assignmentId/criteria/:seq/label', (req, res) => {
+app.put('/md-grader/:assignmentId/rubric/:seq/label', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
-  const criteriaLabel = req.body.criteriaLabel?.trim() || '';
-  if (criteriaLabel) db.updateChecklistCriterionLabel({ assignmentId, seq, criteriaLabel });
+  const label = req.body.label?.trim() || '';
+  if (label) db.updateRubricItemLabel({ assignmentId, seq, label });
   const userId = req.body.userId;
   const branch = req.body.branch;
   const filePath = req.body.filePath;
   renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
 });
 
-app.get('/md-grader/:assignmentId/criteria/:seq/points', (req, res) => {
+app.get('/md-grader/:assignmentId/rubric/:seq/points', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.query.userId;
   const branch = req.query.branch;
@@ -1615,7 +1662,7 @@ app.get('/md-grader/:assignmentId/criteria/:seq/points', (req, res) => {
   renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
 });
 
-app.get('/md-grader/:assignmentId/criteria/:seq/points/edit', (req, res) => {
+app.get('/md-grader/:assignmentId/rubric/:seq/points/edit', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.query.userId;
   const branch = req.query.branch;
@@ -1626,23 +1673,23 @@ app.get('/md-grader/:assignmentId/criteria/:seq/points/edit', (req, res) => {
   res.render('app/md-grader/_sidebar.njk', data);
 });
 
-app.put('/md-grader/:assignmentId/criteria/:seq/points', (req, res) => {
+app.put('/md-grader/:assignmentId/rubric/:seq/points', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
   const points = Number(req.body.points) || 1;
-  db.updateChecklistCriterionPoints({ assignmentId, seq, points });
+  db.updateRubricItemPoints({ assignmentId, seq, points });
   const userId = req.body.userId;
   const branch = req.body.branch;
   const filePath = req.body.filePath;
   renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
 });
 
-app.delete('/md-grader/:assignmentId/criteria/:seq', (req, res) => {
+app.delete('/md-grader/:assignmentId/rubric/:seq', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
   db.transaction(() => {
-    db.deleteChecklistCriterion({ assignmentId, seq });
-    db.deleteChecklistMarksForCriterion({ assignmentId, seq });
+    db.deleteRubricItem({ assignmentId, seq });
+    db.deleteRubricMarksForItem({ assignmentId, seq });
   });
   const userId = req.query.userId;
   const branch = req.query.branch;

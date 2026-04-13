@@ -1,0 +1,5 @@
+<div class="md-grader-mark {{ 'check' if fraction == 1 else 'x' if fraction == 0 else 'empty' }}"
+     hx-put="/md-grader/{{ assignmentId }}/mark/{{ student.user_id }}/{{ seq }}?branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}"
+     hx-trigger="click"
+     hx-target="this"
+     hx-swap="outerHTML">{% if fraction == 1 %}<i class="bi bi-check-lg"></i>{% elif fraction == 0 %}<i class="bi bi-x-lg"></i>{% else %}<i class="bi bi-dash"></i>{% endif %}</div>

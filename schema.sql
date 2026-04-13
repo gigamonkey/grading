@@ -277,16 +277,31 @@ JOIN roster using (github)
 GROUP BY assignment_id, github;
 
 --------------------------------------------------------------------------------
--- Graded by rubric. For each student we compare their work against a rubric and
--- record for each element of the rubric whether they met it or not. We can then
--- compute a total score for the assignment from the individual grades.
+-- Rubric grading. Each assignment can have rubric items with point values. For
+-- each student we record the fraction (0.0–1.0) of each item's points earned.
+-- No row in rubric_marks = ungraded; fraction=0.0 = graded zero.
+-- The 'kind' column on rubric_items determines how the fraction is computed:
+--   'manual' (default): set by the grader via the UI
+--   'word_count': auto-computed from student's word count vs parameters.minWords
 
-CREATE TABLE IF NOT EXISTS rubric_grades (
-  user_id TEXT,
-  assignment_id INTEGER,
-  rubric_item TEXT,
-  score INTEGER, -- 0 or 1
-  PRIMARY KEY (user_id, assignment_id, rubric_item)
+DROP TABLE IF EXISTS rubric_grades;
+
+CREATE TABLE IF NOT EXISTS rubric_items (
+  assignment_id INTEGER NOT NULL,
+  seq INTEGER NOT NULL,
+  label TEXT NOT NULL,
+  points REAL NOT NULL DEFAULT 1,
+  kind TEXT NOT NULL DEFAULT 'manual',
+  parameters TEXT, -- JSON, shape depends on kind. E.g. {"minWords": 500}
+  PRIMARY KEY (assignment_id, seq)
+);
+
+CREATE TABLE IF NOT EXISTS rubric_marks (
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  seq INTEGER NOT NULL,
+  fraction REAL NOT NULL DEFAULT 0, -- 0.0 to 1.0
+  PRIMARY KEY (user_id, assignment_id, seq)
 );
 
 --------------------------------------------------------------------------------
@@ -482,7 +497,9 @@ SELECT *, 'direct_scores' FROM direct_scores
   UNION
 SELECT *, 'form_assessment_scores' FROM form_assessment_scores
   UNION
-SELECT *, 'checklist_scores' FROM checklist_scores;
+SELECT *, 'checklist_scores' FROM checklist_scores
+  UNION
+SELECT *, 'rubric_scores' FROM rubric_scores;
 
 -- This view only contains scores that actually exist. If a student hasn't done
 -- an assignment they will have no entry in this table.
@@ -779,5 +796,21 @@ SELECT
     cast(t.total_points AS REAL) score
 FROM checklist_marks m
 JOIN checklist_criteria c USING (assignment_id, seq)
+JOIN total t USING (assignment_id)
+GROUP BY m.assignment_id, m.user_id;
+
+DROP VIEW IF EXISTS rubric_scores;
+CREATE VIEW rubric_scores AS
+WITH total AS (
+  SELECT assignment_id, sum(points) total_points
+  FROM rubric_items
+  GROUP BY assignment_id
+)
+SELECT
+  m.assignment_id,
+  m.user_id,
+  sum(m.fraction * i.points) / cast(t.total_points AS REAL) score
+FROM rubric_marks m
+JOIN rubric_items i USING (assignment_id, seq)
 JOIN total t USING (assignment_id)
 GROUP BY m.assignment_id, m.user_id;

@@ -539,3 +539,43 @@ INSERT OR IGNORE INTO not_for_grade (assignment_id) VALUES ($assignmentId);
 
 -- :name unmarkNotForGrade :run
 DELETE FROM not_for_grade WHERE assignment_id = $assignmentId;
+
+-- Rubric grading
+-- :name rubricItemsForAssignment :all
+SELECT * FROM rubric_items WHERE assignment_id = $assignmentId ORDER BY seq;
+
+-- :name addRubricItem :insert
+INSERT INTO rubric_items (assignment_id, seq, label, points, kind, parameters)
+VALUES ($assignmentId,
+  COALESCE((SELECT max(seq) + 1 FROM rubric_items WHERE assignment_id = $assignmentId), 1),
+  $label, $points, $kind, $parameters);
+
+-- :name updateRubricItemLabel :run
+UPDATE rubric_items SET label = $label
+WHERE assignment_id = $assignmentId AND seq = $seq;
+
+-- :name updateRubricItemPoints :run
+UPDATE rubric_items SET points = $points
+WHERE assignment_id = $assignmentId AND seq = $seq;
+
+-- :name deleteRubricItem :run
+DELETE FROM rubric_items WHERE assignment_id = $assignmentId AND seq = $seq;
+
+-- :name rubricMarksForAssignment :all
+SELECT * FROM rubric_marks WHERE assignment_id = $assignmentId;
+
+-- :name getRubricMark :get
+SELECT * FROM rubric_marks
+WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
+
+-- :name upsertRubricMark :run
+INSERT INTO rubric_marks (user_id, assignment_id, seq, fraction)
+VALUES ($userId, $assignmentId, $seq, $fraction)
+ON CONFLICT (user_id, assignment_id, seq) DO UPDATE SET fraction = $fraction;
+
+-- :name deleteRubricMark :run
+DELETE FROM rubric_marks
+WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
+
+-- :name deleteRubricMarksForItem :run
+DELETE FROM rubric_marks WHERE assignment_id = $assignmentId AND seq = $seq;

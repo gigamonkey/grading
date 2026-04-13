@@ -1,25 +1,25 @@
 {% if editing %}
 <span class="md-grader-label editing">
-  <input type="text" name="criteriaLabel" value="{{ c.label }}"
-         hx-put="/md-grader/{{ assignmentId }}/criteria/{{ seq }}/label"
+  <input type="text" name="label" value="{{ c.label }}"
+         hx-put="/md-grader/{{ assignmentId }}/rubric/{{ seq }}/label"
          hx-vals='{"userId": "{{ student.user_id }}", "branch": "{{ branch }}", "filePath": "{{ filePath }}"}'
          hx-trigger="keyup[key=='Enter']"
          hx-target="#md-grader-sidebar"
          hx-swap="outerHTML"
          style="width:100%;margin:0"
          autofocus onfocus="this.select()"
-         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/md-grader/{{ assignmentId }}/criteria/{{ seq }}/label?userId={{ student.user_id }}&branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}',{target:'#md-grader-sidebar',swap:'outerHTML'})}"
-         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/md-grader/{{ assignmentId }}/criteria/{{ seq }}/label',{target:'#md-grader-sidebar',swap:'outerHTML',values:{criteriaLabel:this.value,userId:'{{ student.user_id }}',branch:'{{ branch }}',filePath:'{{ filePath }}'}})}">
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/md-grader/{{ assignmentId }}/rubric/{{ seq }}/label?userId={{ student.user_id }}&branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}',{target:'#md-grader-sidebar',swap:'outerHTML'})}"
+         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/md-grader/{{ assignmentId }}/rubric/{{ seq }}/label',{target:'#md-grader-sidebar',swap:'outerHTML',values:{label:this.value,userId:'{{ student.user_id }}',branch:'{{ branch }}',filePath:'{{ filePath }}'}})}">
 </span>
 {% else %}
 <span class="md-grader-label"
-      hx-get="/md-grader/{{ assignmentId }}/criteria/{{ seq }}/label/edit?userId={{ student.user_id }}&branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}"
+      hx-get="/md-grader/{{ assignmentId }}/rubric/{{ seq }}/label/edit?userId={{ student.user_id }}&branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}"
       hx-trigger="click"
       hx-target="#md-grader-sidebar"
       hx-swap="outerHTML">
   {{ c.label }}
   <button class="md-grader-delete-criterion"
-          hx-delete="/md-grader/{{ assignmentId }}/criteria/{{ seq }}?userId={{ student.user_id }}&branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}"
+          hx-delete="/md-grader/{{ assignmentId }}/rubric/{{ seq }}?userId={{ student.user_id }}&branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}"
           hx-target="#md-grader-sidebar"
           hx-swap="outerHTML"
           hx-trigger="click consume"><i class="bi bi-x"></i></button>

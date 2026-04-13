@@ -1,0 +1,8 @@
+{% set params = item.parameters | parse_json if item.parameters else {} %}
+{% set minWords = params.minWords or 0 %}
+<div class="md-grader-wc-mark">
+  <div class="md-grader-wc-bar">
+    <div class="md-grader-wc-fill" style="width:{{ [fraction * 100, 100] | min }}%"></div>
+  </div>
+  <span class="md-grader-wc-info">{{ wordCount }}/{{ minWords }} words &mdash; {{ (fraction * item.points) | round(1) }}/{{ item.points }}pts</span>
+</div>

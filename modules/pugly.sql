@@ -631,38 +631,93 @@ values
   ($period, $userId, $studentNumber, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
 
 
--- rubric_grades -------------------------------------------
+-- rubric_items --------------------------------------------
 
--- :name rubricGrades :all
-select * from rubric_grades;
+-- :name rubricItems :all
+select * from rubric_items;
 
--- :name insertRubricGrade :insert
-insert into rubric_grades
-  (user_id, assignment_id, rubric_item, score)
+-- :name insertRubricItem :insert
+insert into rubric_items
+  (assignment_id, seq, label, points, kind, parameters)
 values
-  ($userId, $assignmentId, $rubricItem, $score);
+  ($assignmentId, $seq, $label, $points, $kind, $parameters);
 
--- :name rubricGrade :get
-select * from rubric_grades
+-- :name rubricItem :get
+select * from rubric_items where assignment_id = $assignmentId and seq = $seq;
+
+-- :name updateRubricItem :run
+update rubric_items set
+  (label, points, kind, parameters) =
+  ($label, $points, $kind, $parameters)
+where
+  assignment_id = $assignmentId and
+  seq = $seq
+
+-- :name updateRubricItemExceptDefaults :run
+update rubric_items set
+  (label, parameters) =
+  ($label, $parameters)
+where
+  assignment_id = $assignmentId and
+  seq = $seq
+
+-- :name insertRubricItemWithDefaultValues :insert
+insert into rubric_items
+  (assignment_id, seq, label, parameters)
+values
+  ($assignmentId, $seq, $label, $parameters);
+
+-- :name updateRubricItemPoints :run
+update rubric_items set points = $points where assignment_id = $assignmentId and seq = $seq
+
+-- :name updateRubricItemKind :run
+update rubric_items set kind = $kind where assignment_id = $assignmentId and seq = $seq
+
+-- :name makeRubricItem :insert
+insert into rubric_items
+  (label, points, kind, parameters)
+values
+  ($label, $points, $kind, $parameters);
+
+-- :name makeRubricItemWithDefaultValues :insert
+insert into rubric_items (label, parameters) values ($label, $parameters);
+
+
+-- rubric_marks --------------------------------------------
+
+-- :name rubricMarks :all
+select * from rubric_marks;
+
+-- :name insertRubricMark :insert
+insert into rubric_marks
+  (user_id, assignment_id, seq, fraction)
+values
+  ($userId, $assignmentId, $seq, $fraction);
+
+-- :name rubricMark :get
+select * from rubric_marks where user_id = $userId and assignment_id = $assignmentId and seq = $seq;
+
+-- :name updateRubricMark :run
+update rubric_marks set
+  (fraction) =
+  ($fraction)
 where
   user_id = $userId and
   assignment_id = $assignmentId and
-  rubric_item = $rubricItem;
+  seq = $seq
 
--- :name updateRubricGrade :run
-update rubric_grades set
-  (score) =
-  ($score)
+-- :name insertRubricMarkWithDefaultValues :insert
+insert into rubric_marks (user_id, assignment_id, seq) values ($userId, $assignmentId, $seq);
+
+-- :name updateRubricMarkFraction :run
+update rubric_marks set fraction = $fraction
 where
   user_id = $userId and
   assignment_id = $assignmentId and
-  rubric_item = $rubricItem
+  seq = $seq
 
--- :name makeRubricGrade :insert
-insert into rubric_grades (score) values ($score);
-
--- :name makeRubricGradeWithDefaultValues :insert
-insert into rubric_grades (score) values ($score);
+-- :name makeRubricMark :insert
+insert into rubric_marks (fraction) values ($fraction);
 
 
 -- score_overrides -----------------------------------------
@@ -972,3 +1027,8 @@ insert into student_answers (raw_answer, timestamp, sha) values ($rawAnswer, $ti
 insert into student_answers (raw_answer, timestamp, sha) values ($rawAnswer, $timestamp, $sha);
 
 
+npm notice
+npm notice New patch version of npm available! 11.12.0 -> 11.12.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.12.1
+npm notice To update run: npm install -g npm@11.12.1
+npm notice
