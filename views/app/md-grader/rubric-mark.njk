@@ -1,4 +1,5 @@
-<div class="md-grader-mark {{ 'check' if fraction == 1 else 'x' if fraction == 0 else 'empty' }}"
+{% if fraction == 1 %}{% set markClass = 'check' %}{% elif fraction == 0 %}{% set markClass = 'x' %}{% else %}{% set markClass = 'empty' %}{% endif -%}
+<div class="md-grader-mark {{ markClass }}"
      hx-put="/md-grader/{{ assignmentId }}/mark/{{ student.user_id }}/{{ seq }}?branch={{ branch | urlencode }}&filePath={{ filePath | urlencode }}"
      hx-trigger="click"
      hx-target="this"
