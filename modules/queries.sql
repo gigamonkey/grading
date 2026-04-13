@@ -554,10 +554,6 @@ VALUES ($assignmentId,
 UPDATE rubric_items SET label = $label
 WHERE assignment_id = $assignmentId AND seq = $seq;
 
--- :name updateRubricItemPoints :run
-UPDATE rubric_items SET points = $points
-WHERE assignment_id = $assignmentId AND seq = $seq;
-
 -- :name deleteRubricItem :run
 DELETE FROM rubric_items WHERE assignment_id = $assignmentId AND seq = $seq;
 
