@@ -1,23 +1,15 @@
 <div class="md-grader-nav" id="md-grader-nav">
   {% set base = '/md-grader/' + assignmentId + '/student/' %}
   {% set qs = '?branch=' + (branch | urlencode) + '&filePath=' + (filePath | urlencode) %}
-  {% if prevUserId %}
-    <button hx-get="{{ base }}{{ prevUserId }}{{ qs }}"
-            hx-target="#md-grader"
-            hx-swap="innerHTML">
-      <i class="bi bi-arrow-left"></i> Prev
-    </button>
-  {% else %}
-    <button disabled><i class="bi bi-arrow-left"></i> Prev</button>
-  {% endif %}
+  <button hx-get="{{ base }}{{ prevUserId }}{{ qs }}"
+          hx-target="#md-grader"
+          hx-swap="innerHTML">
+    <i class="bi bi-arrow-left"></i> Prev
+  </button>
   <span class="md-grader-position">{{ student.sortable_name }} ({{ student.github }}) &mdash; {{ studentIndex + 1 }} of {{ totalStudents }}</span>
-  {% if nextUserId %}
-    <button hx-get="{{ base }}{{ nextUserId }}{{ qs }}"
-            hx-target="#md-grader"
-            hx-swap="innerHTML">
-      Next <i class="bi bi-arrow-right"></i>
-    </button>
-  {% else %}
-    <button disabled>Next <i class="bi bi-arrow-right"></i></button>
-  {% endif %}
+  <button hx-get="{{ base }}{{ nextUserId }}{{ qs }}"
+          hx-target="#md-grader"
+          hx-swap="innerHTML">
+    Next <i class="bi bi-arrow-right"></i>
+  </button>
 </div>

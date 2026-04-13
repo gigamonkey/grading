@@ -598,6 +598,19 @@ td.copyable:hover { background: #f0f0f0; }
 
 .md-grader-criterion:last-child { border-bottom: none; }
 
+.md-grader-criterion-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.md-grader-criterion-row .md-grader-mark {
+  width: 1.4rem;
+  height: 1.4rem;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
 .md-grader-criterion-header {
   display: flex;
   align-items: center;

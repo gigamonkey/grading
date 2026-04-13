@@ -7,20 +7,26 @@
     {% for item in items %}
       {% set seq = item.seq %}
       {% set fraction = markMap[student.user_id][item.seq] if markMap[student.user_id] else undefined %}
-      <div class="md-grader-criterion">
-        <div class="md-grader-criterion-header">
-          {% set c = item %}
+      {% set c = item %}
+      {% if item.kind == 'word_count' %}
+        <div class="md-grader-criterion">
+          <div class="md-grader-criterion-header">
+            {% set editing = (editingLabelSeq == item.seq) %}
+            {% include "app/md-grader/label.njk" %}
+            {% set editing = (editingPointsSeq == item.seq) %}
+            {% include "app/md-grader/points.njk" %}
+          </div>
+          {% include "app/md-grader/word-count-mark.njk" %}
+        </div>
+      {% else %}
+        <div class="md-grader-criterion md-grader-criterion-row">
+          {% include "app/md-grader/rubric-mark.njk" %}
           {% set editing = (editingLabelSeq == item.seq) %}
           {% include "app/md-grader/label.njk" %}
           {% set editing = (editingPointsSeq == item.seq) %}
           {% include "app/md-grader/points.njk" %}
         </div>
-        {% if item.kind == 'word_count' %}
-          {% include "app/md-grader/word-count-mark.njk" %}
-        {% else %}
-          {% include "app/md-grader/rubric-mark.njk" %}
-        {% endif %}
-      </div>
+      {% endif %}
     {% endfor %}
   </div>
   <div class="md-grader-add-buttons">

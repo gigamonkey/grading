@@ -1462,8 +1462,8 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
   const studentIndex = userId ? students.findIndex((s) => s.user_id === userId) : 0;
   const student = students[studentIndex];
 
-  const prevUserId = studentIndex > 0 ? students[studentIndex - 1].user_id : null;
-  const nextUserId = studentIndex < students.length - 1 ? students[studentIndex + 1].user_id : null;
+  const prevUserId = students[(studentIndex - 1 + students.length) % students.length].user_id;
+  const nextUserId = students[(studentIndex + 1) % students.length].user_id;
 
   let mdHtml = '';
   let mdRaw = '';
