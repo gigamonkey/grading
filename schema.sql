@@ -296,6 +296,13 @@ CREATE TABLE IF NOT EXISTS rubric_items (
   PRIMARY KEY (assignment_id, seq)
 );
 
+-- Per-assignment config for the md-grader (branch and file path).
+CREATE TABLE IF NOT EXISTS rubric_configs (
+  assignment_id INTEGER NOT NULL PRIMARY KEY,
+  branch TEXT NOT NULL,
+  file_path TEXT NOT NULL
+);
+
 -- Tracks which git commit was graded for each student/assignment.
 CREATE TABLE IF NOT EXISTS rubric_submissions (
   user_id TEXT NOT NULL,

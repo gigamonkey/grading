@@ -1544,14 +1544,54 @@ function renderMdGraderSidebar(res, assignmentId, userId, branch, filePath) {
 
 app.get('/md-grader/:assignmentId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
-  const branch = req.query.branch;
-  const filePath = req.query.path;
+  let branch = req.query.branch;
+  let filePath = req.query.path;
   if (!branch || !filePath) {
-    const assignment = db.assignmentById({ assignmentId });
-    return res.render('app/md-grader/setup.njk', { assignment, assignmentId });
+    const config = db.rubricConfigForAssignment({ assignmentId });
+    if (config) {
+      branch = config.branch;
+      filePath = config.file_path;
+    } else {
+      const assignment = db.assignmentById({ assignmentId });
+      return res.render('app/md-grader/setup.njk', { assignment, assignmentId });
+    }
+  } else {
+    db.upsertRubricConfig({ assignmentId, branch, filePath });
   }
   const data = mdGraderData(assignmentId, null, branch, filePath);
   res.render('app/md-grader/page.njk', data);
+});
+
+app.post('/md-grader/:assignmentId/fetch-submissions', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  let branch = req.body.branch;
+  let filePath = req.body.filePath;
+  if (!branch || !filePath) {
+    const config = db.rubricConfigForAssignment({ assignmentId });
+    if (config) {
+      branch = config.branch;
+      filePath = config.file_path;
+    }
+  }
+  const students = db.rubricStudentsNeedingFetch({ assignmentId });
+  let found = 0;
+  for (const student of students) {
+    try {
+      const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+      repo.fetch();
+      if (branch && filePath) {
+        const sha = repo.sha(branch, filePath);
+        if (sha) {
+          const timestamp = repo.timestamp(sha);
+          db.upsertRubricSubmission({ userId: student.user_id, assignmentId, sha, timestamp });
+          found++;
+        }
+      }
+    } catch (e) {
+      console.log(`Error fetching ${student.github}: ${e.message}`);
+    }
+  }
+  res.render('app/md-grader/fetch-result.njk', { fetched: students.length, found });
 });
 
 app.get('/md-grader/:assignmentId/student/:userId', (req, res) => {

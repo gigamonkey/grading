@@ -1,7 +1,16 @@
 {% extends "app/layout.njk" %}
 {% block title %}MD Grader: {{ assignment.title }} - Gradebook{% endblock %}
 {% block content %}
-<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small>
+  <button hx-post="/md-grader/{{ assignmentId }}/fetch-submissions"
+          hx-vals='{"branch": "{{ branch }}", "filePath": "{{ filePath }}"}'
+          hx-target="#fetch-result"
+          hx-swap="innerHTML"
+          hx-indicator="#fetch-spinner"
+          class="btn-sm"><i class="bi bi-cloud-download"></i> Fetch new</button>
+  <span id="fetch-spinner" class="htmx-indicator">Fetching...</span>
+  <span id="fetch-result"></span>
+</h1>
 <div class="md-grader" id="md-grader">
   {% include "app/md-grader/_content.njk" %}
   {% include "app/md-grader/_sidebar.njk" %}

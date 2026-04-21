@@ -655,6 +655,34 @@ values
   ($period, $userId, $studentNumber, $email, $github, $name, $pronouns, $googleName, $sortableName, $lastName, $firstName, $birthdate, $courseId);
 
 
+-- rubric_configs ------------------------------------------
+
+-- :name rubricConfigs :all
+select * from rubric_configs;
+
+-- :name insertRubricConfig :insert
+insert into rubric_configs
+  (assignment_id, branch, file_path)
+values
+  ($assignmentId, $branch, $filePath);
+
+-- :name rubricConfig :get
+select * from rubric_configs where assignment_id = $assignmentId;
+
+-- :name updateRubricConfig :run
+update rubric_configs set
+  (branch, file_path) =
+  ($branch, $filePath)
+where
+  assignment_id = $assignmentId
+
+-- :name makeRubricConfig :insert
+insert into rubric_configs (branch, file_path) values ($branch, $filePath);
+
+-- :name makeRubricConfigWithDefaultValues :insert
+insert into rubric_configs (branch, file_path) values ($branch, $filePath);
+
+
 -- rubric_items --------------------------------------------
 
 -- :name rubricItems :all

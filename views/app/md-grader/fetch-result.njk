@@ -1,0 +1,5 @@
+{% if error %}
+  <span class="text-danger">{{ error }}</span>
+{% else %}
+  <span class="text-success">Fetched {{ fetched }} repos, {{ found }} new submissions</span>
+{% endif %}
