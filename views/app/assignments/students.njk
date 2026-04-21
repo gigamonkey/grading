@@ -20,7 +20,27 @@
   {% if assignment.points %} &middot; {{ assignment.points }} points{% endif %}
   {% if hasScoring %} &middot; <a href="/quiz-scoring/{{ assignment.assignment_id }}">Scoring</a>{% endif %}
   {% if assignment.ic_name %} &middot; <a href="/ic-assignment/{{ assignment.ic_name }}">IC: {{ assignment.ic_name }}</a>{% endif %}
-  {% if provenance %} &middot; Graded via: {{ provenance | replace("_", " ") }}{% endif %}
+  {% set gradedViaUrls = {
+    'rubric_scores': '/md-grader/' + assignment.assignment_id,
+    'checklist_scores': '/checklist/' + assignment.assignment_id,
+    'form_assessment_scores': '/quiz-scoring/' + assignment.assignment_id
+  } %}
+  {% if provenance %}
+    {% set label = provenance | replace("_scores", "") | replace("_", " ") %}
+    &middot; Graded via:
+    {% if gradedViaUrls[provenance] %}
+      <a href="{{ gradedViaUrls[provenance] }}">{{ label }}</a>
+    {% else %}
+      {{ label }}
+    {% endif %}
+  {% endif %}
+  {% if provenance == 'rubric_scores' %}
+    <button hx-post="/md-grader/{{ assignment.assignment_id }}/fetch-submissions"
+            hx-target="#fetch-result"
+            hx-swap="innerHTML"
+            class="btn-subtle"><i class="bi bi-cloud-download"></i> Fetch new</button>
+    <span id="fetch-result"></span>
+  {% endif %}
 </p>
 <input type="text" id="student-filter" placeholder="Filter students..." autofocus
        style="margin-bottom: 0.5em; padding: 0.25em 0.5em;">
