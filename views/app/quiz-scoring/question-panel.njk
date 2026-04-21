@@ -8,6 +8,9 @@
   </h2>
   <pre class="question-text">{{ question.question }}</pre>
 
+  <div class="scoring-body">
+  <div class="scoring-column">
+
   {% if unscoredAnswers.length %}
   <div class="unscored-section">
     <h3>Unscored ({{ unscoredAnswers.length }} of {{ scoredAnswers.length + unscoredAnswers.length }})</h3>
@@ -110,6 +113,44 @@
     {% endfor %}
   </div>
   {% endif %}
+
+  </div><!-- /.scoring-column -->
+
+  {% if unscoredAnswers.length or scoredAnswers.length %}
+  <div class="students-by-answer">
+    <h3>Who answered what</h3>
+    {% for a in unscoredAnswers %}
+      {% set roster = studentsByAnswer[a.answer] %}
+      {% if roster and roster.length %}
+      <div class="answer-students unscored">
+        <div class="answer-students-header">
+          <span class="answer-text">{{ a.answer }}</span>
+          <span class="student-count">({{ roster.length }})</span>
+        </div>
+        <ul class="answer-students-list">
+          {% for s in roster %}<li>{{ s.name }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    {% endfor %}
+    {% for a in scoredAnswers %}
+      {% set roster = studentsByAnswer[a.answer] %}
+      {% if roster and roster.length %}
+      <div class="answer-students {% if a.score >= 1 %}correct{% elif a.score > 0 %}partial{% elif a.score < 0 %}incorrect{% else %}zero{% endif %}">
+        <div class="answer-students-header">
+          <span class="answer-text">{{ a.answer }}</span>
+          <span class="answer-score">{{ a.score }}</span>
+          <span class="student-count">({{ roster.length }})</span>
+        </div>
+        <ul class="answer-students-list">
+          {% for s in roster %}<li>{{ s.name }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+  </div><!-- /.scoring-body -->
 
   <div class="question-panel-nav">
     {% if prevQuestion is not none %}

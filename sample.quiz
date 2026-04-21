@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<quiz language="javascript">
+  <title>Frogs refactoring video</title>
+
+  <instructions>
+    <p>
+      Questions about the frogs refactoring video.
+    </p>
+  </instructions>
+
+  <q uuid="1be422fe-f263-451a-ab12-4c3b78d52f30">
+    <title>Main topic</title>
+
+    <question>
+      <p>What was the main topic of the video?</p>
+    </question>
+
+    <answers>
+      <item correct="true">Refactoring</item>
+      <item>Debugging</item>
+      <item>Efficieny</item>
+      <item>Graphic design</item>
+    </answers>
+  </q>
+
+  <q uuid="2a93cb16-c997-4d4e-9e71-59b94fe0d922">
+    <title>Variable names</title>
+    <question>
+      <p>
+        One of the first things I did was rename some variables. What were the
+        original names?
+      </p>
+    </question>
+
+    <answers>
+      <item correct="true"><c>ball</c> and <c>fish</c></item>
+      <item><c>frog</c> and <c>tadpole</c></item>
+      <item><c>redFrog</c> and <c>greenFrog</c></item>
+      <item><c>fish</c> and <c>food</c></item>
+    </answers>
+  </q>
+
+  <q uuid="9cd5a816-32f9-4b3b-b8ea-e237b0e2528c">
+    <title>Purpose of refactoring</title>
+
+    <question>
+      <p>What was my main goal in working on this code?</p>
+    </question>
+
+    <answers>
+      <item correct="true">Simplifying the code</item>
+      <item>Fixing bugs</item>
+      <item>Making the code more efficient</item>
+      <item>Making the game more interesting</item>
+    </answers>
+  </q>
+
+  <q uuid="a89cce39-d50c-44ac-a4c6-d33ee5c179a1">
+    <title>Result</title>
+
+    <question>
+      <p>What was the main change to the code by the end of the video?</p>
+    </question>
+
+    <answers>
+      <item correct="true">There were were more functions</item>
+      <item>There were more loops</item>
+      <item>The code ran faster</item>
+      <item>There were fewer variables</item>
+    </answers>
+  </q>
+
+</quiz>

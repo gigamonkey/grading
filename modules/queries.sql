@@ -418,6 +418,17 @@ WHERE sc.assignment_id = $assignmentId AND sc.question_number = $questionNumber
 GROUP BY sc.answer, sc.score
 ORDER BY sc.score DESC, sc.answer;
 
+-- :name studentsForQuestion :all
+SELECT DISTINCT na.answer, sa.github,
+       coalesce(r.sortable_name, sa.github) sortable_name,
+       coalesce(r.name, sa.github) name
+FROM student_answers sa
+JOIN normalized_answers na ON na.assignment_id = sa.assignment_id
+  AND na.question_number = sa.question_number AND na.raw_answer = sa.raw_answer
+LEFT JOIN roster r ON r.github = sa.github
+WHERE sa.assignment_id = $assignmentId AND sa.question_number = $questionNumber
+ORDER BY na.answer, sortable_name;
+
 -- :name addScoredAnswer :insert
 INSERT INTO scored_answers (assignment_id, question_number, answer, score)
 VALUES ($assignmentId, $questionNumber, $answer, $score)

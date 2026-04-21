@@ -1786,6 +1786,14 @@ function quizScoringData(assignmentId, questionNumber) {
     ? db.scoredAnswersForQuestion({ assignmentId, questionNumber })
     : [];
 
+  // Students grouped by the answer they gave (for the right-side panel).
+  const studentsByAnswer = {};
+  if (question) {
+    for (const row of db.studentsForQuestion({ assignmentId, questionNumber })) {
+      (studentsByAnswer[row.answer] ||= []).push(row);
+    }
+  }
+
   // Compute per-question accuracy stats
   const totalStudents =
     unscoredAnswers.reduce((s, a) => s + a.student_count, 0) +
@@ -1805,6 +1813,7 @@ function quizScoringData(assignmentId, questionNumber) {
     question,
     unscoredAnswers,
     scoredAnswers,
+    studentsByAnswer,
     totalStudents,
     correctStudents,
     prevQuestion,
@@ -1865,12 +1874,23 @@ async function fetchAndLoadAnswers(assignmentId) {
   const students = db.studentsByCourse({ courseId });
   const filename = `${url.slice(1)}/answers.json`;
   let loaded = 0;
+  const repos = new Map();
+  for (const student of students) {
+    if (!student.github) continue;
+    try {
+      const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+      repo.fetch();
+      repos.set(student.github, repo);
+    } catch (e) {
+      console.log(`Error fetching repo for ${student.github}: ${e.message}`);
+    }
+  }
   db.transaction(() => {
     db.clearStudentAnswers({ assignmentId });
     for (const student of students) {
-      if (!student.github) continue;
+      const repo = repos.get(student.github);
+      if (!repo) continue;
       try {
-        const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
         const sha = repo.sha('main', filename);
         if (sha) {
           const timestamp = repo.timestamp(sha);
