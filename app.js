@@ -1523,6 +1523,229 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
   renderChecklistTable(res, assignmentId);
 });
 
+// Points grader
+
+function pointsGraderData(assignmentId) {
+  const assignment = db.assignmentById({ assignmentId });
+  const items = db.rubricItemsForAssignment({ assignmentId });
+  const students = db.studentsByCourse({ courseId: assignment.course_id });
+  const marks = db.pointsRubricMarksForAssignment({ assignmentId });
+  const markMap = {};
+  for (const m of marks) {
+    if (!markMap[m.user_id]) markMap[m.user_id] = {};
+    markMap[m.user_id][m.seq] = m.fraction;
+  }
+  const totalPoints = items.reduce((sum, i) => sum + (i.points ?? 0), 0);
+  const studentPoints = {};
+  const studentComplete = {};
+  for (const s of students) {
+    let earned = 0;
+    let count = 0;
+    for (const i of items) {
+      const f = markMap[s.user_id]?.[i.seq];
+      if (f != null) {
+        earned += f * (i.points ?? 0);
+        count += 1;
+      }
+    }
+    studentPoints[s.user_id] = earned;
+    studentComplete[s.user_id] = items.length > 0 && count === items.length;
+  }
+  return { assignment, items, students, markMap, totalPoints, studentPoints, studentComplete };
+}
+
+function renderPointsGraderTable(
+  res,
+  assignmentId,
+  sort = 'github',
+  dir = 'asc',
+  prevSort = null,
+  prevDir = 'asc',
+) {
+  const data = pointsGraderData(assignmentId);
+  const byGithub = (a, b) => (a.github || '').localeCompare(b.github || '');
+  const byName = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
+  const byPoints = (a, b) =>
+    (data.studentPoints[a.user_id] ?? -Infinity) - (data.studentPoints[b.user_id] ?? -Infinity);
+  const makeCmp = (s, d) => {
+    const r = d === 'desc' ? -1 : 1;
+    if (s === 'github') return (a, b) => r * byGithub(a, b);
+    if (s === 'name') return (a, b) => r * byName(a, b);
+    if (s === 'score' || s === 'points') return (a, b) => r * byPoints(a, b);
+    return () => 0;
+  };
+  const secondary = prevSort ? makeCmp(prevSort, prevDir) : byGithub;
+  data.students.sort((a, b) => makeCmp(sort, dir)(a, b) || secondary(a, b));
+  res.render('app/points-grader/_table.njk', { ...data, sort, dir, prevSort, prevDir });
+}
+
+app.get('/points-grader', (req, res) => {
+  const search = req.query.search || null;
+  const assignments = db.ungradedAssignments({ search });
+  if (req.headers['hx-request']) {
+    res.render('app/points-grader/tbody.njk', { assignments });
+  } else {
+    res.render('app/points-grader.njk', { assignments, search });
+  }
+});
+
+app.get('/points-grader/:assignmentId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const sort = ['name', 'github', 'score', 'points'].includes(req.query.sort)
+    ? req.query.sort
+    : 'github';
+  const defaultDir = sort === 'score' || sort === 'points' ? 'desc' : 'asc';
+  const dir = ['asc', 'desc'].includes(req.query.dir) ? req.query.dir : defaultDir;
+  const prevSort = ['name', 'github', 'score', 'points'].includes(req.query.prevSort)
+    ? req.query.prevSort
+    : null;
+  const prevDir = ['asc', 'desc'].includes(req.query.prevDir) ? req.query.prevDir : 'asc';
+  const data = pointsGraderData(assignmentId);
+
+  const byGithub = (a, b) => (a.github || '').localeCompare(b.github || '');
+  const byName = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
+  const byPoints = (a, b) =>
+    (data.studentPoints[a.user_id] ?? -Infinity) - (data.studentPoints[b.user_id] ?? -Infinity);
+  const makeCmp = (s, d) => {
+    const r = d === 'desc' ? -1 : 1;
+    if (s === 'github') return (a, b) => r * byGithub(a, b);
+    if (s === 'name') return (a, b) => r * byName(a, b);
+    if (s === 'score' || s === 'points') return (a, b) => r * byPoints(a, b);
+    return () => 0;
+  };
+  const primary = makeCmp(sort, dir);
+  const secondary = prevSort ? makeCmp(prevSort, prevDir) : byGithub;
+  data.students.sort((a, b) => primary(a, b) || secondary(a, b));
+
+  res.render('app/points-grader/table.njk', { ...data, sort, dir, prevSort, prevDir });
+});
+
+app.post('/points-grader/:assignmentId/items', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const label = req.body.label?.trim() || '-';
+  db.addRubricItem({ assignmentId, label, points: 1, kind: 'manual', parameters: null });
+  renderPointsGraderTable(res, assignmentId);
+});
+
+app.delete('/points-grader/:assignmentId/items/:seq', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  db.transaction(() => {
+    db.deleteRubricItem({ assignmentId, seq });
+    db.deletePointsRubricMarksForItem({ assignmentId, seq });
+  });
+  renderPointsGraderTable(res, assignmentId);
+});
+
+app.get('/points-grader/:assignmentId/items/:seq/label', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const item = db.rubricItemsForAssignment({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/points-grader/label-cell.njk', {
+    assignmentId,
+    seq,
+    label: item?.label ?? '',
+    editing: false,
+  });
+});
+
+app.get('/points-grader/:assignmentId/items/:seq/label/edit', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const item = db.rubricItemsForAssignment({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/points-grader/label-cell.njk', {
+    assignmentId,
+    seq,
+    label: item?.label ?? '',
+    editing: true,
+  });
+});
+
+app.put('/points-grader/:assignmentId/items/:seq/label', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const label = req.body.label?.trim() || '';
+  if (label) db.updateRubricItemLabel({ assignmentId, seq, label });
+  const item = db.rubricItemsForAssignment({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/points-grader/label-cell.njk', {
+    assignmentId,
+    seq,
+    label: item?.label ?? label,
+    editing: false,
+  });
+});
+
+app.get('/points-grader/:assignmentId/items/:seq/points', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const item = db.rubricItemsForAssignment({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/points-grader/item-points-cell.njk', {
+    assignmentId,
+    seq,
+    points: item?.points ?? 1,
+    editing: false,
+  });
+});
+
+app.get('/points-grader/:assignmentId/items/:seq/points/edit', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const item = db.rubricItemsForAssignment({ assignmentId }).find((c) => c.seq === seq);
+  res.render('app/points-grader/item-points-cell.njk', {
+    assignmentId,
+    seq,
+    points: item?.points ?? 1,
+    editing: true,
+  });
+});
+
+app.put('/points-grader/:assignmentId/items/:seq/points', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const points = Number(req.body.points);
+  if (Number.isFinite(points)) {
+    db.updateRubricItemPoints({ assignmentId, seq, points });
+  }
+  renderPointsGraderTable(res, assignmentId);
+});
+
+const POINTS_GRADER_STEP = 0.25;
+
+app.put('/points-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const seq = Number(req.params.seq);
+  const direction = req.body.direction === 'down' ? 'down' : 'up';
+  const existing = db.getPointsRubricMark({ userId, assignmentId, seq });
+  let fraction;
+  if (!existing) {
+    fraction = 0;
+  } else {
+    const delta = direction === 'down' ? -POINTS_GRADER_STEP : POINTS_GRADER_STEP;
+    fraction = existing.fraction + delta;
+  }
+  db.upsertPointsRubricMark({ userId, assignmentId, seq, fraction });
+  renderPointsGraderTable(res, assignmentId);
+});
+
+app.post('/points-grader/:assignmentId/zero/:userId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const items = db.rubricItemsForAssignment({ assignmentId });
+  const existing = db
+    .pointsRubricMarksForAssignment({ assignmentId })
+    .filter((m) => m.user_id === userId);
+  const have = new Set(existing.map((m) => m.seq));
+  db.transaction(() => {
+    for (const i of items) {
+      if (!have.has(i.seq)) {
+        db.upsertPointsRubricMark({ userId, assignmentId, seq: i.seq, fraction: 0 });
+      }
+    }
+  });
+  renderPointsGraderTable(res, assignmentId);
+});
+
 // MD Grader
 
 function mdGraderData(assignmentId, userId, branch, filePath) {

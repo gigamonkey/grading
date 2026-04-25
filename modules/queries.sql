@@ -284,13 +284,15 @@ SELECT a.assignment_id, a.date, a.course_id, a.title,
        COALESCE(apv.standard, ma.standard) as standard,
        COALESCE(apv.ic_name, min.ic_name) as ic_name,
        COALESCE(apv.points, ma.points) as points,
-       CASE WHEN a.assignment_id IN (SELECT DISTINCT assignment_id FROM checklist_scores) THEN 'Yes' ELSE '' END as graded
+       CASE WHEN a.assignment_id IN (SELECT DISTINCT assignment_id FROM checklist_scores)
+              OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM points_rubric_marks) THEN 'Yes' ELSE '' END as graded
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
 WHERE (a.assignment_id NOT IN (SELECT DISTINCT assignment_id FROM assignment_scores)
-       OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM checklist_scores))
+       OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM checklist_scores)
+       OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM points_rubric_marks))
   AND ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
        OR upper(a.course_id) LIKE '%' || upper($search) || '%'
        OR CAST(a.assignment_id AS TEXT) = $search)
@@ -633,3 +635,23 @@ WHERE a.assignment_id = $assignmentId
 GROUP BY r.user_id
 HAVING COUNT(rs.sha) = 0
    OR MAX(rs.timestamp) IS NULL;
+
+-- Points-grader marks
+-- :name pointsRubricMarksForAssignment :all
+SELECT * FROM points_rubric_marks WHERE assignment_id = $assignmentId;
+
+-- :name getPointsRubricMark :get
+SELECT * FROM points_rubric_marks
+WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
+
+-- :name upsertPointsRubricMark :run
+INSERT INTO points_rubric_marks (user_id, assignment_id, seq, fraction)
+VALUES ($userId, $assignmentId, $seq, $fraction)
+ON CONFLICT (user_id, assignment_id, seq) DO UPDATE SET fraction = $fraction;
+
+-- :name deletePointsRubricMark :run
+DELETE FROM points_rubric_marks
+WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
+
+-- :name deletePointsRubricMarksForItem :run
+DELETE FROM points_rubric_marks WHERE assignment_id = $assignmentId AND seq = $seq;

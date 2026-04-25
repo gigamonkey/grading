@@ -596,6 +596,40 @@ select * from optional_assignments;
 insert into optional_assignments (assignment_id) values ($assignmentId);
 
 
+-- points_rubric_marks -------------------------------------
+
+-- :name pointsRubricMarks :all
+select * from points_rubric_marks;
+
+-- :name insertPointsRubricMark :insert
+insert into points_rubric_marks
+  (user_id, assignment_id, seq, fraction)
+values
+  ($userId, $assignmentId, $seq, $fraction);
+
+-- :name pointsRubricMark :get
+select * from points_rubric_marks
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  seq = $seq;
+
+-- :name updatePointsRubricMark :run
+update points_rubric_marks set
+  (fraction) =
+  ($fraction)
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  seq = $seq
+
+-- :name makePointsRubricMark :insert
+insert into points_rubric_marks (fraction) values ($fraction);
+
+-- :name makePointsRubricMarkWithDefaultValues :insert
+insert into points_rubric_marks (fraction) values ($fraction);
+
+
 -- questions -----------------------------------------------
 
 -- :name questions :all

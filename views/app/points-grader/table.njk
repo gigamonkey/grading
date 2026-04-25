@@ -1,0 +1,8 @@
+{% extends "app/layout.njk" %}
+{% block title %}Points Grader: {{ assignment.title }} - Gradebook{% endblock %}
+{% block content %}
+<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+<div id="points-grader-table">
+{% include "app/points-grader/_table.njk" %}
+</div>
+{% endblock %}

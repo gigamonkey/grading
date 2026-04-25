@@ -1,0 +1,13 @@
+{% for a in assignments %}
+<tr>
+  <td>{{ a.assignment_id }}</td>
+  <td><a href="/points-grader/{{ a.assignment_id }}">{{ a.title }}</a></td>
+  <td>{{ a.course_id }}</td>
+  <td>{{ a.date }}</td>
+  <td>{{ a.assignment_type }}</td>
+  <td>{{ a.standard }}</td>
+  <td>{{ a.graded }}</td>
+</tr>
+{% else %}
+<tr><td colspan="7">No assignments found.</td></tr>
+{% endfor %}

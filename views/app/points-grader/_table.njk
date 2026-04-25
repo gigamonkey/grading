@@ -1,0 +1,74 @@
+<table class="checklist">
+  <thead>
+    <tr>
+      {% set base = '/points-grader/' + assignment.assignment_id %}
+      {% macro sortLink(key, label, defaultSortDir) %}
+        {% if sort == key %}
+          {% set toggledDir = 'desc' if dir == 'asc' else 'asc' %}
+          {% set href = base + '?sort=' + key + '&dir=' + toggledDir + ('&prevSort=' + prevSort + '&prevDir=' + prevDir if prevSort else '') %}
+          <a href="{{ href }}" class="sort-active">{{ label }} <i class="bi {{ 'bi-arrow-up' if dir == 'asc' else 'bi-arrow-down' }}"></i></a>
+        {% else %}
+          {% set href = base + '?sort=' + key + '&dir=' + defaultSortDir + '&prevSort=' + sort + '&prevDir=' + dir %}
+          <a href="{{ href }}">{{ label }}</a>
+        {% endif %}
+      {% endmacro %}
+      <th rowspan="2">{{ sortLink('name', 'Name', 'asc') }} / {{ sortLink('github', 'Github', 'asc') }}</th>
+      <th rowspan="2">{{ sortLink('score', 'Score', 'desc') }}</th>
+      <th rowspan="2">{{ sortLink('points', 'Points', 'desc') }}</th>
+      {% for i in items %}
+        {% set assignmentId = assignment.assignment_id %}
+        {% set seq = i.seq %}
+        {% set label = i.label %}
+        {% set editing = false %}
+        {% include "app/points-grader/label-cell.njk" %}
+      {% endfor %}
+      <th rowspan="2">
+        <button hx-post="/points-grader/{{ assignment.assignment_id }}/items"
+                hx-vals='{"label": "-"}'
+                hx-target="#points-grader-table"
+                hx-swap="innerHTML"><i class="bi bi-plus-lg"></i></button>
+      </th>
+      <th rowspan="2"></th>
+    </tr>
+    <tr>
+      {% for i in items %}
+        {% set assignmentId = assignment.assignment_id %}
+        {% set seq = i.seq %}
+        {% set points = i.points %}
+        {% set editing = false %}
+        {% include "app/points-grader/item-points-cell.njk" %}
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in students %}
+    {% set earned = studentPoints[s.user_id] %}
+    {% set complete = studentComplete[s.user_id] %}
+    <tr class="{{ 'points-grader-incomplete' if not complete }}">
+      <td>{{ s.sortable_name }} ({{ s.github }})</td>
+      <td class="checklist-score">
+        <span id="score-{{ s.user_id }}">{% if complete and totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span>
+      </td>
+      <td class="checklist-score">
+        <span id="points-{{ s.user_id }}">{% if complete %}{{ earned }}/{{ totalPoints }}{% else %}-{% endif %}</span>
+      </td>
+      {% for i in items %}
+        {% set assignmentId = assignment.assignment_id %}
+        {% set userId = s.user_id %}
+        {% set seq = i.seq %}
+        {% set value = markMap[s.user_id][i.seq] if markMap[s.user_id] else null %}
+        {% include "app/points-grader/cell.njk" %}
+      {% endfor %}
+      <td></td>
+      <td>
+        {% if not complete and items.length %}
+        <button class="btn-subtle"
+                hx-post="/points-grader/{{ assignment.assignment_id }}/zero/{{ s.user_id }}"
+                hx-target="#points-grader-table"
+                hx-swap="innerHTML">Zero</button>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

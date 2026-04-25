@@ -541,7 +541,9 @@ SELECT *, 'form_assessment_scores' FROM form_assessment_scores
   UNION
 SELECT *, 'checklist_scores' FROM checklist_scores
   UNION
-SELECT *, 'rubric_scores' FROM rubric_scores;
+SELECT *, 'rubric_scores' FROM rubric_scores
+  UNION
+SELECT *, 'points_rubric_scores' FROM points_rubric_scores;
 
 -- This view only contains scores that actually exist. If a student hasn't done
 -- an assignment they will have no entry in this table.
@@ -863,3 +865,32 @@ JOIN latest l USING (user_id, assignment_id, sha)
 JOIN rubric_items i USING (assignment_id, seq)
 JOIN total t USING (assignment_id)
 GROUP BY m.assignment_id, m.user_id;
+
+-- Per-item fractions awarded for the points-grader. Like the rubric grader
+-- but the work being graded is external to the system (no SHA), and the
+-- fraction is unconstrained (can be negative or above 1.0). A student is
+-- considered "graded" only when every item has a mark.
+CREATE TABLE IF NOT EXISTS points_rubric_marks (
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  seq INTEGER NOT NULL,
+  fraction REAL NOT NULL,
+  PRIMARY KEY (user_id, assignment_id, seq)
+);
+
+DROP VIEW IF EXISTS points_rubric_scores;
+CREATE VIEW points_rubric_scores AS
+WITH item_counts AS (
+  SELECT assignment_id, count(*) item_count, sum(points) total_points
+  FROM rubric_items
+  GROUP BY assignment_id
+)
+SELECT
+  m.assignment_id,
+  m.user_id,
+  sum(m.fraction * i.points) / cast(ic.total_points AS REAL) score
+FROM points_rubric_marks m
+JOIN rubric_items i USING (assignment_id, seq)
+JOIN item_counts ic USING (assignment_id)
+GROUP BY m.assignment_id, m.user_id
+HAVING count(*) = ic.item_count;
