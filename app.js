@@ -1786,7 +1786,7 @@ app.put('/points-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   const existing = db.getPointsRubricMark({ userId, assignmentId, seq });
   let fraction;
   if (!existing) {
-    fraction = 0;
+    fraction = 1;
   } else {
     const delta = direction === 'down' ? -POINTS_GRADER_STEP : POINTS_GRADER_STEP;
     fraction = existing.fraction + delta;
