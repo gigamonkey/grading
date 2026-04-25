@@ -536,6 +536,18 @@ async function gradeJavascriptUnitTests(assignmentId) {
 
   const students = db.studentsByCourse({ courseId });
 
+  const repos = new Map();
+  for (const student of students) {
+    if (!student.github) continue;
+    try {
+      const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+      repo.fetch();
+      repos.set(student.github, repo);
+    } catch (e) {
+      console.log(`Error fetching repo for ${student.github}: ${e.message}`);
+    }
+  }
+
   let graded = 0;
   db.transaction(() => {
     db.ensureAssignment({ assignmentId, openDate, courseId, title });
@@ -545,9 +557,9 @@ async function gradeJavascriptUnitTests(assignmentId) {
     db.insertScoredQuestionAssignment({ assignmentId, questions });
 
     for (const student of students) {
-      if (!student.github) continue;
+      const repo = repos.get(student.github);
+      if (!repo) continue;
       try {
-        const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
         const sha = repo.sha(branch, filename);
         if (!sha) continue;
 
@@ -628,10 +640,17 @@ async function gradeJavaUnitTests(assignmentId) {
   const filename = `${branch}/${file}`;
 
   const students = db.studentsByCourse({ courseId });
-  const repoPaths = students
+  const repoPathList = students
     .filter((s) => s.github)
-    .map((s) => `${process.env.BHS_CS_REPOS}/${s.github}.git/`)
-    .join('\n');
+    .map((s) => `${process.env.BHS_CS_REPOS}/${s.github}.git/`);
+  for (const path of repoPathList) {
+    try {
+      new Repo(path).fetch();
+    } catch (e) {
+      console.log(`Error fetching ${path}: ${e.message}`);
+    }
+  }
+  const repoPaths = repoPathList.join('\n');
 
   const output = runJavaGrader(
     `--repos-from - --file ${filename} --tester ${tester} --branch ${branch} --latest --output json`,
@@ -639,6 +658,11 @@ async function gradeJavaUnitTests(assignmentId) {
   );
   const firstWithResults = Object.values(output).find((e) => e.results);
   const questions = firstWithResults ? Object.keys(firstWithResults.results).length : 0;
+  if (questions === 0) {
+    throw new Error(
+      'Java grader returned no results for any student. Is the tester class in the jar up to date?',
+    );
+  }
 
   let graded = 0;
   db.transaction(() => {
@@ -689,12 +713,16 @@ app.get('/students/:userId', (req, res) => {
   const userId = req.params.userId;
   const student = db.studentById({ userId });
   const assignments = db.studentAssignmentScores({ userId });
+  const reloadKinds = Object.fromEntries(
+    assignments.map((a) => [a.assignment_id, reloadKindFor(a.assignment_id)]),
+  );
   const masteryPoints = db.studentMasteryPoints({ userId });
   const masteryTotals = db.studentMasteryTotals({ userId });
   const speedruns = db.studentSpeedruns({ userId });
   res.render('app/students/student.njk', {
     student,
     assignments,
+    reloadKinds,
     masteryPoints,
     masteryTotals,
     speedruns,
@@ -1140,6 +1168,11 @@ app.get('/speedruns/:speedrunId/results', async (req, res) => {
     timeline = buildTimelineFromCache(cached, speedrun.questions);
   } else {
     const repoObj = new Repo(repo);
+    try {
+      repoObj.fetch();
+    } catch (e) {
+      console.log(`Error fetching ${repo}: ${e.message}`);
+    }
 
     function extendedLastSha(lastSha) {
       try {
@@ -1982,6 +2015,29 @@ app.post('/quiz-scoring/:assignmentId/fetch', async (req, res) => {
   }
 });
 
+async function doReloadAnswers(assignmentId, student) {
+  const data = camelify(await api.assignment(assignmentId));
+  const { url, kind } = data;
+  if (kind !== 'questions') {
+    return { ok: false, html: '<span class="error">Not a quiz assignment.</span>' };
+  }
+  const filename = `${url.slice(1)}/answers.json`;
+  const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+  repo.fetch();
+  const sha = repo.sha('main', filename);
+  if (!sha) {
+    return { ok: false, html: '<span class="error">No answers found.</span>' };
+  }
+  const timestamp = repo.timestamp(sha);
+  const contents = repo.contents(sha, filename);
+  const answers = JSON.parse(contents);
+  db.transaction(() => {
+    db.clearStudentAnswersByGithub({ assignmentId, github: student.github });
+    saveAnswers(student.github, assignmentId, answers, timestamp, sha);
+  });
+  return { ok: true, event: 'answers-reloaded' };
+}
+
 app.post('/assignments/:assignmentId/students/:userId/reload-answers', async (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
@@ -1990,30 +2046,60 @@ app.post('/assignments/:assignmentId/students/:userId/reload-answers', async (re
     if (!student?.github) {
       return res.send('<span class="error">No GitHub username for student.</span>');
     }
-    const data = camelify(await api.assignment(assignmentId));
-    const { url, kind } = data;
-    if (kind !== 'questions') {
-      return res.send(`<span class="error">Not a quiz assignment.</span>`);
-    }
-    const filename = `${url.slice(1)}/answers.json`;
-    const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
-    const sha = repo.sha('main', filename);
-    if (!sha) {
-      return res.send('<span class="error">No answers found.</span>');
-    }
-    const timestamp = repo.timestamp(sha);
-    const contents = repo.contents(sha, filename);
-    const answers = JSON.parse(contents);
-    db.transaction(() => {
-      db.clearStudentAnswersByGithub({ assignmentId, github: student.github });
-      saveAnswers(student.github, assignmentId, answers, timestamp, sha);
-    });
-    res.set('HX-Trigger', JSON.stringify({ 'answers-reloaded': userId }));
+    const r = await doReloadAnswers(assignmentId, student);
+    if (!r.ok) return res.send(r.html);
+    res.set('HX-Trigger', JSON.stringify({ [r.event]: userId }));
     res.send('<i class="bi bi-check-lg text-success"></i>');
   } catch (e) {
     res.send(`<span class="error">${e.message}</span>`);
   }
 });
+
+async function doReloadJs(assignmentId, student) {
+  const data = camelify(await api.assignment(assignmentId));
+  const { url, kind } = data;
+  if (kind !== 'coding') {
+    return { ok: false, html: '<span class="error">Not a coding assignment.</span>' };
+  }
+  const config = await api.codingConfig(url);
+  const branch = url.slice(1);
+  const filename = `${url.slice(1)}/${config.files[0]}`;
+
+  const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+  repo.fetch();
+  const sha = repo.sha(branch, filename);
+  if (!sha) {
+    return { ok: false, html: '<span class="error">No code found.</span>' };
+  }
+  const timestamp = repo.timestamp(sha);
+  const code = repo.contents(sha, filename);
+
+  const testcasesCode = await api.jsTestcases(url);
+  const testcases = loadTestcases(testcasesCode);
+
+  const { results, error } = runTestsWithError(testcases, code);
+  const testResults = error
+    ? Object.fromEntries(Object.keys(testcases.allCases).map((n) => [n, null]))
+    : results;
+
+  db.transaction(() => {
+    db.clearJavascriptUnitTestForStudent({ assignmentId, github: student.github });
+    for (const [question, result] of Object.entries(testResults)) {
+      const answered = result === null ? 0 : 1;
+      const correct = result === null ? 0 : result.every((r) => r.passed) ? 1 : 0;
+      db.insertJavascriptUnitTest({
+        assignmentId,
+        github: student.github,
+        question,
+        answered,
+        correct,
+        timestamp,
+        sha,
+      });
+    }
+  });
+  return { ok: true, event: 'js-reloaded' };
+}
 
 app.post('/assignments/:assignmentId/students/:userId/reload-js', async (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
@@ -2023,54 +2109,53 @@ app.post('/assignments/:assignmentId/students/:userId/reload-js', async (req, re
     if (!student?.github) {
       return res.send('<span class="error">No GitHub username for student.</span>');
     }
-    const data = camelify(await api.assignment(assignmentId));
-    const { url, kind } = data;
-    if (kind !== 'coding') {
-      return res.send(`<span class="error">Not a coding assignment.</span>`);
-    }
-    const config = await api.codingConfig(url);
-    const branch = url.slice(1);
-    const filename = `${url.slice(1)}/${config.files[0]}`;
-
-    const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
-    const sha = repo.sha(branch, filename);
-    if (!sha) {
-      return res.send('<span class="error">No code found.</span>');
-    }
-    const timestamp = repo.timestamp(sha);
-    const code = repo.contents(sha, filename);
-
-    const testcasesCode = await api.jsTestcases(url);
-    const testcases = loadTestcases(testcasesCode);
-
-    const { results, error } = runTestsWithError(testcases, code);
-    const testResults = error
-      ? Object.fromEntries(Object.keys(testcases.allCases).map((n) => [n, null]))
-      : results;
-
-    db.transaction(() => {
-      db.clearJavascriptUnitTestForStudent({ assignmentId, github: student.github });
-      for (const [question, result] of Object.entries(testResults)) {
-        const answered = result === null ? 0 : 1;
-        const correct = result === null ? 0 : result.every((r) => r.passed) ? 1 : 0;
-        db.insertJavascriptUnitTest({
-          assignmentId,
-          github: student.github,
-          question,
-          answered,
-          correct,
-          timestamp,
-          sha,
-        });
-      }
-    });
-
-    res.set('HX-Trigger', JSON.stringify({ 'js-reloaded': userId }));
+    const r = await doReloadJs(assignmentId, student);
+    if (!r.ok) return res.send(r.html);
+    res.set('HX-Trigger', JSON.stringify({ [r.event]: userId }));
     res.send('<i class="bi bi-check-lg text-success"></i>');
   } catch (e) {
     res.send(`<span class="error">${e.message}</span>`);
   }
 });
+
+async function doReloadJava(assignmentId, student) {
+  const data = camelify(await api.assignment(assignmentId));
+  const { url, kind } = data;
+  if (kind !== 'coding') {
+    return { ok: false, html: '<span class="error">Not a coding assignment.</span>' };
+  }
+  const config = await api.codingConfig(url);
+  const file = config.files[0];
+  if (!file.endsWith('.java')) {
+    return { ok: false, html: '<span class="error">Not a Java assignment.</span>' };
+  }
+  const tester = config.server.testClass;
+  const branch = url.slice(1);
+  const filename = `${branch}/${file}`;
+  const repoPath = `${process.env.BHS_CS_REPOS}/${student.github}.git/`;
+  try {
+    new Repo(repoPath).fetch();
+  } catch (e) {
+    console.log(`Error fetching ${repoPath}: ${e.message}`);
+  }
+
+  const output = runJavaGrader(
+    `--repo ${repoPath} --file ${filename} --tester ${tester} --branch ${branch} --latest --output json`,
+  );
+
+  const entry = output[student.github];
+  if (!entry) {
+    return { ok: false, html: '<span class="error">No results found.</span>' };
+  }
+
+  const { results, sha, time } = entry;
+  const timestamp = Math.floor(new Date(time).getTime() / 1000);
+  const questions = db.scoredQuestionAssignment({ assignmentId })?.questions;
+  const correct = numCorrect(results);
+  const score = scoreTest(results, questions);
+  db.ensureJavaUnitTest({ assignmentId, github: student.github, correct, score, timestamp, sha });
+  return { ok: true, event: 'java-reloaded' };
+}
 
 app.post('/assignments/:assignmentId/students/:userId/reload-java', async (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
@@ -2080,42 +2165,64 @@ app.post('/assignments/:assignmentId/students/:userId/reload-java', async (req, 
     if (!student?.github) {
       return res.send('<span class="error">No GitHub username for student.</span>');
     }
-    const data = camelify(await api.assignment(assignmentId));
-    const { url, kind } = data;
-    if (kind !== 'coding') {
-      return res.send('<span class="error">Not a coding assignment.</span>');
-    }
-    const config = await api.codingConfig(url);
-    const file = config.files[0];
-    if (!file.endsWith('.java')) {
-      return res.send('<span class="error">Not a Java assignment.</span>');
-    }
-    const tester = config.server.testClass;
-    const branch = url.slice(1);
-    const filename = `${branch}/${file}`;
-    const repoPath = `${process.env.BHS_CS_REPOS}/${student.github}.git/`;
-
-    const output = runJavaGrader(
-      `--repo ${repoPath} --file ${filename} --tester ${tester} --branch ${branch} --latest --output json`,
-    );
-
-    const entry = output[student.github];
-    if (!entry) {
-      return res.send('<span class="error">No results found.</span>');
-    }
-
-    const { results, sha, time } = entry;
-    const timestamp = Math.floor(new Date(time).getTime() / 1000);
-    const questions = db.scoredQuestionAssignment({ assignmentId })?.questions;
-    const correct = numCorrect(results);
-    const score = scoreTest(results, questions);
-    db.ensureJavaUnitTest({ assignmentId, github: student.github, correct, score, timestamp, sha });
-
-    res.set('HX-Trigger', JSON.stringify({ 'java-reloaded': userId }));
+    const r = await doReloadJava(assignmentId, student);
+    if (!r.ok) return res.send(r.html);
+    res.set('HX-Trigger', JSON.stringify({ [r.event]: userId }));
     res.send('<i class="bi bi-check-lg text-success"></i>');
   } catch (e) {
     res.send(`<span class="error">${e.message}</span>`);
   }
+});
+
+function reloadKindFor(assignmentId) {
+  if (db.hasFormAssessment({ assignmentId })) return 'answers';
+  const provenance = db.assignmentProvenance({ assignmentId })?.provenance;
+  if (provenance === 'java_unit_tests_scores') return 'java';
+  if (db.scoredQuestionAssignment({ assignmentId })) return 'js';
+  return null;
+}
+
+app.post('/students/:userId/assignments/:assignmentId/reload', async (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  try {
+    const student = db.studentById({ userId });
+    if (!student?.github) {
+      return res.send('<span class="error">No GitHub username for student.</span>');
+    }
+    const kind = reloadKindFor(assignmentId);
+    let r;
+    if (kind === 'answers') r = await doReloadAnswers(assignmentId, student);
+    else if (kind === 'js') r = await doReloadJs(assignmentId, student);
+    else if (kind === 'java') r = await doReloadJava(assignmentId, student);
+    else return res.send('<span class="error">Reload not supported.</span>');
+    if (!r.ok) return res.send(r.html);
+    res.set(
+      'HX-Trigger',
+      JSON.stringify({
+        [r.event]: userId,
+        'student-assignment-reloaded': `${userId}-${assignmentId}`,
+      }),
+    );
+    res.send('<i class="bi bi-check-lg text-success"></i>');
+  } catch (e) {
+    res.send(`<span class="error">${e.message}</span>`);
+  }
+});
+
+app.get('/students/:userId/assignments/:assignmentId/row', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const student = db.studentById({ userId });
+  const assignments = db.studentAssignmentScores({ userId });
+  const a = assignments.find((row) => row.assignment_id === assignmentId);
+  if (!a) return res.status(404).send('');
+  res.render('app/students/assignment-row.njk', {
+    a,
+    student,
+    userId,
+    reloadKind: reloadKindFor(assignmentId),
+  });
 });
 
 app.get('/quiz-scoring/:assignmentId/question/:questionNumber', (req, res) => {

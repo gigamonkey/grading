@@ -32,13 +32,8 @@
   </thead>
   <tbody>
     {% for a in assignments %}
-    <tr>
-      <td><a href="/assignments/{{ a.assignment_id }}/students">{{ a.title }}</a></td>
-      <td>{{ a.date }}</td>
-      <td>{{ a.ic_name }}</td>
-      <td>{% if a.score != null %}{{ (a.score * 100) | round }}%{% else %}&mdash;{% endif %}</td>
-      <td>{% if a.points != null %}{{ a.points }} / {{ a.max_points }}{% else %}&mdash;{% endif %}</td>
-    </tr>
+    {% set userId = student.user_id %}{% set reloadKind = reloadKinds[a.assignment_id] %}
+    {% include "app/students/assignment-row.njk" %}
     {% else %}
     <tr><td colspan="5">No assignment scores.</td></tr>
     {% endfor %}
