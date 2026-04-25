@@ -284,8 +284,6 @@ GROUP BY assignment_id, github;
 --   'manual' (default): set by the grader via the UI
 --   'word_count': auto-computed from student's word count vs parameters.minWords
 
-DROP TABLE IF EXISTS rubric_grades;
-
 CREATE TABLE IF NOT EXISTS rubric_items (
   assignment_id INTEGER NOT NULL,
   seq INTEGER NOT NULL,
@@ -312,7 +310,6 @@ CREATE TABLE IF NOT EXISTS rubric_submissions (
   PRIMARY KEY (user_id, assignment_id, sha)
 );
 
-DROP TABLE IF EXISTS rubric_marks;
 CREATE TABLE IF NOT EXISTS rubric_marks (
   user_id TEXT NOT NULL,
   assignment_id INTEGER NOT NULL,
@@ -372,9 +369,13 @@ CREATE TABLE IF NOT EXISTS dropped (
 );
 
 -- Max point values per IC assignment, from row 2 of the gradebook CSV export.
+-- The course_id is sniffed at import time from the student rows in the CSV
+-- since the export filename does not carry the course.
 CREATE TABLE IF NOT EXISTS ic_point_values (
-  ic_name TEXT PRIMARY KEY,
-  points INTEGER NOT NULL
+  course_id TEXT NOT NULL,
+  ic_name TEXT NOT NULL,
+  points INTEGER NOT NULL,
+  PRIMARY KEY (course_id, ic_name)
 );
 
 -- Grades loaded from IC grade export so we can compare what's in IC to what we

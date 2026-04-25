@@ -57,8 +57,11 @@ delete from student_answers where assignment_id = $assignmentId;
 delete from student_answers where assignment_id = $assignmentId and github = $github;
 
 -- :name ensureIcPointValue :insert
-insert into ic_point_values (ic_name, points) values ($icName, $points)
-on conflict(ic_name) do update set points = excluded.points;
+insert into ic_point_values (course_id, ic_name, points) values ($courseId, $icName, $points)
+on conflict(course_id, ic_name) do update set points = excluded.points;
+
+-- :name courseIdByStudentNumber :get
+SELECT course_id FROM roster WHERE student_number = $studentNumber LIMIT 1;
 
 -- :name ensureIcGrade :insert
 insert into ic_grades (student_number, ic_name, points) values ($studentNumber, $icName, $points)
@@ -169,14 +172,14 @@ values
 SELECT s.course_id, s.standard, s.mastery_points, min.ic_name, ipv.points AS ic_points
 FROM standards s
 LEFT JOIN mastery_ic_names min USING (course_id, standard)
-LEFT JOIN ic_point_values ipv ON ipv.ic_name = min.ic_name
+LEFT JOIN ic_point_values ipv ON ipv.ic_name = min.ic_name AND ipv.course_id = s.course_id
 ORDER BY s.course_id, s.standard;
 
 -- :name masteryIcNamesByCourse :all
 SELECT min.standard, min.ic_name, s.mastery_points, ipv.points AS ic_points
 FROM mastery_ic_names min
 JOIN standards s USING (course_id, standard)
-LEFT JOIN ic_point_values ipv ON ipv.ic_name = min.ic_name
+LEFT JOIN ic_point_values ipv ON ipv.ic_name = min.ic_name AND ipv.course_id = min.course_id
 WHERE min.course_id = $courseId
 ORDER BY min.standard;
 
@@ -191,9 +194,8 @@ WHERE s.course_id = $courseId AND min.standard IS NULL
 ORDER BY s.standard;
 
 -- :name availableMasteryIcNames :list
-SELECT DISTINCT ic_name
-FROM ic_grades
-JOIN roster USING (student_number)
+SELECT ic_name
+FROM ic_point_values
 WHERE course_id = $courseId
 AND ic_name NOT IN (SELECT ic_name FROM assignment_point_values)
 AND ic_name NOT IN (SELECT ic_name FROM mastery_ic_names WHERE course_id = $courseId)
@@ -253,7 +255,7 @@ LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
 LEFT JOIN assignment_kinds ak USING (assignment_id)
-LEFT JOIN ic_point_values ipv ON ipv.ic_name = COALESCE(apv.ic_name, min.ic_name)
+LEFT JOIN ic_point_values ipv ON ipv.ic_name = COALESCE(apv.ic_name, min.ic_name) AND ipv.course_id = a.course_id
 WHERE a.assignment_id = $assignmentId;
 
 -- :name allAssignments :all
@@ -270,7 +272,7 @@ LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
 LEFT JOIN assignment_kinds ak USING (assignment_id)
-LEFT JOIN ic_point_values ipv ON ipv.ic_name = COALESCE(apv.ic_name, min.ic_name)
+LEFT JOIN ic_point_values ipv ON ipv.ic_name = COALESCE(apv.ic_name, min.ic_name) AND ipv.course_id = a.course_id
 WHERE ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
        OR upper(a.course_id) LIKE '%' || upper($search) || '%'
        OR CAST(a.assignment_id AS TEXT) = $search)

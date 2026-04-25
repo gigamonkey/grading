@@ -475,6 +475,7 @@ app.post('/assignments/reload-gradebook', (_req, res) => {
     }
 
     let totalRecords = 0;
+    const skipped = [];
     db.transaction(() => {
       for (const file of files) {
         const text = fs.readFileSync(path.join(dir, file), 'utf-8');
@@ -483,9 +484,37 @@ app.post('/assignments/reload-gradebook', (_req, res) => {
         const maxPoints = rows[2].slice(1);
         const studentRows = rows.slice(3);
 
-        for (let i = 0; i < names.length; i++) {
-          if (names[i] && maxPoints[i]) {
-            db.ensureIcPointValue({ icName: names[i], points: Number(maxPoints[i]) });
+        // Sniff course_id by tallying the courses of the students in this CSV.
+        // The export filename does not carry the course, but the gradebook is
+        // per-course so the modal student course is the CSV's course.
+        const courseCounts = new Map();
+        for (const cols of studentRows) {
+          const m = cols[0].match(/#(\d+)/);
+          if (!m) continue;
+          const r = db.courseIdByStudentNumber({ studentNumber: m[1] });
+          if (r?.course_id) {
+            courseCounts.set(r.course_id, (courseCounts.get(r.course_id) ?? 0) + 1);
+          }
+        }
+        let courseId = null;
+        let max = 0;
+        for (const [c, n] of courseCounts) {
+          if (n > max) {
+            max = n;
+            courseId = c;
+          }
+        }
+        if (!courseId) {
+          skipped.push(file);
+        } else {
+          for (let i = 0; i < names.length; i++) {
+            if (names[i] && maxPoints[i]) {
+              db.ensureIcPointValue({
+                courseId,
+                icName: names[i],
+                points: Number(maxPoints[i]),
+              });
+            }
           }
         }
 
@@ -510,8 +539,11 @@ app.post('/assignments/reload-gradebook', (_req, res) => {
     }
 
     res.set('HX-Trigger', 'gradebook-reloaded');
+    const skipMsg = skipped.length
+      ? ` Skipped point values for ${skipped.length} file${skipped.length === 1 ? '' : 's'} with no recognized students.`
+      : '';
     res.send(
-      `<span class="success">Loaded ${totalRecords} grades from ${files.length} file${files.length === 1 ? '' : 's'}.</span>`,
+      `<span class="success">Loaded ${totalRecords} grades from ${files.length} file${files.length === 1 ? '' : 's'}.${skipMsg}</span>`,
     );
   } catch (e) {
     res.send(`<span class="error">${e.message}</span>`);

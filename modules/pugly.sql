@@ -397,13 +397,13 @@ insert into ic_grades (points) values ($points);
 select * from ic_point_values;
 
 -- :name insertIcPointValue :insert
-insert into ic_point_values (ic_name, points) values ($icName, $points);
+insert into ic_point_values (course_id, ic_name, points) values ($courseId, $icName, $points);
 
 -- :name icPointValue :get
-select * from ic_point_values where ic_name = $icName;
+select * from ic_point_values where course_id = $courseId and ic_name = $icName;
 
 -- :name updateIcPointValue :run
-update ic_point_values set (points) = ($points) where ic_name = $icName
+update ic_point_values set (points) = ($points) where course_id = $courseId and ic_name = $icName
 
 -- :name makeIcPointValue :insert
 insert into ic_point_values (points) values ($points);
