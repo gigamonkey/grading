@@ -90,7 +90,7 @@ CREATE VIEW javascript_unit_tests_scores AS
 SELECT
   assignment_id,
   user_id,
-  sum(correct) / cast(questions as real) score
+  sum(correct) / nullif(cast(questions as real), 0) score
 FROM javascript_unit_tests
 JOIN scored_question_assignments USING (assignment_id)
 JOIN roster USING (github)
@@ -118,7 +118,7 @@ SELECT
   assignment_id,
   user_id,
   case
-    when hg.correct is not null then (round(score * questions) + sum(coalesce(hg.correct, 0))) / questions
+    when hg.correct is not null then (round(score * questions) + sum(coalesce(hg.correct, 0))) / nullif(questions, 0)
     else score
   end score
 FROM java_unit_tests
