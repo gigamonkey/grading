@@ -636,6 +636,18 @@ GROUP BY r.user_id
 HAVING COUNT(rs.sha) = 0
    OR MAX(rs.timestamp) IS NULL;
 
+-- Excused assignments
+-- :name ensureExcusedAssignment :run
+INSERT INTO excused_assignments (assignment_id, user_id, reason)
+VALUES ($assignmentId, $userId, $reason)
+ON CONFLICT (assignment_id, user_id) DO NOTHING;
+
+-- :name deleteExcusedAssignment :run
+DELETE FROM excused_assignments WHERE assignment_id = $assignmentId AND user_id = $userId;
+
+-- :name excusedUsersForAssignment :list
+SELECT user_id FROM excused_assignments WHERE assignment_id = $assignmentId;
+
 -- Points-grader marks
 -- :name pointsRubricMarksForAssignment :all
 SELECT * FROM points_rubric_marks WHERE assignment_id = $assignmentId;

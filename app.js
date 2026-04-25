@@ -1307,6 +1307,19 @@ app.post('/speedruns/:speedrunId/skip', (_req, res) => {
   res.send('');
 });
 
+function toggleExcused(assignmentId, userId) {
+  const existing = db.excusedAssignment({ assignmentId, userId });
+  if (existing) {
+    db.deleteExcusedAssignment({ assignmentId, userId });
+  } else {
+    db.ensureExcusedAssignment({ assignmentId, userId, reason: null });
+  }
+}
+
+function excusedSetFor(assignmentId) {
+  return new Set(db.excusedUsersForAssignment({ assignmentId }));
+}
+
 // Checklist grader
 function renderChecklistTable(
   res,
@@ -1350,7 +1363,8 @@ function checklistData(assignmentId) {
       return sum + (markMap[s.user_id]?.[c.seq] === 'check' ? (c.points ?? 1) : 0);
     }, 0);
   }
-  return { assignment, criteria, students, markMap, totalPoints, studentPoints };
+  const excused = excusedSetFor(assignmentId);
+  return { assignment, criteria, students, markMap, totalPoints, studentPoints, excused };
 }
 
 function ensureDefaultCriteria(assignmentId) {
@@ -1513,6 +1527,13 @@ app.put('/checklist/:assignmentId/criteria/:seq/points', (req, res) => {
   renderChecklistTable(res, assignmentId);
 });
 
+app.post('/checklist/:assignmentId/excused/:userId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  toggleExcused(assignmentId, userId);
+  renderChecklistTable(res, assignmentId);
+});
+
 app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
@@ -1551,7 +1572,17 @@ function pointsGraderData(assignmentId) {
     studentPoints[s.user_id] = earned;
     studentComplete[s.user_id] = items.length > 0 && count === items.length;
   }
-  return { assignment, items, students, markMap, totalPoints, studentPoints, studentComplete };
+  const excused = excusedSetFor(assignmentId);
+  return {
+    assignment,
+    items,
+    students,
+    markMap,
+    totalPoints,
+    studentPoints,
+    studentComplete,
+    excused,
+  };
 }
 
 function renderPointsGraderTable(
@@ -1728,6 +1759,13 @@ app.put('/points-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   renderPointsGraderTable(res, assignmentId);
 });
 
+app.post('/points-grader/:assignmentId/excused/:userId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  toggleExcused(assignmentId, userId);
+  renderPointsGraderTable(res, assignmentId);
+});
+
 app.post('/points-grader/:assignmentId/zero/:userId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
@@ -1806,6 +1844,8 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
     return sum + (fraction != null ? fraction * item.points : 0);
   }, 0);
 
+  const excused = db.excusedAssignment({ assignmentId, userId: student.user_id }) != null;
+
   return {
     assignment,
     assignmentId,
@@ -1826,6 +1866,7 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
     mdRaw,
     wordCount,
     fileError,
+    excused,
   };
 }
 
@@ -1891,6 +1932,18 @@ app.get('/md-grader/:assignmentId/student/:userId', (req, res) => {
   const userId = req.params.userId;
   const branch = req.query.branch;
   const filePath = req.query.filePath;
+  const data = mdGraderData(assignmentId, userId, branch, filePath);
+  const content = env.render('app/md-grader/_content.njk', data);
+  const sidebar = env.render('app/md-grader/_sidebar.njk', data);
+  res.send(content + sidebar);
+});
+
+app.post('/md-grader/:assignmentId/excused/:userId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const branch = req.body.branch;
+  const filePath = req.body.filePath;
+  toggleExcused(assignmentId, userId);
   const data = mdGraderData(assignmentId, userId, branch, filePath);
   const content = env.render('app/md-grader/_content.njk', data);
   const sidebar = env.render('app/md-grader/_sidebar.njk', data);

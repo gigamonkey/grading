@@ -6,7 +6,13 @@
           hx-swap="innerHTML">
     <i class="bi bi-arrow-left"></i> Prev
   </button>
-  <span class="md-grader-position">{{ student.sortable_name }} ({{ student.github }}) &mdash; {{ studentIndex + 1 }} of {{ totalStudents }}</span>
+  <span class="md-grader-position {{ 'excused' if excused }}">{{ student.sortable_name }} ({{ student.github }})
+    <button class="excuse-button"
+            hx-post="/md-grader/{{ assignmentId }}/excused/{{ student.user_id }}"
+            hx-vals='{"branch": "{{ branch }}", "filePath": "{{ filePath }}"}'
+            hx-target="#md-grader"
+            hx-swap="innerHTML">{{ 'Unexcuse' if excused else 'Excuse' }}</button>
+    &mdash; {{ studentIndex + 1 }} of {{ totalStudents }}</span>
   <button hx-get="{{ base }}{{ nextUserId }}{{ qs }}"
           hx-target="#md-grader"
           hx-swap="innerHTML">

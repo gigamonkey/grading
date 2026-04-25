@@ -14,38 +14,39 @@
           <a href="{{ href }}">{{ label }}</a>
         {% endif %}
       {% endmacro %}
-      <th rowspan="2">{{ sortLink('name', 'Name', 'asc') }} / {{ sortLink('github', 'Github', 'asc') }}</th>
-      <th rowspan="2">{{ sortLink('score', 'Score', 'desc') }}</th>
-      <th rowspan="2">{{ sortLink('points', 'Points', 'desc') }}</th>
+      <th>{{ sortLink('name', 'Name', 'asc') }} / {{ sortLink('github', 'Github', 'asc') }}</th>
+      <th>{{ sortLink('score', 'Score', 'desc') }}</th>
+      <th>{{ sortLink('points', 'Points', 'desc') }}</th>
       {% for c in criteria %}
-        {% set assignmentId = assignment.assignment_id %}
-        {% set seq = c.seq %}
-        {% set criteriaLabel = c.label %}
-        {% set editing = false %}
-        {% include "app/checklist/label-cell.njk" %}
+        <th class="checklist-item">
+          {% set assignmentId = assignment.assignment_id %}
+          {% set seq = c.seq %}
+          {% set criteriaLabel = c.label %}
+          {% set editing = false %}
+          {% include "app/checklist/label-cell.njk" %}
+          {% set points = c.points %}
+          {% set editing = false %}
+          {% include "app/checklist/points-cell.njk" %}
+        </th>
       {% endfor %}
-      <th rowspan="2">
+      <th>
         <button hx-post="/checklist/{{ assignment.assignment_id }}/criteria"
                 hx-vals='{"criteriaLabel": "-"}'
                 hx-target="#checklist-table"
                 hx-swap="innerHTML"><i class="bi bi-plus-lg"></i></button>
       </th>
-    </tr>
-    <tr>
-      {% for c in criteria %}
-        {% set assignmentId = assignment.assignment_id %}
-        {% set seq = c.seq %}
-        {% set points = c.points %}
-        {% set editing = false %}
-        {% include "app/checklist/points-cell.njk" %}
-      {% endfor %}
-    </tr>
   </thead>
   <tbody>
     {% for s in students %}
     {% set earned = studentPoints[s.user_id] %}
-    <tr>
-      <td>{{ s.sortable_name }} ({{ s.github }})</td>
+    {% set isExcused = excused.has(s.user_id) %}
+    <tr class="{{ 'excused' if isExcused }}">
+      <td>{{ s.sortable_name }} ({{ s.github }})
+        <button class="excuse-button"
+                hx-post="/checklist/{{ assignment.assignment_id }}/excused/{{ s.user_id }}"
+                hx-target="#checklist-table"
+                hx-swap="innerHTML">{{ 'Unexcuse' if isExcused else 'Excuse' }}</button>
+      </td>
       <td class="checklist-score"><span id="score-{{ s.user_id }}">{% if totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span></td>
       <td class="checklist-score"><span id="points-{{ s.user_id }}">{{ earned }}/{{ totalPoints }}</span></td>
       {% for c in criteria %}

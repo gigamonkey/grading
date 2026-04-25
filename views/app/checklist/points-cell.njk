@@ -1,5 +1,5 @@
 {% if editing %}
-<td class="checklist-points editing">
+<div class="checklist-points editing">
   <input type="number" name="points" value="{{ points }}" min="0" step="1"
          hx-put="/checklist/{{ assignmentId }}/criteria/{{ seq }}/points"
          hx-trigger="keyup[key=='Enter']"
@@ -7,13 +7,13 @@
          hx-swap="innerHTML"
          style="width:100%;margin:0"
          autofocus onfocus="this.select()"
-         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/checklist/{{ assignmentId }}/criteria/{{ seq }}/points',{target:this.closest('td'),swap:'outerHTML'})}"
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/checklist/{{ assignmentId }}/criteria/{{ seq }}/points',{target:this.closest('.checklist-points'),swap:'outerHTML'})}"
          hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/checklist/{{ assignmentId }}/criteria/{{ seq }}/points',{target:'#checklist-table',swap:'innerHTML',values:{points:this.value}})}">
-</td>
+</div>
 {% else %}
-<td class="checklist-points"
-    hx-get="/checklist/{{ assignmentId }}/criteria/{{ seq }}/points/edit"
-    hx-trigger="click"
-    hx-target="this"
-    hx-swap="outerHTML">{{ points }}</td>
+<div class="checklist-points"
+     hx-get="/checklist/{{ assignmentId }}/criteria/{{ seq }}/points/edit"
+     hx-trigger="click"
+     hx-target="this"
+     hx-swap="outerHTML">{{ points }}</div>
 {% endif %}

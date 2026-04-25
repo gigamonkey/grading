@@ -12,40 +12,41 @@
           <a href="{{ href }}">{{ label }}</a>
         {% endif %}
       {% endmacro %}
-      <th rowspan="2">{{ sortLink('name', 'Name', 'asc') }} / {{ sortLink('github', 'Github', 'asc') }}</th>
-      <th rowspan="2">{{ sortLink('score', 'Score', 'desc') }}</th>
-      <th rowspan="2">{{ sortLink('points', 'Points', 'desc') }}</th>
+      <th>{{ sortLink('name', 'Name', 'asc') }} / {{ sortLink('github', 'Github', 'asc') }}</th>
+      <th>{{ sortLink('score', 'Score', 'desc') }}</th>
+      <th>{{ sortLink('points', 'Points', 'desc') }}</th>
       {% for i in items %}
-        {% set assignmentId = assignment.assignment_id %}
-        {% set seq = i.seq %}
-        {% set label = i.label %}
-        {% set editing = false %}
-        {% include "app/points-grader/label-cell.njk" %}
+        <th class="checklist-item">
+          {% set assignmentId = assignment.assignment_id %}
+          {% set seq = i.seq %}
+          {% set label = i.label %}
+          {% set editing = false %}
+          {% include "app/points-grader/label-cell.njk" %}
+          {% set points = i.points %}
+          {% set editing = false %}
+          {% include "app/points-grader/item-points-cell.njk" %}
+        </th>
       {% endfor %}
-      <th rowspan="2">
+      <th>
         <button hx-post="/points-grader/{{ assignment.assignment_id }}/items"
                 hx-vals='{"label": "-"}'
                 hx-target="#points-grader-table"
                 hx-swap="innerHTML"><i class="bi bi-plus-lg"></i></button>
       </th>
-      <th rowspan="2"></th>
-    </tr>
-    <tr>
-      {% for i in items %}
-        {% set assignmentId = assignment.assignment_id %}
-        {% set seq = i.seq %}
-        {% set points = i.points %}
-        {% set editing = false %}
-        {% include "app/points-grader/item-points-cell.njk" %}
-      {% endfor %}
-    </tr>
+      <th></th>
   </thead>
   <tbody>
     {% for s in students %}
     {% set earned = studentPoints[s.user_id] %}
     {% set complete = studentComplete[s.user_id] %}
-    <tr class="{{ 'points-grader-incomplete' if not complete }}">
-      <td>{{ s.sortable_name }} ({{ s.github }})</td>
+    {% set isExcused = excused.has(s.user_id) %}
+    <tr class="{{ 'excused' if isExcused else ('points-grader-incomplete' if not complete) }}">
+      <td>{{ s.sortable_name }} ({{ s.github }})
+        <button class="excuse-button"
+                hx-post="/points-grader/{{ assignment.assignment_id }}/excused/{{ s.user_id }}"
+                hx-target="#points-grader-table"
+                hx-swap="innerHTML">{{ 'Unexcuse' if isExcused else 'Excuse' }}</button>
+      </td>
       <td class="checklist-score">
         <span id="score-{{ s.user_id }}">{% if complete and totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span>
       </td>
@@ -61,7 +62,7 @@
       {% endfor %}
       <td></td>
       <td>
-        {% if not complete and items.length %}
+        {% if not complete and not isExcused and items.length %}
         <button class="btn-subtle"
                 hx-post="/points-grader/{{ assignment.assignment_id }}/zero/{{ s.user_id }}"
                 hx-target="#points-grader-table"

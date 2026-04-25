@@ -1,26 +1,26 @@
 {% if editing %}
-<th class="checklist-label editing">
+<div class="checklist-label editing">
   <input type="text" name="label" value="{{ label }}"
          hx-put="/points-grader/{{ assignmentId }}/items/{{ seq }}/label"
          hx-trigger="keyup[key=='Enter']"
-         hx-target="closest th"
+         hx-target="closest .checklist-label"
          hx-swap="outerHTML"
          style="width:100%;margin:0"
          autofocus onfocus="this.select()"
-         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/points-grader/{{ assignmentId }}/items/{{ seq }}/label',{target:this.closest('th'),swap:'outerHTML'})}"
-         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/points-grader/{{ assignmentId }}/items/{{ seq }}/label',{target:this.closest('th'),swap:'outerHTML',values:{label:this.value}})}">
-</th>
+         hx-on:keydown="if(event.key==='Escape'){event.preventDefault();this.dataset.cancelled='1';htmx.ajax('GET','/points-grader/{{ assignmentId }}/items/{{ seq }}/label',{target:this.closest('.checklist-label'),swap:'outerHTML'})}"
+         hx-on:blur="if(!this.dataset.cancelled){htmx.ajax('PUT','/points-grader/{{ assignmentId }}/items/{{ seq }}/label',{target:this.closest('.checklist-label'),swap:'outerHTML',values:{label:this.value}})}">
+</div>
 {% else %}
-<th class="checklist-label"
-    hx-get="/points-grader/{{ assignmentId }}/items/{{ seq }}/label/edit"
-    hx-trigger="click"
-    hx-target="this"
-    hx-swap="outerHTML">
+<div class="checklist-label"
+     hx-get="/points-grader/{{ assignmentId }}/items/{{ seq }}/label/edit"
+     hx-trigger="click"
+     hx-target="this"
+     hx-swap="outerHTML">
   {{ label }}
   <button class="checklist-delete-criterion"
           hx-delete="/points-grader/{{ assignmentId }}/items/{{ seq }}"
           hx-target="#points-grader-table"
           hx-swap="innerHTML"
           hx-trigger="click consume"><i class="bi bi-x"></i></button>
-</th>
+</div>
 {% endif %}
