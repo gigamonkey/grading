@@ -719,6 +719,8 @@ app.get('/students/:userId', (req, res) => {
   const masteryPoints = db.studentMasteryPoints({ userId });
   const masteryTotals = db.studentMasteryTotals({ userId });
   const speedruns = db.studentSpeedruns({ userId });
+  const toUpdate = db.studentToUpdate({ userId });
+  const masteryToUpdate = db.studentMasteryToUpdate({ userId });
   res.render('app/students/student.njk', {
     student,
     assignments,
@@ -726,6 +728,8 @@ app.get('/students/:userId', (req, res) => {
     masteryPoints,
     masteryTotals,
     speedruns,
+    toUpdate,
+    masteryToUpdate,
   });
 });
 

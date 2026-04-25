@@ -19,6 +19,42 @@
   </tbody>
 </table>
 
+{% if toUpdate.length %}
+<h2>Assignment Scores to Update</h2>
+<table class="data-table fit">
+  <thead>
+    <tr><th>IC Name</th><th>IC Points</th><th>DB Points</th></tr>
+  </thead>
+  <tbody>
+    {% for r in toUpdate %}
+    <tr>
+      <td><a href="/ic-assignment/{{ r.ic_name | urlencode }}">{{ r.ic_name }}</a></td>
+      <td>{{ r.ic }}</td>
+      <td>{{ r.db }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if masteryToUpdate.length %}
+<h2>Mastery Points to Update</h2>
+<table class="data-table fit">
+  <thead>
+    <tr><th>IC Name</th><th>IC Points</th><th>DB Points</th></tr>
+  </thead>
+  <tbody>
+    {% for r in masteryToUpdate %}
+    <tr>
+      <td><a href="/ic-assignment/{{ r.ic_name | urlencode }}">{{ r.ic_name }}</a></td>
+      <td>{{ r.ic }}</td>
+      <td>{{ r.db }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
 <h2>Assignment Scores</h2>
 <table class="data-table fit">
   <thead>

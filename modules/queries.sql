@@ -325,6 +325,12 @@ SELECT * FROM mastery_to_update
 WHERE ($period IS NULL OR period = $period)
 ORDER BY period, sortable_name;
 
+-- :name studentToUpdate :all
+SELECT * FROM to_update WHERE user_id = $userId ORDER BY ic_name;
+
+-- :name studentMasteryToUpdate :all
+SELECT * FROM mastery_to_update WHERE user_id = $userId ORDER BY ic_name;
+
 -- :name zerosReport :all
 SELECT * FROM zeros
 WHERE ($course IS NULL OR course_id = $course)
