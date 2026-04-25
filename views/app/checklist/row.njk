@@ -1,0 +1,18 @@
+{% set assignmentId = assignment.assignment_id %}
+{% set userId = s.user_id %}
+<tr class="{{ 'excused' if isExcused }}">
+  <td>{{ s.sortable_name }} ({{ s.github }})
+    <button class="excuse-button"
+            hx-post="/checklist/{{ assignmentId }}/excused/{{ userId }}"
+            hx-target="#checklist-table"
+            hx-swap="innerHTML">{{ 'Unexcuse' if isExcused else 'Excuse' }}</button>
+  </td>
+  <td class="checklist-score"><span id="score-{{ userId }}">{% if totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span></td>
+  <td class="checklist-score"><span id="points-{{ userId }}">{{ earned }}/{{ totalPoints }}</span></td>
+  {% for c in criteria %}
+    {% set seq = c.seq %}
+    {% set value = markMap[userId][c.seq] if markMap[userId] else null %}
+    {% include "app/checklist/cell.njk" %}
+  {% endfor %}
+  <td></td>
+</tr>

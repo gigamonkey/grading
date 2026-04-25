@@ -1,0 +1,30 @@
+{% set assignmentId = assignment.assignment_id %}
+{% set userId = s.user_id %}
+<tr class="{{ 'excused' if isExcused else ('points-grader-incomplete' if not complete) }}">
+  <td>{{ s.sortable_name }} ({{ s.github }})
+    <button class="excuse-button"
+            hx-post="/points-grader/{{ assignmentId }}/excused/{{ userId }}"
+            hx-target="#points-grader-table"
+            hx-swap="innerHTML">{{ 'Unexcuse' if isExcused else 'Excuse' }}</button>
+  </td>
+  <td class="checklist-score">
+    <span id="score-{{ userId }}">{% if complete and totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span>
+  </td>
+  <td class="checklist-score">
+    <span id="points-{{ userId }}">{% if complete %}{{ earned }}/{{ totalPoints }}{% else %}-{% endif %}</span>
+  </td>
+  {% for i in items %}
+    {% set seq = i.seq %}
+    {% set value = markMap[userId][i.seq] if markMap[userId] else null %}
+    {% include "app/points-grader/cell.njk" %}
+  {% endfor %}
+  <td></td>
+  <td>
+    {% if not complete and not isExcused and items.length %}
+    <button class="btn-subtle"
+            hx-post="/points-grader/{{ assignmentId }}/zero/{{ userId }}"
+            hx-target="#points-grader-table"
+            hx-swap="innerHTML">Zero</button>
+    {% endif %}
+  </td>
+</tr>

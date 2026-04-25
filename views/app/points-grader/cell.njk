@@ -2,8 +2,8 @@
     style="user-select: none"
     hx-put="/points-grader/{{ assignmentId }}/mark/{{ userId }}/{{ seq }}"
     hx-trigger="click, contextmenu"
-    hx-target="#points-grader-table"
-    hx-swap="innerHTML"
+    hx-target="closest tr"
+    hx-swap="outerHTML"
     hx-vals='js:{direction: (event.type === "contextmenu" || event.shiftKey) ? "down" : "up"}'
     hx-on:contextmenu="event.preventDefault()"
     hx-on:mousedown="if (event.shiftKey) event.preventDefault()">{% if value != null %}{{ (value * 100) | round }}%{% endif %}</td>

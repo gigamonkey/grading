@@ -41,24 +41,7 @@
     {% for s in students %}
     {% set earned = studentPoints[s.user_id] %}
     {% set isExcused = excused.has(s.user_id) %}
-    <tr class="{{ 'excused' if isExcused }}">
-      <td>{{ s.sortable_name }} ({{ s.github }})
-        <button class="excuse-button"
-                hx-post="/checklist/{{ assignment.assignment_id }}/excused/{{ s.user_id }}"
-                hx-target="#checklist-table"
-                hx-swap="innerHTML">{{ 'Unexcuse' if isExcused else 'Excuse' }}</button>
-      </td>
-      <td class="checklist-score"><span id="score-{{ s.user_id }}">{% if totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span></td>
-      <td class="checklist-score"><span id="points-{{ s.user_id }}">{{ earned }}/{{ totalPoints }}</span></td>
-      {% for c in criteria %}
-        {% set assignmentId = assignment.assignment_id %}
-        {% set userId = s.user_id %}
-        {% set seq = c.seq %}
-        {% set value = markMap[s.user_id][c.seq] if markMap[s.user_id] else null %}
-        {% include "app/checklist/cell.njk" %}
-      {% endfor %}
-      <td></td>
-    </tr>
+    {% include "app/checklist/row.njk" %}
     {% endfor %}
   </tbody>
 </table>

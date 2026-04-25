@@ -1630,6 +1630,22 @@ function renderPointsGraderTableFromReq(req, res, assignmentId) {
   renderPointsGraderTable(res, assignmentId, s.sort, s.dir, s.prevSort, s.prevDir);
 }
 
+function renderPointsGraderRow(res, assignmentId, userId) {
+  const data = pointsGraderData(assignmentId);
+  const s = data.students.find((st) => st.user_id === userId);
+  if (!s) return res.status(404).send('');
+  res.render('app/points-grader/row.njk', {
+    assignment: data.assignment,
+    items: data.items,
+    totalPoints: data.totalPoints,
+    markMap: data.markMap,
+    s,
+    earned: data.studentPoints[userId],
+    complete: data.studentComplete[userId],
+    isExcused: data.excused.has(userId),
+  });
+}
+
 app.get('/points-grader', (req, res) => {
   const search = req.query.search || null;
   const assignments = db.ungradedAssignments({ search });
@@ -1776,7 +1792,7 @@ app.put('/points-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
     fraction = existing.fraction + delta;
   }
   db.upsertPointsRubricMark({ userId, assignmentId, seq, fraction });
-  renderPointsGraderTableFromReq(req, res, assignmentId);
+  renderPointsGraderRow(res, assignmentId, userId);
 });
 
 app.post('/points-grader/:assignmentId/excused/:userId', (req, res) => {
