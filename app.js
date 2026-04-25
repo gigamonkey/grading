@@ -1307,6 +1307,16 @@ app.post('/speedruns/:speedrunId/skip', (_req, res) => {
   res.send('');
 });
 
+function readSort(req, valid = ['name', 'github', 'score', 'points']) {
+  const b = { ...req.query, ...req.body };
+  const sort = valid.includes(b.sort) ? b.sort : 'github';
+  const defaultDir = sort === 'score' || sort === 'points' ? 'desc' : 'asc';
+  const dir = ['asc', 'desc'].includes(b.dir) ? b.dir : defaultDir;
+  const prevSort = valid.includes(b.prevSort) ? b.prevSort : null;
+  const prevDir = ['asc', 'desc'].includes(b.prevDir) ? b.prevDir : 'asc';
+  return { sort, dir, prevSort, prevDir };
+}
+
 function toggleExcused(assignmentId, userId) {
   const existing = db.excusedAssignment({ assignmentId, userId });
   if (existing) {
@@ -1344,6 +1354,11 @@ function renderChecklistTable(
   const secondary = prevSort ? makeCmp(prevSort, prevDir) : byGithub;
   data.students.sort((a, b) => makeCmp(sort, dir)(a, b) || secondary(a, b));
   res.render('app/checklist/_table.njk', { ...data, sort, dir, prevSort, prevDir });
+}
+
+function renderChecklistTableFromReq(req, res, assignmentId) {
+  const s = readSort(req);
+  renderChecklistTable(res, assignmentId, s.sort, s.dir, s.prevSort, s.prevDir);
 }
 
 function checklistData(assignmentId) {
@@ -1422,7 +1437,7 @@ app.post('/checklist/:assignmentId/criteria', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const label = req.body.criteriaLabel?.trim();
   if (label) db.addChecklistCriterion({ assignmentId, criteriaLabel: label });
-  renderChecklistTable(res, assignmentId);
+  renderChecklistTableFromReq(req, res, assignmentId);
 });
 
 app.put('/checklist/:assignmentId/mark/:userId/:seq', (req, res) => {
@@ -1524,14 +1539,14 @@ app.put('/checklist/:assignmentId/criteria/:seq/points', (req, res) => {
   const seq = Number(req.params.seq);
   const points = Number(req.body.points) || 1;
   db.updateChecklistCriterionPoints({ assignmentId, seq, points });
-  renderChecklistTable(res, assignmentId);
+  renderChecklistTableFromReq(req, res, assignmentId);
 });
 
 app.post('/checklist/:assignmentId/excused/:userId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
   toggleExcused(assignmentId, userId);
-  renderChecklistTable(res, assignmentId);
+  renderChecklistTableFromReq(req, res, assignmentId);
 });
 
 app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
@@ -1541,7 +1556,7 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
     db.deleteChecklistCriterion({ assignmentId, seq });
     db.deleteChecklistMarksForCriterion({ assignmentId, seq });
   });
-  renderChecklistTable(res, assignmentId);
+  renderChecklistTableFromReq(req, res, assignmentId);
 });
 
 // Points grader
@@ -1610,6 +1625,11 @@ function renderPointsGraderTable(
   res.render('app/points-grader/_table.njk', { ...data, sort, dir, prevSort, prevDir });
 }
 
+function renderPointsGraderTableFromReq(req, res, assignmentId) {
+  const s = readSort(req);
+  renderPointsGraderTable(res, assignmentId, s.sort, s.dir, s.prevSort, s.prevDir);
+}
+
 app.get('/points-grader', (req, res) => {
   const search = req.query.search || null;
   const assignments = db.ungradedAssignments({ search });
@@ -1655,7 +1675,7 @@ app.post('/points-grader/:assignmentId/items', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const label = req.body.label?.trim() || '-';
   db.addRubricItem({ assignmentId, label, points: 1, kind: 'manual', parameters: null });
-  renderPointsGraderTable(res, assignmentId);
+  renderPointsGraderTableFromReq(req, res, assignmentId);
 });
 
 app.delete('/points-grader/:assignmentId/items/:seq', (req, res) => {
@@ -1665,7 +1685,7 @@ app.delete('/points-grader/:assignmentId/items/:seq', (req, res) => {
     db.deleteRubricItem({ assignmentId, seq });
     db.deletePointsRubricMarksForItem({ assignmentId, seq });
   });
-  renderPointsGraderTable(res, assignmentId);
+  renderPointsGraderTableFromReq(req, res, assignmentId);
 });
 
 app.get('/points-grader/:assignmentId/items/:seq/label', (req, res) => {
@@ -1737,7 +1757,7 @@ app.put('/points-grader/:assignmentId/items/:seq/points', (req, res) => {
   if (Number.isFinite(points)) {
     db.updateRubricItemPoints({ assignmentId, seq, points });
   }
-  renderPointsGraderTable(res, assignmentId);
+  renderPointsGraderTableFromReq(req, res, assignmentId);
 });
 
 const POINTS_GRADER_STEP = 0.25;
@@ -1756,14 +1776,14 @@ app.put('/points-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
     fraction = existing.fraction + delta;
   }
   db.upsertPointsRubricMark({ userId, assignmentId, seq, fraction });
-  renderPointsGraderTable(res, assignmentId);
+  renderPointsGraderTableFromReq(req, res, assignmentId);
 });
 
 app.post('/points-grader/:assignmentId/excused/:userId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
   toggleExcused(assignmentId, userId);
-  renderPointsGraderTable(res, assignmentId);
+  renderPointsGraderTableFromReq(req, res, assignmentId);
 });
 
 app.post('/points-grader/:assignmentId/zero/:userId', (req, res) => {
@@ -1781,7 +1801,7 @@ app.post('/points-grader/:assignmentId/zero/:userId', (req, res) => {
       }
     }
   });
-  renderPointsGraderTable(res, assignmentId);
+  renderPointsGraderTableFromReq(req, res, assignmentId);
 });
 
 // MD Grader
