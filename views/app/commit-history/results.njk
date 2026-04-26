@@ -1,0 +1,64 @@
+{% if not courseId %}
+<p>Pick a course to see commit history.</p>
+{% elif rows.length == 0 %}
+<p>No students in this course.</p>
+{% else %}
+{% macro sortLink(key, label) %}{{ label }}<span class="sort-carets"
+  ><a class="sort-up{% if sort == key and dir == 'desc' %} active{% endif %}"
+      hx-get="/commit-history" hx-vals='{"sort":"{{ key }}","dir":"desc"}'
+      hx-include="#commit-history-form"
+      hx-target="#commit-history-results" hx-swap="innerHTML"
+      href="#"><i class="bi bi-caret-up-fill"></i></a
+  ><a class="sort-down{% if sort == key and dir == 'asc' %} active{% endif %}"
+      hx-get="/commit-history" hx-vals='{"sort":"{{ key }}","dir":"asc"}'
+      hx-include="#commit-history-form"
+      hx-target="#commit-history-results" hx-swap="innerHTML"
+      href="#"><i class="bi bi-caret-down-fill"></i></a
+></span>{% endmacro %}
+{% set sparkWidth = 400 %}
+{% set sparkHeight = 24 %}
+{% set days = dateRange.length %}
+{% set barWidth = (sparkWidth / days) if days else 0 %}
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>{{ sortLink('name', 'Student') }}</th>
+      <th>{{ sortLink('period', 'Period') }}</th>
+      <th>{{ sortLink('github', 'GitHub') }}</th>
+      <th>Commits {% if dateRange.length %}<small style="color:#888;font-weight:normal">({{ dateRange[0] }} → {{ dateRange[dateRange.length - 1] }})</small>{% endif %}</th>
+      <th>{{ sortLink('days', 'Days') }}</th>
+      <th>{{ sortLink('rate', 'Commits/day') }}</th>
+      <th>{{ sortLink('total', 'Total') }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="/students/{{ r.student.user_id }}">{{ r.student.sortable_name }}</a></td>
+      <td>{{ r.student.period }}</td>
+      <td>{% if r.student.github %}<a href="https://gigamonkeys.com/berkeley-high-cs/{{ r.student.github }}">{{ r.student.github }}</a>{% else %}&mdash;{% endif %}</td>
+      <td>
+        {% if r.missing %}
+        <span style="color:#999">no repo</span>
+        {% elif maxCount and dateRange.length %}
+        <svg width="{{ sparkWidth }}" height="{{ sparkHeight }}" style="vertical-align: middle">
+          {% for day in dateRange %}
+            {% set count = r.counts[day] or 0 %}
+            {% if count %}
+              {% set h = (count / maxCount) * sparkHeight %}
+              <rect x="{{ loop.index0 * barWidth }}" y="{{ sparkHeight - h }}" width="{{ barWidth }}" height="{{ h }}" fill="#1a1a2e"><title>{{ day }}: {{ count }}</title></rect>
+            {% endif %}
+          {% endfor %}
+        </svg>
+        {% else %}
+        <span style="color:#999">none</span>
+        {% endif %}
+      </td>
+      <td>{{ r.days or 0 }}</td>
+      <td>{% if r.days %}{{ (r.total / r.days) | round(1) }}{% else %}&mdash;{% endif %}</td>
+      <td>{{ r.total }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}

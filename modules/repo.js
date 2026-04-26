@@ -78,6 +78,20 @@ class Repo {
     return this.parseCommit(this.git(cmd).trim().split('\n')[0]);
   }
 
+  commitDatesForPath(p) {
+    const pathArg = p ? `-- ${p}` : '';
+    let out;
+    try {
+      out = this.git(`log --all --format=%aI ${pathArg}`);
+    } catch {
+      return [];
+    }
+    return out
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
   parseCommit(line) {
     if (line.trim() !== '') {
       const [sha, timestamp] = line.split(' ');
