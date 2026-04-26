@@ -1309,10 +1309,13 @@ app.post('/speedruns/:speedrunId/skip', (_req, res) => {
 
 function readSort(req, valid = ['name', 'github', 'score', 'points']) {
   const b = { ...req.query, ...req.body };
-  const sort = valid.includes(b.sort) ? b.sort : 'github';
-  const defaultDir = sort === 'score' || sort === 'points' ? 'desc' : 'asc';
+  const isValid = (k) => valid.includes(k) || (typeof k === 'string' && /^item:\d+$/.test(k));
+  const sort = isValid(b.sort) ? b.sort : 'github';
+  const isQuantitative = (k) =>
+    k === 'score' || k === 'points' || (typeof k === 'string' && k.startsWith('item:'));
+  const defaultDir = isQuantitative(sort) ? 'desc' : 'asc';
   const dir = ['asc', 'desc'].includes(b.dir) ? b.dir : defaultDir;
-  const prevSort = valid.includes(b.prevSort) ? b.prevSort : null;
+  const prevSort = isValid(b.prevSort) ? b.prevSort : null;
   const prevDir = ['asc', 'desc'].includes(b.prevDir) ? b.prevDir : 'asc';
   return { sort, dir, prevSort, prevDir };
 }
@@ -1613,11 +1616,18 @@ function renderPointsGraderTable(
   const byName = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
   const byPoints = (a, b) =>
     (data.studentPoints[a.user_id] ?? -Infinity) - (data.studentPoints[b.user_id] ?? -Infinity);
+  const byItem = (seq) => (a, b) =>
+    (data.markMap[a.user_id]?.[seq] ?? -Infinity) - (data.markMap[b.user_id]?.[seq] ?? -Infinity);
   const makeCmp = (s, d) => {
     const r = d === 'desc' ? -1 : 1;
     if (s === 'github') return (a, b) => r * byGithub(a, b);
     if (s === 'name') return (a, b) => r * byName(a, b);
     if (s === 'score' || s === 'points') return (a, b) => r * byPoints(a, b);
+    if (typeof s === 'string' && s.startsWith('item:')) {
+      const seq = Number(s.slice(5));
+      const cmp = byItem(seq);
+      return (a, b) => r * cmp(a, b);
+    }
     return () => 0;
   };
   const secondary = prevSort ? makeCmp(prevSort, prevDir) : byGithub;
@@ -1658,26 +1668,25 @@ app.get('/points-grader', (req, res) => {
 
 app.get('/points-grader/:assignmentId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
-  const sort = ['name', 'github', 'score', 'points'].includes(req.query.sort)
-    ? req.query.sort
-    : 'github';
-  const defaultDir = sort === 'score' || sort === 'points' ? 'desc' : 'asc';
-  const dir = ['asc', 'desc'].includes(req.query.dir) ? req.query.dir : defaultDir;
-  const prevSort = ['name', 'github', 'score', 'points'].includes(req.query.prevSort)
-    ? req.query.prevSort
-    : null;
-  const prevDir = ['asc', 'desc'].includes(req.query.prevDir) ? req.query.prevDir : 'asc';
+  const { sort, dir, prevSort, prevDir } = readSort(req);
   const data = pointsGraderData(assignmentId);
 
   const byGithub = (a, b) => (a.github || '').localeCompare(b.github || '');
   const byName = (a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || '');
   const byPoints = (a, b) =>
     (data.studentPoints[a.user_id] ?? -Infinity) - (data.studentPoints[b.user_id] ?? -Infinity);
+  const byItem = (seq) => (a, b) =>
+    (data.markMap[a.user_id]?.[seq] ?? -Infinity) - (data.markMap[b.user_id]?.[seq] ?? -Infinity);
   const makeCmp = (s, d) => {
     const r = d === 'desc' ? -1 : 1;
     if (s === 'github') return (a, b) => r * byGithub(a, b);
     if (s === 'name') return (a, b) => r * byName(a, b);
     if (s === 'score' || s === 'points') return (a, b) => r * byPoints(a, b);
+    if (typeof s === 'string' && s.startsWith('item:')) {
+      const seq = Number(s.slice(5));
+      const cmp = byItem(seq);
+      return (a, b) => r * cmp(a, b);
+    }
     return () => 0;
   };
   const primary = makeCmp(sort, dir);

@@ -846,3 +846,22 @@ button.excuse-button:hover { color: #555; }
   max-height: calc(100vh - 8rem);
   overflow: auto;
 }
+
+.sort-carets {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 0.7;
+  font-size: 0.6rem;
+  vertical-align: middle;
+  margin-left: 0.2em;
+}
+.sort-carets a { color: #ccc; text-decoration: none; padding: 0; }
+.sort-carets a:hover { color: #555; }
+.sort-carets a.active { color: #1a1a2e; }
+table.checklist th.checklist-item .sort-carets {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.25rem;
+  z-index: 2;
+  margin-left: 0;
+}

@@ -3,21 +3,28 @@
   <thead>
     <tr>
       {% set base = '/points-grader/' + assignment.assignment_id %}
-      {% macro sortLink(key, label, defaultSortDir) %}
-        {% if sort == key %}
-          {% set toggledDir = 'desc' if dir == 'asc' else 'asc' %}
-          {% set href = base + '?sort=' + key + '&dir=' + toggledDir + ('&prevSort=' + prevSort + '&prevDir=' + prevDir if prevSort else '') %}
-          <a href="{{ href }}" class="sort-active">{{ label }} <i class="bi {{ 'bi-arrow-up' if dir == 'asc' else 'bi-arrow-down' }}"></i></a>
-        {% else %}
-          {% set href = base + '?sort=' + key + '&dir=' + defaultSortDir + '&prevSort=' + sort + '&prevDir=' + dir %}
-          <a href="{{ href }}">{{ label }}</a>
-        {% endif %}
+      {% macro sortLink(key, label) %}
+        {% set qsTail = ('&prevSort=' + sort + '&prevDir=' + dir) if sort != key else (('&prevSort=' + prevSort + '&prevDir=' + prevDir) if prevSort else '') %}
+        {{ label }}<span class="sort-carets"
+          ><a class="sort-up{% if sort == key and dir == 'desc' %} active{% endif %}"
+              href="{{ base }}?sort={{ key }}&dir=desc{{ qsTail }}"><i class="bi bi-caret-up-fill"></i></a
+          ><a class="sort-down{% if sort == key and dir == 'asc' %} active{% endif %}"
+              href="{{ base }}?sort={{ key }}&dir=asc{{ qsTail }}"><i class="bi bi-caret-down-fill"></i></a
+        ></span>
       {% endmacro %}
-      <th>{{ sortLink('name', 'Name', 'asc') }} / {{ sortLink('github', 'Github', 'asc') }}</th>
-      <th>{{ sortLink('score', 'Score', 'desc') }}</th>
-      <th>{{ sortLink('points', 'Points', 'desc') }}</th>
+      <th>{{ sortLink('name', 'Name') }} / {{ sortLink('github', 'Github') }}</th>
+      <th>{{ sortLink('score', 'Score') }}</th>
+      <th>{{ sortLink('points', 'Points') }}</th>
       {% for i in items %}
         <th class="checklist-item">
+          {% set itemKey = 'item:' + i.seq %}
+          {% set qsTail = ('&prevSort=' + sort + '&prevDir=' + dir) if sort != itemKey else (('&prevSort=' + prevSort + '&prevDir=' + prevDir) if prevSort else '') %}
+          <span class="sort-carets">
+            <a class="sort-up{% if sort == itemKey and dir == 'desc' %} active{% endif %}"
+               href="{{ base }}?sort={{ itemKey }}&dir=desc{{ qsTail }}"><i class="bi bi-caret-up-fill"></i></a>
+            <a class="sort-down{% if sort == itemKey and dir == 'asc' %} active{% endif %}"
+               href="{{ base }}?sort={{ itemKey }}&dir=asc{{ qsTail }}"><i class="bi bi-caret-down-fill"></i></a>
+          </span>
           {% set assignmentId = assignment.assignment_id %}
           {% set seq = i.seq %}
           {% set label = i.label %}
