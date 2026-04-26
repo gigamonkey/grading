@@ -752,7 +752,13 @@ app.get('/commit-history', (req, res) => {
       if (!repoDir || !fs.existsSync(repoDir)) {
         return { student: s, counts: {}, total: 0, days: 0, missing: true };
       }
-      const isos = new Repo(repoDir).commitDatesForPath(repoPath);
+      const repo = new Repo(repoDir);
+      try {
+        repo.fetch();
+      } catch (e) {
+        console.log(`fetch failed for ${repoDir}: ${e.message}`);
+      }
+      const isos = repo.commitDatesForPath(repoPath);
       const counts = {};
       for (const iso of isos) {
         const day = iso.slice(0, 10);
@@ -1964,7 +1970,13 @@ app.post('/points-grader/:assignmentId/commits-item', (req, res) => {
   const perStudent = students.map((s) => {
     const repoDir = s.github ? `${process.env.BHS_CS_REPOS}/${s.github}.git/` : null;
     if (!repoDir || !fs.existsSync(repoDir)) return { s, days: new Set() };
-    const isos = new Repo(repoDir).commitDatesForPath(repoPath);
+    const repo = new Repo(repoDir);
+    try {
+      repo.fetch();
+    } catch (e) {
+      console.log(`fetch failed for ${repoDir}: ${e.message}`);
+    }
+    const isos = repo.commitDatesForPath(repoPath);
     const days = new Set();
     for (const iso of isos) {
       const day = iso.slice(0, 10);
