@@ -2,7 +2,7 @@
 {% block title %}Commit History - Gradebook{% endblock %}
 {% block content %}
 <h1>Commit History</h1>
-<form id="commit-history-form" hx-get="/commit-history" hx-target="#commit-history-results" hx-swap="innerHTML" hx-trigger="change, submit"
+<form id="commit-history-form" hx-get="/commit-history" hx-target="#commit-history-results" hx-swap="innerHTML" hx-push-url="true" hx-trigger="change, submit"
       onsubmit="event.preventDefault()" style="display: flex; gap: 1rem; align-items: center;">
   <label>Course
     <select name="course">
@@ -15,6 +15,14 @@
   <label style="flex: 1">Path
     <input type="text" name="path" value="{{ repoPath }}" placeholder="e.g. csa/something or path/to/file.java" style="width: 100%">
   </label>
+  <label>Start
+    <input type="date" name="startDate" value="{{ startDate or '' }}">
+  </label>
+  <label>End
+    <input type="date" name="endDate" value="{{ endDate or '' }}">
+  </label>
+  <input type="hidden" id="hidden-sort" name="sort" value="{{ sort or '' }}">
+  <input type="hidden" id="hidden-dir" name="dir" value="{{ dir or '' }}">
 </form>
 <div id="commit-history-results">
   {% include "app/commit-history/results.njk" %}

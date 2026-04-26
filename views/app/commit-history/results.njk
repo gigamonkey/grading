@@ -1,3 +1,5 @@
+<input type="hidden" id="hidden-sort" name="sort" form="commit-history-form" value="{{ sort or '' }}" hx-swap-oob="true">
+<input type="hidden" id="hidden-dir" name="dir" form="commit-history-form" value="{{ dir or '' }}" hx-swap-oob="true">
 {% if not courseId %}
 <p>Pick a course to see commit history.</p>
 {% elif rows.length == 0 %}
@@ -7,12 +9,12 @@
   ><a class="sort-up{% if sort == key and dir == 'desc' %} active{% endif %}"
       hx-get="/commit-history" hx-vals='{"sort":"{{ key }}","dir":"desc"}'
       hx-include="#commit-history-form"
-      hx-target="#commit-history-results" hx-swap="innerHTML"
+      hx-target="#commit-history-results" hx-swap="innerHTML" hx-push-url="true"
       href="#"><i class="bi bi-caret-up-fill"></i></a
   ><a class="sort-down{% if sort == key and dir == 'asc' %} active{% endif %}"
       hx-get="/commit-history" hx-vals='{"sort":"{{ key }}","dir":"asc"}'
       hx-include="#commit-history-form"
-      hx-target="#commit-history-results" hx-swap="innerHTML"
+      hx-target="#commit-history-results" hx-swap="innerHTML" hx-push-url="true"
       href="#"><i class="bi bi-caret-down-fill"></i></a
 ></span>{% endmacro %}
 {% set sparkWidth = 400 %}

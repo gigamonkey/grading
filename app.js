@@ -736,6 +736,9 @@ app.get('/commit-history', (req, res) => {
   const courses = db.distinctCourses();
   const courseId = req.query.course || null;
   const repoPath = (req.query.path || '').trim();
+  const isoDate = (s) => (typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null);
+  const startDate = isoDate(req.query.startDate);
+  const endDate = isoDate(req.query.endDate);
 
   let rows = [];
   let dateRange = [];
@@ -747,25 +750,34 @@ app.get('/commit-history', (req, res) => {
     rows = students.map((s) => {
       const repoDir = s.github ? `${process.env.BHS_CS_REPOS}/${s.github}.git/` : null;
       if (!repoDir || !fs.existsSync(repoDir)) {
-        return { student: s, counts: {}, total: 0, missing: true };
+        return { student: s, counts: {}, total: 0, days: 0, missing: true };
       }
       const isos = new Repo(repoDir).commitDatesForPath(repoPath);
       const counts = {};
       for (const iso of isos) {
         const day = iso.slice(0, 10);
+        if (startDate && day < startDate) continue;
+        if (endDate && day > endDate) continue;
         counts[day] = (counts[day] ?? 0) + 1;
         allDates.add(day);
       }
-      const total = isos.length;
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
       const days = Object.keys(counts).length;
       return { student: s, counts, total, days, missing: false };
     });
 
-    var schoolDays = new Set();
-    if (allDates.size > 0) {
+    let rangeStart = startDate;
+    let rangeEnd = endDate;
+    if (!rangeStart || !rangeEnd) {
       const sorted = [...allDates].sort();
-      const start = new Date(`${sorted[0]}T00:00:00Z`);
-      const end = new Date(`${sorted[sorted.length - 1]}T00:00:00Z`);
+      if (!rangeStart) rangeStart = sorted[0];
+      if (!rangeEnd) rangeEnd = sorted[sorted.length - 1];
+    }
+
+    const schoolDays = new Set();
+    if (rangeStart && rangeEnd && rangeStart <= rangeEnd) {
+      const start = new Date(`${rangeStart}T00:00:00Z`);
+      const end = new Date(`${rangeEnd}T00:00:00Z`);
       for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
         const day = d.toISOString().slice(0, 10);
         dateRange.push(day);
@@ -813,6 +825,8 @@ app.get('/commit-history', (req, res) => {
       courses,
       courseId,
       repoPath,
+      startDate,
+      endDate,
       rows,
       dateRange,
       maxCount,
@@ -828,6 +842,8 @@ app.get('/commit-history', (req, res) => {
     courses,
     courseId,
     repoPath,
+    startDate,
+    endDate,
     rows,
     dateRange,
     maxCount,
