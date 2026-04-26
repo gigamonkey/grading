@@ -16,6 +16,7 @@ import { API } from './api.js';
 import { numCorrect, scoreTest } from './modules/grading.js';
 import mdfilter from './modules/mdfilter.js';
 import { Repo } from './modules/repo.js';
+import { bellSchedule } from './modules/bell-schedule.js';
 import { durationString, getCommitData } from './modules/speedruns.js';
 import { loadTestcases, runTestsWithError } from './modules/test-javascript.js';
 import { camelify } from './modules/util.js';
@@ -760,12 +761,21 @@ app.get('/commit-history', (req, res) => {
       return { student: s, counts, total, days, missing: false };
     });
 
+    var schoolDays = new Set();
     if (allDates.size > 0) {
       const sorted = [...allDates].sort();
       const start = new Date(`${sorted[0]}T00:00:00Z`);
       const end = new Date(`${sorted[sorted.length - 1]}T00:00:00Z`);
       for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
-        dateRange.push(d.toISOString().slice(0, 10));
+        const day = d.toISOString().slice(0, 10);
+        dateRange.push(day);
+        try {
+          if (bellSchedule.isSchoolDay(globalThis.Temporal.PlainDate.from(day))) {
+            schoolDays.add(day);
+          }
+        } catch {
+          /* date outside known calendar years */
+        }
       }
       for (const r of rows) {
         for (const c of Object.values(r.counts)) {
@@ -773,11 +783,15 @@ app.get('/commit-history', (req, res) => {
         }
       }
     }
+    for (const r of rows) {
+      r.schoolDays = schoolDays.size;
+      r.schoolDayPct = schoolDays.size ? r.days / schoolDays.size : null;
+    }
 
-    const validSort = ['name', 'period', 'github', 'days', 'rate', 'total'];
+    const validSort = ['name', 'period', 'github', 'days', 'rate', 'schoolPct', 'total'];
     const sort = validSort.includes(req.query.sort) ? req.query.sort : 'name';
-    const defaultDir =
-      sort === 'total' || sort === 'days' || sort === 'rate' ? 'desc' : 'asc';
+    const quantitative = new Set(['days', 'rate', 'schoolPct', 'total']);
+    const defaultDir = quantitative.has(sort) ? 'desc' : 'asc';
     const dir = ['asc', 'desc'].includes(req.query.dir) ? req.query.dir : defaultDir;
     const r = dir === 'desc' ? -1 : 1;
     const rate = (row) => (row.days ? row.total / row.days : 0);
@@ -787,6 +801,7 @@ app.get('/commit-history', (req, res) => {
       github: (a, b) => (a.student.github || '').localeCompare(b.student.github || ''),
       days: (a, b) => a.days - b.days,
       rate: (a, b) => rate(a) - rate(b),
+      schoolPct: (a, b) => (a.schoolDayPct ?? -1) - (b.schoolDayPct ?? -1),
       total: (a, b) => a.total - b.total,
     };
     rows.sort((a, b) => r * cmp[sort](a, b) || cmp.name(a, b));

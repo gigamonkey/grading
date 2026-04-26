@@ -27,6 +27,7 @@
       <th>{{ sortLink('github', 'GitHub') }}</th>
       <th>Commits {% if dateRange.length %}<small style="color:#888;font-weight:normal">({{ dateRange[0] }} → {{ dateRange[dateRange.length - 1] }})</small>{% endif %}</th>
       <th>{{ sortLink('days', 'Days') }}</th>
+      <th>{{ sortLink('schoolPct', '% school days') }}</th>
       <th>{{ sortLink('rate', 'Commits/day') }}</th>
       <th>{{ sortLink('total', 'Total') }}</th>
     </tr>
@@ -55,6 +56,7 @@
         {% endif %}
       </td>
       <td>{{ r.days or 0 }}</td>
+      <td>{% if r.schoolDayPct != null %}{{ (r.schoolDayPct * 100) | round }}% <small style="color:#888">({{ r.days }}/{{ r.schoolDays }})</small>{% else %}&mdash;{% endif %}</td>
       <td>{% if r.days %}{{ (r.total / r.days) | round(1) }}{% else %}&mdash;{% endif %}</td>
       <td>{{ r.total }}</td>
     </tr>

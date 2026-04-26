@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@js-temporal/polyfill": "^0.5.1",
+    "@peterseibel/bells": "^0.3.0",
+    "@peterseibel/bhs-calendars": "^2.0.0",
     "commander": "^14.0.1",
     "csv-parse": "^6.2.1",
     "dompurify": "^3.2.6",
