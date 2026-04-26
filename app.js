@@ -1949,6 +1949,84 @@ app.post('/points-grader/:assignmentId/excused/:userId', (req, res) => {
   renderPointsGraderTableFromReq(req, res, assignmentId);
 });
 
+app.post('/points-grader/:assignmentId/commits-item', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const repoPath = (req.body.path || '').trim();
+  const isoDate = (s) =>
+    typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.trim()) ? s.trim() : null;
+  const startDate = isoDate(req.body.startDate);
+  const endDate = isoDate(req.body.endDate);
+
+  const assignment = db.assignmentById({ assignmentId });
+  const students = db.studentsByCourse({ courseId: assignment.course_id });
+  const excused = excusedSetFor(assignmentId);
+
+  const perStudent = students.map((s) => {
+    const repoDir = s.github ? `${process.env.BHS_CS_REPOS}/${s.github}.git/` : null;
+    if (!repoDir || !fs.existsSync(repoDir)) return { s, days: new Set() };
+    const isos = new Repo(repoDir).commitDatesForPath(repoPath);
+    const days = new Set();
+    for (const iso of isos) {
+      const day = iso.slice(0, 10);
+      if (startDate && day < startDate) continue;
+      if (endDate && day > endDate) continue;
+      days.add(day);
+    }
+    return { s, days };
+  });
+
+  const allDays = new Set();
+  for (const p of perStudent) for (const d of p.days) allDays.add(d);
+  let rangeStart = startDate;
+  let rangeEnd = endDate;
+  if (!rangeStart || !rangeEnd) {
+    const sorted = [...allDays].sort();
+    if (!rangeStart) rangeStart = sorted[0];
+    if (!rangeEnd) rangeEnd = sorted[sorted.length - 1];
+  }
+
+  const schoolDays = new Set();
+  if (rangeStart && rangeEnd && rangeStart <= rangeEnd) {
+    const start = new Date(`${rangeStart}T00:00:00Z`);
+    const end = new Date(`${rangeEnd}T00:00:00Z`);
+    for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+      const day = d.toISOString().slice(0, 10);
+      try {
+        if (bellSchedule.isSchoolDay(globalThis.Temporal.PlainDate.from(day))) {
+          schoolDays.add(day);
+        }
+      } catch {
+        /* outside known calendar years */
+      }
+    }
+  }
+
+  const items = db.rubricItemsForAssignment({ assignmentId });
+  const newSeq = items.length ? Math.max(...items.map((i) => i.seq)) + 1 : 1;
+
+  db.transaction(() => {
+    db.addRubricItem({
+      assignmentId,
+      label: 'Commit days',
+      points: 1,
+      kind: 'commits',
+      parameters: JSON.stringify({ path: repoPath, startDate, endDate }),
+    });
+    for (const p of perStudent) {
+      if (excused.has(p.s.user_id)) continue;
+      const fraction = schoolDays.size ? p.days.size / schoolDays.size : 0;
+      db.upsertPointsRubricMark({
+        userId: p.s.user_id,
+        assignmentId,
+        seq: newSeq,
+        fraction,
+      });
+    }
+  });
+
+  renderPointsGraderTableFromReq(req, res, assignmentId);
+});
+
 app.post('/points-grader/:assignmentId/zero/:userId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;

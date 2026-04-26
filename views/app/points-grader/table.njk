@@ -2,6 +2,31 @@
 {% block title %}Points Grader: {{ assignment.title }} - Gradebook{% endblock %}
 {% block content %}
 <h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+<dialog id="commits-dialog">
+  <form method="dialog"
+        hx-post="/points-grader/{{ assignment.assignment_id }}/commits-item"
+        hx-target="#points-grader-table"
+        hx-swap="innerHTML"
+        hx-on:htmx:after-request="document.getElementById('commits-dialog').close()"
+        style="display: flex; flex-direction: column; gap: 0.6em; min-width: 22rem;">
+    <h3 style="margin: 0">Add commit-days item</h3>
+    <label style="display: flex; align-items: center; gap: 0.4em">Path
+      <input name="path" type="text" required style="flex: 1; margin: 0">
+    </label>
+    <label style="display: flex; align-items: center; gap: 0.4em">Start
+      <input name="startDate" type="date" style="margin: 0">
+    </label>
+    <label style="display: flex; align-items: center; gap: 0.4em">End
+      <input name="endDate" type="date" style="margin: 0">
+    </label>
+    <p style="margin: 0; color: #888; font-size: 0.85em">Empty start/end = auto min/max from commits.</p>
+    <div style="display: flex; gap: 0.5em; justify-content: flex-end">
+      <button type="button" class="btn-subtle"
+              onclick="document.getElementById('commits-dialog').close()">Cancel</button>
+      <button type="submit">Add</button>
+    </div>
+  </form>
+</dialog>
 <div id="points-grader-table">
 {% include "app/points-grader/_table.njk" %}
 </div>

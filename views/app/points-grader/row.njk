@@ -11,7 +11,7 @@
     <span id="score-{{ userId }}">{% if complete and totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}-{% endif %}</span>
   </td>
   <td class="checklist-score">
-    <span id="points-{{ userId }}">{% if complete %}{{ earned }}/{{ totalPoints }}{% else %}-{% endif %}</span>
+    <span id="points-{{ userId }}">{% if complete %}{{ earned | round }}/{{ totalPoints }}{% else %}-{% endif %}</span>
   </td>
   {% for i in items %}
     {% set seq = i.seq %}
