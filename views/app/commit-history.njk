@@ -4,7 +4,10 @@
 <h1>Commit History</h1>
 <form id="commit-history-form" hx-get="/commit-history" hx-target="#commit-history-results" hx-swap="innerHTML" hx-push-url="true" hx-trigger="change, submit"
       onsubmit="event.preventDefault()" style="display: flex; gap: 1rem; align-items: center;">
-  <label>Course
+<style>
+  #commit-history-form input, #commit-history-form select { margin: 0; }
+</style>
+  <label style="display: flex; align-items: center; gap: 0.4em; margin: 0;">Course
     <select name="course">
       <option value="">— pick a course —</option>
       {% for c in courses %}
@@ -12,13 +15,13 @@
       {% endfor %}
     </select>
   </label>
-  <label style="flex: 1">Path
-    <input type="text" name="path" value="{{ repoPath }}" placeholder="e.g. csa/something or path/to/file.java" style="width: 100%">
+  <label style="display: flex; align-items: center; gap: 0.4em; margin: 0; flex: 1;">Path
+    <input type="text" name="path" value="{{ repoPath }}" placeholder="e.g. csa/something or path/to/file.java" style="flex: 1;">
   </label>
-  <label>Start
+  <label style="display: flex; align-items: center; gap: 0.4em; margin: 0;">Start
     <input type="date" name="startDate" value="{{ startDate or '' }}">
   </label>
-  <label>End
+  <label style="display: flex; align-items: center; gap: 0.4em; margin: 0;">End
     <input type="date" name="endDate" value="{{ endDate or '' }}">
   </label>
   <input type="hidden" id="hidden-sort" name="sort" value="{{ sort or '' }}">
