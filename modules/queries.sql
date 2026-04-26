@@ -63,6 +63,23 @@ on conflict(course_id, ic_name) do update set points = excluded.points;
 -- :name courseIdByStudentNumber :get
 SELECT course_id FROM roster WHERE student_number = $studentNumber LIMIT 1;
 
+-- :name icPointValueExists :get
+SELECT 1 AS exists_ FROM ic_point_values WHERE ic_name = $icName LIMIT 1;
+
+-- Rename an IC assignment column. ic_name is referenced from
+-- assignment_point_values, mastery_ic_names, ic_point_values, and ic_grades.
+-- :name renameIcNameInAssignmentPointValues :run
+UPDATE assignment_point_values SET ic_name = $newIcName WHERE ic_name = $oldIcName;
+
+-- :name renameIcNameInMasteryIcNames :run
+UPDATE mastery_ic_names SET ic_name = $newIcName WHERE ic_name = $oldIcName;
+
+-- :name renameIcNameInIcPointValues :run
+UPDATE ic_point_values SET ic_name = $newIcName WHERE ic_name = $oldIcName;
+
+-- :name renameIcNameInIcGrades :run
+UPDATE ic_grades SET ic_name = $newIcName WHERE ic_name = $oldIcName;
+
 -- :name ensureIcGrade :insert
 insert into ic_grades (student_number, ic_name, points) values ($studentNumber, $icName, $points)
 on conflict(student_number, ic_name) do update set points = excluded.points;

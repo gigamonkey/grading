@@ -920,8 +920,25 @@ app.get('/ic-assignment/:icName', (req, res) => {
   const icName = req.params.icName;
   const assignment = db.icAssignmentInfo({ icName });
   const rows = db.icAssignmentScores({ icName });
-  const existsInIc = !!db.icPointValue({ icName });
+  const existsInIc = !!db.icPointValueExists({ icName });
   res.render('app/ic-assignment.njk', { icName, assignment, rows, existsInIc });
+});
+
+app.put('/ic-assignment/:icName/name', (req, res) => {
+  const oldIcName = req.params.icName;
+  const newIcName = req.body.icName?.trim();
+  if (!newIcName || newIcName === oldIcName) {
+    res.set('HX-Redirect', `/ic-assignment/${encodeURIComponent(oldIcName)}`);
+    return res.send('');
+  }
+  db.transaction(() => {
+    db.renameIcNameInAssignmentPointValues({ oldIcName, newIcName });
+    db.renameIcNameInMasteryIcNames({ oldIcName, newIcName });
+    db.renameIcNameInIcPointValues({ oldIcName, newIcName });
+    db.renameIcNameInIcGrades({ oldIcName, newIcName });
+  });
+  res.set('HX-Redirect', `/ic-assignment/${encodeURIComponent(newIcName)}`);
+  res.send('');
 });
 
 // Mastery IC Names
