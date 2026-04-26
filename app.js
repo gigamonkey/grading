@@ -250,6 +250,26 @@ app.get('/assignments/:assignmentId/students/:userId/row', (req, res) => {
   });
 });
 
+app.get('/direct-scores', (req, res) => {
+  const search = req.query.search || null;
+  const assignments = db.ungradedAssignments({ search });
+  if (req.headers['hx-request']) {
+    res.render('app/direct-scores/tbody.njk', { assignments });
+  } else {
+    res.render('app/direct-scores.njk', { assignments, search });
+  }
+});
+
+app.get('/direct-scores/:assignmentId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const assignment = db.assignmentById({ assignmentId });
+  const students = db.studentsByCourse({ courseId: assignment.course_id });
+  students.sort((a, b) => (a.sortable_name || '').localeCompare(b.sortable_name || ''));
+  const scores = db.directScoresForAssignment({ assignmentId });
+  const scoreMap = Object.fromEntries(scores.map((s) => [s.user_id, s.score]));
+  res.render('app/direct-scores/table.njk', { assignment, students, scoreMap });
+});
+
 app.post('/assignments/:assignmentId/students/:userId/direct-score', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;

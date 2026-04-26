@@ -18,8 +18,9 @@
   <td class="text-center">
     {% if a.has_scores %}
       <i class="bi bi-check-circle-fill text-success"></i>
-    {% elif a.kind == 'coding' %}
-      <span id="grade-status-{{ a.assignment_id }}">
+    {% else %}
+      <span id="grade-status-{{ a.assignment_id }}" class="grading-buttons">
+        {% if a.kind == 'coding' %}
         <button class="btn-subtle" hx-post="/assignments/{{ a.assignment_id }}/grade-java"
                 hx-target="#grade-status-{{ a.assignment_id }}"
                 hx-swap="innerHTML"
@@ -30,9 +31,15 @@
                 hx-swap="innerHTML"
                 hx-on::before-request="this.parentElement.innerHTML = '<i class=\'bi bi-arrow-repeat spinning\'></i>'"
                 >JS</button>
+        {% endif %}
+        {% if a.kind == 'questions' %}
+        <a href="/quiz-scoring/{{ a.assignment_id }}"><button type="button" class="btn-subtle">Quiz</button></a>
+        {% endif %}
+        <a href="/md-grader/{{ a.assignment_id }}"><button type="button" class="btn-subtle">MD</button></a>
+        <a href="/checklist/{{ a.assignment_id }}"><button type="button" class="btn-subtle">Checklist</button></a>
+        <a href="/points-grader/{{ a.assignment_id }}"><button type="button" class="btn-subtle">Points</button></a>
+        <a href="/direct-scores/{{ a.assignment_id }}"><button type="button" class="btn-subtle">Direct</button></a>
       </span>
-    {% elif a.kind == 'questions' %}
-      <a href="/quiz-scoring/{{ a.assignment_id }}"><button type="button" class="btn-subtle">Quiz</button></a>
     {% endif %}
   </td>
 </tr>

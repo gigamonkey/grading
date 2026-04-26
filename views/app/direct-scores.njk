@@ -1,0 +1,22 @@
+{% extends "app/layout.njk" %}
+{% block title %}Direct Scores - Gradebook{% endblock %}
+{% block content %}
+<h1>Direct Scores</h1>
+<input type="search" placeholder="Search assignments..."
+  value="{{ search or '' }}"
+  hx-get="/direct-scores"
+  hx-trigger="input delay:300ms"
+  hx-target="#direct-scores-tbody"
+  hx-include="this"
+  name="search">
+<table data-column-filters>
+  <thead>
+    <tr>
+      <th>ID</th><th>Title</th><th data-column-filter="2">Course</th><th>Date</th><th data-column-filter="4">Type</th><th data-column-filter="5">Standard</th><th data-column-filter="6">Graded?</th>
+    </tr>
+  </thead>
+  <tbody id="direct-scores-tbody">
+    {% include "app/direct-scores/tbody.njk" %}
+  </tbody>
+</table>
+{% endblock %}

@@ -225,6 +225,9 @@ VALUES ($courseId, $standard, $icName);
 -- :name questionsForAssignment :one
 select questions from speedrunnables where assignment_id = $assignmentId;
 
+-- :name directScoresForAssignment :all
+SELECT user_id, score FROM direct_scores WHERE assignment_id = $assignmentId;
+
 -- :name ensureDirectScore :insert
 insert or replace into direct_scores
   (assignment_id, user_id, score)
@@ -302,14 +305,16 @@ SELECT a.assignment_id, a.date, a.course_id, a.title,
        COALESCE(apv.ic_name, min.ic_name) as ic_name,
        COALESCE(apv.points, ma.points) as points,
        CASE WHEN a.assignment_id IN (SELECT DISTINCT assignment_id FROM checklist_scores)
-              OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM points_rubric_marks) THEN 'Yes' ELSE '' END as graded
+              OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM points_rubric_marks)
+              OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM direct_scores) THEN 'Yes' ELSE '' END as graded
 FROM assignments a
 LEFT JOIN assignment_point_values apv USING (assignment_id)
 LEFT JOIN mastery_assignments ma USING (assignment_id)
 LEFT JOIN mastery_ic_names min ON min.standard = ma.standard AND min.course_id = a.course_id
 WHERE (a.assignment_id NOT IN (SELECT DISTINCT assignment_id FROM assignment_scores)
        OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM checklist_scores)
-       OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM points_rubric_marks))
+       OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM points_rubric_marks)
+       OR a.assignment_id IN (SELECT DISTINCT assignment_id FROM direct_scores))
   AND ($search IS NULL OR upper(a.title) LIKE '%' || upper($search) || '%'
        OR upper(a.course_id) LIKE '%' || upper($search) || '%'
        OR CAST(a.assignment_id AS TEXT) = $search)

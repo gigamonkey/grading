@@ -1,0 +1,98 @@
+{% extends "app/layout.njk" %}
+{% block title %}Direct Scores: {{ assignment.title }} - Gradebook{% endblock %}
+{% block content %}
+<h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
+<p style="color:#666;font-size:0.9em">
+  Enter scores as fractions (0.0–1.0). Tab or Enter to advance. Pasting a list of values fills cells starting at the focused row.
+</p>
+<table class="data-table" style="width:auto">
+  <thead>
+    <tr><th>Student</th><th>Period</th><th>Score</th></tr>
+  </thead>
+  <tbody>
+    {% for s in students %}
+    <tr>
+      <td>{{ s.sortable_name }} <span class="copyable" data-copy="{{ s.sortable_name }}" onclick="navigator.clipboard.writeText(this.dataset.copy)" style="cursor: pointer;"><i class="bi bi-clipboard copy-icon" style="font-size: 0.75em; vertical-align: middle;"></i></span></td>
+      <td>{{ s.period }}</td>
+      <td>
+        <input type="number" min="0" max="1" step="any" class="direct-score-input"
+               data-user-id="{{ s.user_id }}"
+               data-name="{{ s.sortable_name }}"
+               value="{% if scoreMap[s.user_id] != null %}{{ scoreMap[s.user_id] }}{% endif %}"
+               style="width: 6em">
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<span id="direct-scores-status" style="color:#888;font-size:0.85em;margin-left:0.5em"></span>
+<script>
+(function () {
+  const assignmentId = {{ assignment.assignment_id }};
+  const status = document.getElementById('direct-scores-status');
+  const inputs = () => [...document.querySelectorAll('.direct-score-input')];
+
+  function flash(msg, isError) {
+    status.textContent = msg;
+    status.style.color = isError ? '#c00' : '#888';
+  }
+
+  async function save(input) {
+    const userId = input.dataset.userId;
+    const name = input.dataset.name;
+    const raw = input.value.trim();
+    if (raw === '') return;
+    const num = Number(raw);
+    if (!Number.isFinite(num) || num < 0 || num > 1) {
+      flash(`Invalid value for ${name}: ${raw}`, true);
+      input.style.outline = '2px solid #c00';
+      return;
+    }
+    input.style.outline = '';
+    const body = new URLSearchParams({ score: String(num) });
+    const r = await fetch(`/assignments/${assignmentId}/students/${userId}/direct-score`, {
+      method: 'POST',
+      body,
+    });
+    if (!r.ok) {
+      flash(`Save failed for ${name}`, true);
+    } else {
+      flash(`Saved ${name} = ${num}`);
+    }
+  }
+
+  document.querySelector('table.data-table').addEventListener('change', (e) => {
+    if (e.target.classList.contains('direct-score-input')) save(e.target);
+  });
+
+  document.querySelector('table.data-table').addEventListener('keydown', (e) => {
+    if (!e.target.classList.contains('direct-score-input')) return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const all = inputs();
+      const i = all.indexOf(e.target);
+      e.target.blur();
+      if (all[i + 1]) all[i + 1].focus();
+    }
+  });
+
+  document.querySelector('table.data-table').addEventListener('paste', async (e) => {
+    if (!e.target.classList.contains('direct-score-input')) return;
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    const values = text.split(/[\s,]+/).filter(Boolean);
+    if (values.length <= 1) return;
+    e.preventDefault();
+    const all = inputs();
+    const start = all.indexOf(e.target);
+    const targets = values
+      .map((v, i) => ({ target: all[start + i], v }))
+      .filter((p) => p.target);
+    flash(`Saving ${targets.length}…`);
+    for (const { target, v } of targets) target.value = v;
+    const results = await Promise.allSettled(targets.map(({ target }) => save(target)));
+    const failed = results.filter((r) => r.status === 'rejected').length;
+    flash(failed ? `Saved ${targets.length - failed} of ${targets.length} (${failed} failed)` : `Saved ${targets.length} students`, failed > 0);
+  });
+})();
+</script>
+{% endblock %}
