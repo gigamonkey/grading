@@ -235,7 +235,7 @@ button.checklist-delete-criterion {
   border-radius: 3px;
   cursor: pointer;
 }
-th.checklist-label:hover button.checklist-delete-criterion { display: block; }
+.checklist-label:hover button.checklist-delete-criterion { display: block; }
 
 .checklist-points {
   cursor: pointer;
