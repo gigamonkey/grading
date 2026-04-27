@@ -148,6 +148,12 @@ SELECT standard FROM standards WHERE course_id = $courseId ORDER BY standard;
 -- :name findAssignment :all
 select * from assignments where assignment_id = cast($q as integer) or upper(title) like '%' || upper($q) || '%';
 
+-- :name updateScoreOverrideScore :run
+UPDATE score_overrides SET score = $score WHERE user_id = $userId AND assignment_id = $assignmentId;
+
+-- :name updateScoreOverrideReason :run
+UPDATE score_overrides SET reason = $reason WHERE user_id = $userId AND assignment_id = $assignmentId;
+
 -- :name ensureScoreOverride :insert
 insert or replace into score_overrides (user_id, assignment_id, score, reason)
 values ($userId, $assignmentId, $score, $reason);
@@ -350,6 +356,11 @@ ORDER BY period, sortable_name;
 SELECT * FROM mastery_to_update
 WHERE ($period IS NULL OR period = $period)
 ORDER BY period, sortable_name;
+
+-- :name assignmentPointsForStudent :get
+SELECT points, max_points, score
+FROM assignment_points
+WHERE user_id = $userId AND assignment_id = $assignmentId;
 
 -- :name studentToUpdate :all
 SELECT * FROM to_update WHERE user_id = $userId ORDER BY ic_name;

@@ -19,6 +19,12 @@
     <div id="assignment-results"></div>
   </fieldset>
 
+  <div id="current-score"
+       hx-get="/overrides/current-score"
+       hx-trigger="change from:closest form"
+       hx-include="closest form"
+       hx-target="this"
+       hx-swap="innerHTML"></div>
   <label>Score <input type="number" name="score" step="0.01" required></label>
   <label>Reason <input type="text" name="reason" required></label>
   <button type="submit">Add Override</button>

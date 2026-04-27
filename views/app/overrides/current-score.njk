@@ -1,0 +1,5 @@
+{% if row %}
+<p style="color: #555; margin: 0.5em 0">Current score: <strong>{{ row.points }} of {{ row.max_points }}</strong>{% if row.score != null %} ({{ (row.score * 100) | round }}%){% endif %}</p>
+{% else %}
+<p style="color: #888; margin: 0.5em 0">No recorded score for this student on this assignment.</p>
+{% endif %}

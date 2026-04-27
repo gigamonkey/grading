@@ -13,4 +13,48 @@
     {% include "app/overrides/tbody.njk" %}
   </tbody>
 </table>
+<style>
+  td.override-edit { cursor: pointer; }
+  td.override-edit:hover { background: #f0f0f0; }
+  td.override-edit input { width: 100%; box-sizing: border-box; padding: 0.1em 0.3em; margin: 0; font: inherit; }
+</style>
+<script>
+document.getElementById('overrides-tbody').addEventListener('click', (e) => {
+  const td = e.target.closest('.override-edit');
+  if (!td || td.querySelector('input')) return;
+  const original = td.textContent;
+  const { userId, assignmentId, field, type } = td.dataset;
+  const input = document.createElement('input');
+  input.type = type === 'number' ? 'number' : 'text';
+  if (type === 'number') input.step = 'any';
+  input.value = original;
+  td.textContent = '';
+  td.appendChild(input);
+  input.focus();
+  input.select();
+
+  let cancelled = false;
+  async function commit() {
+    if (cancelled) return;
+    const value = input.value;
+    if (value === original) {
+      td.textContent = original;
+      return;
+    }
+    const r = await fetch(`/overrides/${encodeURIComponent(userId)}/${assignmentId}/${field}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ value }),
+    });
+    const display = r.ok && type === 'number' ? Number(value).toFixed(1) : value;
+    td.textContent = r.ok ? display : original;
+    if (!r.ok) td.style.outline = '2px solid #c00';
+  }
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+    if (ev.key === 'Escape') { cancelled = true; td.textContent = original; }
+  });
+});
+</script>
 {% endblock %}

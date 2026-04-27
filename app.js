@@ -942,6 +942,31 @@ app.get('/overrides/search-assignments', (req, res) => {
   res.render('app/overrides/assignment-results.njk', { assignments });
 });
 
+app.get('/overrides/current-score', (req, res) => {
+  const userId = req.query.userId;
+  const assignmentId = Number(req.query.assignmentId);
+  if (!userId || !Number.isFinite(assignmentId)) return res.send('');
+  const row = db.assignmentPointsForStudent({ userId, assignmentId });
+  res.render('app/overrides/current-score.njk', { row });
+});
+
+app.put('/overrides/:userId/:assignmentId/score', (req, res) => {
+  const userId = req.params.userId;
+  const assignmentId = Number(req.params.assignmentId);
+  const score = Number(req.body.value);
+  if (!Number.isFinite(score)) return res.status(400).send('Invalid score');
+  db.updateScoreOverrideScore({ userId, assignmentId, score });
+  res.send(String(score));
+});
+
+app.put('/overrides/:userId/:assignmentId/reason', (req, res) => {
+  const userId = req.params.userId;
+  const assignmentId = Number(req.params.assignmentId);
+  const reason = (req.body.value || '').toString();
+  db.updateScoreOverrideReason({ userId, assignmentId, reason });
+  res.send(reason);
+});
+
 app.post('/overrides', (req, res) => {
   const { userId, assignmentId, score, reason } = req.body;
   db.ensureScoreOverride({

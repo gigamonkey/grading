@@ -4,8 +4,8 @@
   <td>{{ o.period }}</td>
   <td>{{ o.course_id }}</td>
   <td>{{ o.title }}</td>
-  <td>{{ o.score }}</td>
-  <td>{{ o.reason }}</td>
+  <td class="override-edit" data-user-id="{{ o.user_id }}" data-assignment-id="{{ o.assignment_id }}" data-field="score" data-type="number">{% if o.score != null %}{{ o.score.toFixed(1) }}{% endif %}</td>
+  <td class="override-edit" data-user-id="{{ o.user_id }}" data-assignment-id="{{ o.assignment_id }}" data-field="reason" data-type="text">{{ o.reason }}</td>
 </tr>
 {% else %}
 <tr><td colspan="6">No overrides found.</td></tr>
