@@ -12,6 +12,12 @@
             hx-vals='{"branch": "{{ branch }}", "filePath": "{{ filePath }}"}'
             hx-target="#md-grader"
             hx-swap="innerHTML">{{ 'Unexcuse' if excused else 'Excuse' }}</button>
+    <button class="excuse-button"
+            title="Re-fetch this student's repo"
+            hx-post="/md-grader/{{ assignmentId }}/refresh/{{ student.user_id }}"
+            hx-vals='{"branch": "{{ branch }}", "filePath": "{{ filePath }}"}'
+            hx-target="#md-grader"
+            hx-swap="innerHTML"><i class="bi bi-arrow-clockwise"></i></button>
     &mdash; {{ studentIndex + 1 }} of {{ totalStudents }}</span>
   <button hx-get="{{ base }}{{ nextUserId }}{{ qs }}"
           hx-target="#md-grader"

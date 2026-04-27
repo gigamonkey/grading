@@ -2256,6 +2256,25 @@ app.get('/md-grader/:assignmentId/student/:userId', (req, res) => {
   res.send(content + sidebar);
 });
 
+app.post('/md-grader/:assignmentId/refresh/:userId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const branch = req.body.branch;
+  const filePath = req.body.filePath;
+  const student = db.studentById({ userId });
+  if (student?.github) {
+    try {
+      new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`).fetch();
+    } catch (e) {
+      console.log(`refresh fetch failed for ${student.github}: ${e.message}`);
+    }
+  }
+  const data = mdGraderData(assignmentId, userId, branch, filePath);
+  const content = env.render('app/md-grader/_content.njk', data);
+  const sidebar = env.render('app/md-grader/_sidebar.njk', data);
+  res.send(content + sidebar);
+});
+
 app.post('/md-grader/:assignmentId/excused/:userId', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
