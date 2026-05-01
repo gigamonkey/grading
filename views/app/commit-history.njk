@@ -15,6 +15,15 @@
       {% endfor %}
     </select>
   </label>
+  <label style="display: flex; align-items: center; gap: 0.4em; margin: 0;">Student
+    <select id="student-select" name="user">
+      <option value="">— pick a student —</option>
+      <option value="all"{% if userParam == 'all' %} selected{% endif %}>All students</option>
+      {% for s in courseStudents %}
+      <option value="{{ s.user_id }}"{% if s.user_id == userId %} selected{% endif %}>{{ s.sortable_name }}</option>
+      {% endfor %}
+    </select>
+  </label>
   <label style="display: flex; align-items: center; gap: 0.4em; margin: 0; flex: 1;">Path
     <input type="text" name="path" value="{{ repoPath }}" placeholder="e.g. csa/something or path/to/file.java" style="flex: 1;">
   </label>

@@ -1,7 +1,18 @@
+{% if isHtmx %}
 <input type="hidden" id="hidden-sort" name="sort" form="commit-history-form" value="{{ sort or '' }}" hx-swap-oob="true">
 <input type="hidden" id="hidden-dir" name="dir" form="commit-history-form" value="{{ dir or '' }}" hx-swap-oob="true">
+<select id="student-select" name="user" form="commit-history-form" hx-swap-oob="true">
+  <option value="">— pick a student —</option>
+  <option value="all"{% if userParam == 'all' %} selected{% endif %}>All students</option>
+  {% for s in courseStudents %}
+  <option value="{{ s.user_id }}"{% if s.user_id == userId %} selected{% endif %}>{{ s.sortable_name }}</option>
+  {% endfor %}
+</select>
+{% endif %}
 {% if not courseId %}
 <p>Pick a course to see commit history.</p>
+{% elif not userParam %}
+<p>Pick a student (or "All students") to see commit history.</p>
 {% elif rows.length == 0 %}
 <p>No students in this course.</p>
 {% else %}

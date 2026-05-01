@@ -755,6 +755,8 @@ app.post('/assignments/:assignmentId/grade-java', async (req, res) => {
 app.get('/commit-history', (req, res) => {
   const courses = db.distinctCourses();
   const courseId = req.query.course || null;
+  const userParam = req.query.user || '';
+  const userId = userParam && userParam !== 'all' ? userParam : null;
   const repoPath = (req.query.path || '').trim();
   const isoDate = (s) => (typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null);
   const startDate = isoDate(req.query.startDate);
@@ -763,9 +765,16 @@ app.get('/commit-history', (req, res) => {
   let rows = [];
   let dateRange = [];
   let maxCount = 0;
+  let courseStudents = [];
 
   if (courseId) {
-    const students = db.studentsByCourse({ courseId });
+    courseStudents = db.studentsByCourse({ courseId });
+  }
+
+  if (courseId && userParam) {
+    const students = userId
+      ? courseStudents.filter((s) => s.user_id === userId)
+      : courseStudents;
     const allDates = new Set();
     rows = students.map((s) => {
       const repoDir = s.github ? `${process.env.BHS_CS_REPOS}/${s.github}.git/` : null;
@@ -844,12 +853,15 @@ app.get('/commit-history', (req, res) => {
     };
     rows.sort((a, b) => r * cmp[sort](a, b) || cmp.name(a, b));
 
-    const tmpl = req.headers['hx-request']
-      ? 'app/commit-history/results.njk'
-      : 'app/commit-history.njk';
+    const isHtmx = !!req.headers['hx-request'];
+    const tmpl = isHtmx ? 'app/commit-history/results.njk' : 'app/commit-history.njk';
     return res.render(tmpl, {
+      isHtmx,
       courses,
       courseId,
+      courseStudents,
+      userParam,
+      userId,
       repoPath,
       startDate,
       endDate,
@@ -861,12 +873,15 @@ app.get('/commit-history', (req, res) => {
     });
   }
 
-  const tmpl = req.headers['hx-request']
-    ? 'app/commit-history/results.njk'
-    : 'app/commit-history.njk';
+  const isHtmx = !!req.headers['hx-request'];
+  const tmpl = isHtmx ? 'app/commit-history/results.njk' : 'app/commit-history.njk';
   res.render(tmpl, {
+    isHtmx,
     courses,
     courseId,
+    courseStudents,
+    userParam,
+    userId,
     repoPath,
     startDate,
     endDate,
