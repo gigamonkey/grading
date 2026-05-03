@@ -524,7 +524,10 @@ FROM student_answers JOIN roster USING (github)
 GROUP BY assignment_id, github
 UNION ALL
 SELECT assignment_id, user_id, timestamp, sha
-FROM rubric_submissions;
+FROM rubric_submissions
+WHERE timestamp IS NOT NULL
+GROUP BY assignment_id, user_id
+HAVING timestamp = max(timestamp);
 
 -- Union of all scores with their provenance
 DROP VIEW IF EXISTS recorded_scores;
