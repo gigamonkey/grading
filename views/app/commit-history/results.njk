@@ -18,15 +18,13 @@
 {% else %}
 {% macro sortLink(key, label) %}{{ label }}<span class="sort-carets"
   ><a class="sort-up{% if sort == key and dir == 'desc' %} active{% endif %}"
-      hx-get="/commit-history" hx-vals='{"sort":"{{ key }}","dir":"desc"}'
-      hx-include="#commit-history-form"
-      hx-target="#commit-history-results" hx-swap="innerHTML" hx-push-url="true"
-      href="#"><i class="bi bi-caret-up-fill"></i></a
+      data-sort-key="{{ key }}" data-sort-dir="desc"
+      href="#" onclick="event.preventDefault(); commitHistorySort(this);"
+      ><i class="bi bi-caret-up-fill"></i></a
   ><a class="sort-down{% if sort == key and dir == 'asc' %} active{% endif %}"
-      hx-get="/commit-history" hx-vals='{"sort":"{{ key }}","dir":"asc"}'
-      hx-include="#commit-history-form"
-      hx-target="#commit-history-results" hx-swap="innerHTML" hx-push-url="true"
-      href="#"><i class="bi bi-caret-down-fill"></i></a
+      data-sort-key="{{ key }}" data-sort-dir="asc"
+      href="#" onclick="event.preventDefault(); commitHistorySort(this);"
+      ><i class="bi bi-caret-down-fill"></i></a
 ></span>{% endmacro %}
 <div id="commit-history-spinner" style="margin: 0.5rem 0; color: #888;">
   Loading <span id="commit-history-pending-count">{{ placeholderRows.length }}</span> student{% if placeholderRows.length != 1 %}s{% endif %}…
