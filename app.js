@@ -752,6 +752,46 @@ app.post('/assignments/:assignmentId/grade-java', async (req, res) => {
 });
 
 // Students
+function computeStudentCounts(student, repoPath, startDate, endDate) {
+  const repoDir = student.github ? `${process.env.BHS_CS_REPOS}/${student.github}.git/` : null;
+  if (!repoDir || !fs.existsSync(repoDir)) {
+    return { counts: {}, total: 0, days: 0, missing: true };
+  }
+  const repo = new Repo(repoDir);
+  try {
+    repo.fetch();
+  } catch (e) {
+    console.log(`fetch failed for ${repoDir}: ${e.message}`);
+  }
+  const counts = {};
+  for (const iso of repo.commitDatesForPath(repoPath)) {
+    const day = iso.slice(0, 10);
+    if (startDate && day < startDate) continue;
+    if (endDate && day > endDate) continue;
+    counts[day] = (counts[day] ?? 0) + 1;
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  return { counts, total, days: Object.keys(counts).length, missing: false };
+}
+
+let _schoolDaysCache = null;
+function knownSchoolDays() {
+  if (_schoolDaysCache) return _schoolDaysCache;
+  const days = [];
+  const start = new Date('2022-08-01T00:00:00Z');
+  const end = new Date('2027-07-31T00:00:00Z');
+  for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+    const day = d.toISOString().slice(0, 10);
+    try {
+      if (bellSchedule.isSchoolDay(globalThis.Temporal.PlainDate.from(day))) days.push(day);
+    } catch {
+      /* outside known calendar years */
+    }
+  }
+  _schoolDaysCache = days;
+  return days;
+}
+
 app.get('/commit-history', (req, res) => {
   const courses = db.distinctCourses();
   const courseId = req.query.course || null;
@@ -762,10 +802,15 @@ app.get('/commit-history', (req, res) => {
   const startDate = isoDate(req.query.startDate);
   const endDate = isoDate(req.query.endDate);
 
-  let rows = [];
-  let dateRange = [];
-  let maxCount = 0;
+  const validSort = ['name', 'period', 'github', 'days', 'rate', 'schoolPct', 'total'];
+  const sort = validSort.includes(req.query.sort) ? req.query.sort : 'name';
+  const quantitative = new Set(['days', 'rate', 'schoolPct', 'total']);
+  const defaultDir = quantitative.has(sort) ? 'desc' : 'asc';
+  const dir = ['asc', 'desc'].includes(req.query.dir) ? req.query.dir : defaultDir;
+
   let courseStudents = [];
+  let placeholderRows = [];
+  let schoolDays = [];
 
   if (courseId) {
     courseStudents = db.studentsByCourse({ courseId });
@@ -775,102 +820,8 @@ app.get('/commit-history', (req, res) => {
     const students = userId
       ? courseStudents.filter((s) => s.user_id === userId)
       : courseStudents;
-    const allDates = new Set();
-    rows = students.map((s) => {
-      const repoDir = s.github ? `${process.env.BHS_CS_REPOS}/${s.github}.git/` : null;
-      if (!repoDir || !fs.existsSync(repoDir)) {
-        return { student: s, counts: {}, total: 0, days: 0, missing: true };
-      }
-      const repo = new Repo(repoDir);
-      try {
-        repo.fetch();
-      } catch (e) {
-        console.log(`fetch failed for ${repoDir}: ${e.message}`);
-      }
-      const isos = repo.commitDatesForPath(repoPath);
-      const counts = {};
-      for (const iso of isos) {
-        const day = iso.slice(0, 10);
-        if (startDate && day < startDate) continue;
-        if (endDate && day > endDate) continue;
-        counts[day] = (counts[day] ?? 0) + 1;
-        allDates.add(day);
-      }
-      const total = Object.values(counts).reduce((a, b) => a + b, 0);
-      const days = Object.keys(counts).length;
-      return { student: s, counts, total, days, missing: false };
-    });
-
-    let rangeStart = startDate;
-    let rangeEnd = endDate;
-    if (!rangeStart || !rangeEnd) {
-      const sorted = [...allDates].sort();
-      if (!rangeStart) rangeStart = sorted[0];
-      if (!rangeEnd) rangeEnd = sorted[sorted.length - 1];
-    }
-
-    const schoolDays = new Set();
-    if (rangeStart && rangeEnd && rangeStart <= rangeEnd) {
-      const start = new Date(`${rangeStart}T00:00:00Z`);
-      const end = new Date(`${rangeEnd}T00:00:00Z`);
-      for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
-        const day = d.toISOString().slice(0, 10);
-        dateRange.push(day);
-        try {
-          if (bellSchedule.isSchoolDay(globalThis.Temporal.PlainDate.from(day))) {
-            schoolDays.add(day);
-          }
-        } catch {
-          /* date outside known calendar years */
-        }
-      }
-      for (const r of rows) {
-        for (const c of Object.values(r.counts)) {
-          if (c > maxCount) maxCount = c;
-        }
-      }
-    }
-    for (const r of rows) {
-      r.schoolDays = schoolDays.size;
-      r.schoolDayPct = schoolDays.size ? r.days / schoolDays.size : null;
-    }
-
-    const validSort = ['name', 'period', 'github', 'days', 'rate', 'schoolPct', 'total'];
-    const sort = validSort.includes(req.query.sort) ? req.query.sort : 'name';
-    const quantitative = new Set(['days', 'rate', 'schoolPct', 'total']);
-    const defaultDir = quantitative.has(sort) ? 'desc' : 'asc';
-    const dir = ['asc', 'desc'].includes(req.query.dir) ? req.query.dir : defaultDir;
-    const r = dir === 'desc' ? -1 : 1;
-    const rate = (row) => (row.days ? row.total / row.days : 0);
-    const cmp = {
-      name: (a, b) => (a.student.sortable_name || '').localeCompare(b.student.sortable_name || ''),
-      period: (a, b) => String(a.student.period || '').localeCompare(String(b.student.period || '')),
-      github: (a, b) => (a.student.github || '').localeCompare(b.student.github || ''),
-      days: (a, b) => a.days - b.days,
-      rate: (a, b) => rate(a) - rate(b),
-      schoolPct: (a, b) => (a.schoolDayPct ?? -1) - (b.schoolDayPct ?? -1),
-      total: (a, b) => a.total - b.total,
-    };
-    rows.sort((a, b) => r * cmp[sort](a, b) || cmp.name(a, b));
-
-    const isHtmx = !!req.headers['hx-request'];
-    const tmpl = isHtmx ? 'app/commit-history/results.njk' : 'app/commit-history.njk';
-    return res.render(tmpl, {
-      isHtmx,
-      courses,
-      courseId,
-      courseStudents,
-      userParam,
-      userId,
-      repoPath,
-      startDate,
-      endDate,
-      rows,
-      dateRange,
-      maxCount,
-      sort,
-      dir,
-    });
+    placeholderRows = students.map((s) => ({ student: s }));
+    schoolDays = knownSchoolDays();
   }
 
   const isHtmx = !!req.headers['hx-request'];
@@ -885,12 +836,32 @@ app.get('/commit-history', (req, res) => {
     repoPath,
     startDate,
     endDate,
-    rows,
-    dateRange,
-    maxCount,
-    sort: 'name',
-    dir: 'asc',
+    placeholderRows,
+    schoolDays,
+    sort,
+    dir,
   });
+});
+
+app.get('/commit-history/row', (req, res) => {
+  const courseId = req.query.course || null;
+  const userId = req.query.user || null;
+  const repoPath = (req.query.path || '').trim();
+  const isoDate = (s) => (typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null);
+  const startDate = isoDate(req.query.startDate);
+  const endDate = isoDate(req.query.endDate);
+
+  if (!courseId || !userId) {
+    return res.status(400).send('<tr><td colspan="8">missing course or user</td></tr>');
+  }
+
+  const student = db.studentsByCourse({ courseId }).find((s) => s.user_id === userId);
+  if (!student) {
+    return res.status(404).send('<tr><td colspan="8">student not found</td></tr>');
+  }
+
+  const { counts, total, days, missing } = computeStudentCounts(student, repoPath, startDate, endDate);
+  res.render('app/commit-history/row.njk', { student, counts, total, days, missing });
 });
 
 app.get('/students', (req, res) => {

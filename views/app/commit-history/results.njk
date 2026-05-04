@@ -13,7 +13,7 @@
 <p>Pick a course to see commit history.</p>
 {% elif not userParam %}
 <p>Pick a student (or "All students") to see commit history.</p>
-{% elif rows.length == 0 %}
+{% elif placeholderRows.length == 0 %}
 <p>No students in this course.</p>
 {% else %}
 {% macro sortLink(key, label) %}{{ label }}<span class="sort-carets"
@@ -28,17 +28,19 @@
       hx-target="#commit-history-results" hx-swap="innerHTML" hx-push-url="true"
       href="#"><i class="bi bi-caret-down-fill"></i></a
 ></span>{% endmacro %}
-{% set sparkWidth = 400 %}
-{% set sparkHeight = 24 %}
-{% set days = dateRange.length %}
-{% set barWidth = (sparkWidth / days) if days else 0 %}
-<table class="data-table">
+<div id="commit-history-spinner" style="margin: 0.5rem 0; color: #888;">
+  Loading <span id="commit-history-pending-count">{{ placeholderRows.length }}</span> student{% if placeholderRows.length != 1 %}s{% endif %}…
+</div>
+<script id="school-days-data" type="application/json">{{ schoolDays | dump | safe }}</script>
+<table class="data-table" id="commit-history-table"
+       data-sort="{{ sort }}" data-dir="{{ dir }}"
+       data-start-date="{{ startDate or '' }}" data-end-date="{{ endDate or '' }}">
   <thead>
     <tr>
       <th>{{ sortLink('name', 'Student') }}</th>
       <th>{{ sortLink('period', 'Period') }}</th>
       <th>{{ sortLink('github', 'GitHub') }}</th>
-      <th>Commits {% if dateRange.length %}<small style="color:#888;font-weight:normal">({{ dateRange[0] }} → {{ dateRange[dateRange.length - 1] }})</small>{% endif %}</th>
+      <th>Commits <small id="commit-history-date-range" style="color:#888;font-weight:normal"></small></th>
       <th>{{ sortLink('days', 'Days') }}</th>
       <th>{{ sortLink('schoolPct', '% school days') }}</th>
       <th>{{ sortLink('rate', 'Commits/day') }}</th>
@@ -46,32 +48,14 @@
     </tr>
   </thead>
   <tbody>
-    {% for r in rows %}
-    <tr>
+    {% for r in placeholderRows %}
+    <tr data-pending="true"
+        hx-get="/commit-history/row?course={{ courseId | urlencode }}&user={{ r.student.user_id | urlencode }}&path={{ repoPath | urlencode }}&startDate={{ startDate or '' }}&endDate={{ endDate or '' }}"
+        hx-trigger="load" hx-swap="outerHTML">
       <td><a href="/students/{{ r.student.user_id }}">{{ r.student.sortable_name }}</a></td>
       <td>{{ r.student.period }}</td>
       <td>{% if r.student.github %}<a href="https://gigamonkeys.com/berkeley-high-cs/{{ r.student.github }}">{{ r.student.github }}</a>{% else %}&mdash;{% endif %}</td>
-      <td>
-        {% if r.missing %}
-        <span style="color:#999">no repo</span>
-        {% elif maxCount and dateRange.length %}
-        <svg width="{{ sparkWidth }}" height="{{ sparkHeight }}" style="vertical-align: middle">
-          {% for day in dateRange %}
-            {% set count = r.counts[day] or 0 %}
-            {% if count %}
-              {% set h = (count / maxCount) * sparkHeight %}
-              <rect x="{{ loop.index0 * barWidth }}" y="{{ sparkHeight - h }}" width="{{ barWidth }}" height="{{ h }}" fill="#1a1a2e"><title>{{ day }}: {{ count }}</title></rect>
-            {% endif %}
-          {% endfor %}
-        </svg>
-        {% else %}
-        <span style="color:#999">none</span>
-        {% endif %}
-      </td>
-      <td>{{ r.days or 0 }}</td>
-      <td>{% if r.schoolDayPct != null %}{{ (r.schoolDayPct * 100) | round }}% <small style="color:#888">({{ r.days }}/{{ r.schoolDays }})</small>{% else %}&mdash;{% endif %}</td>
-      <td>{% if r.days %}{{ (r.total / r.days) | round(1) }}{% else %}&mdash;{% endif %}</td>
-      <td>{{ r.total }}</td>
+      <td colspan="5" style="color:#999">…</td>
     </tr>
     {% endfor %}
   </tbody>

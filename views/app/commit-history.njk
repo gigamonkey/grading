@@ -39,4 +39,136 @@
 <div id="commit-history-results">
   {% include "app/commit-history/results.njk" %}
 </div>
+<script>
+(function () {
+  if (window.__commitHistoryInit) return;
+  window.__commitHistoryInit = true;
+
+  var SPARK_W = 400, SPARK_H = 24;
+
+  function tryFinalize() {
+    var table = document.getElementById('commit-history-table');
+    if (!table || table.dataset.finalized === 'true') return;
+    var pending = table.querySelectorAll('tr[data-pending]');
+    var countSpan = document.getElementById('commit-history-pending-count');
+    if (countSpan) countSpan.textContent = pending.length;
+    if (pending.length === 0) {
+      finalize(table);
+      table.dataset.finalized = 'true';
+    }
+  }
+
+  function finalize(table) {
+    var schoolDaysEl = document.getElementById('school-days-data');
+    var schoolDays = schoolDaysEl ? new Set(JSON.parse(schoolDaysEl.textContent)) : new Set();
+    var startDate = table.dataset.startDate || null;
+    var endDate = table.dataset.endDate || null;
+
+    var rows = Array.from(table.querySelectorAll('tbody tr[data-counts]'));
+    var allDates = new Set();
+    var maxCount = 0;
+    var data = rows.map(function (tr) {
+      var counts = JSON.parse(tr.dataset.counts || '{}');
+      for (var day in counts) {
+        allDates.add(day);
+        if (counts[day] > maxCount) maxCount = counts[day];
+      }
+      return {
+        tr: tr,
+        counts: counts,
+        days: parseInt(tr.dataset.days || '0', 10),
+        total: parseInt(tr.dataset.total || '0', 10),
+        missing: tr.dataset.missing === 'true',
+      };
+    });
+
+    var rangeStart = startDate, rangeEnd = endDate;
+    if (!rangeStart || !rangeEnd) {
+      var sorted = Array.from(allDates).sort();
+      if (!rangeStart) rangeStart = sorted[0];
+      if (!rangeEnd) rangeEnd = sorted[sorted.length - 1];
+    }
+
+    var dateRange = [];
+    var schoolDaysInRange = 0;
+    if (rangeStart && rangeEnd && rangeStart <= rangeEnd) {
+      var d = new Date(rangeStart + 'T00:00:00Z');
+      var endD = new Date(rangeEnd + 'T00:00:00Z');
+      while (d <= endD) {
+        var day = d.toISOString().slice(0, 10);
+        dateRange.push(day);
+        if (schoolDays.has(day)) schoolDaysInRange++;
+        d.setUTCDate(d.getUTCDate() + 1);
+      }
+    }
+
+    var barWidth = dateRange.length ? SPARK_W / dateRange.length : 0;
+    data.forEach(function (r) {
+      if (r.missing) return;
+      var sparkCell = r.tr.querySelector('.sparkline-cell');
+      if (sparkCell) {
+        if (maxCount && dateRange.length) {
+          var parts = ['<svg width="' + SPARK_W + '" height="' + SPARK_H + '" style="vertical-align: middle">'];
+          dateRange.forEach(function (day, i) {
+            var c = r.counts[day] || 0;
+            if (c) {
+              var h = (c / maxCount) * SPARK_H;
+              parts.push('<rect x="' + (i * barWidth) + '" y="' + (SPARK_H - h) + '" width="' + barWidth + '" height="' + h + '" fill="#1a1a2e"><title>' + day + ': ' + c + '</title></rect>');
+            }
+          });
+          parts.push('</svg>');
+          sparkCell.outerHTML = parts.join('');
+        } else {
+          sparkCell.outerHTML = '<span style="color:#999">none</span>';
+        }
+      }
+      var pctCell = r.tr.querySelector('.school-pct-cell');
+      if (pctCell) {
+        if (schoolDaysInRange > 0) {
+          var pct = Math.round((r.days / schoolDaysInRange) * 100);
+          pctCell.innerHTML = pct + '% <small style="color:#888">(' + r.days + '/' + schoolDaysInRange + ')</small>';
+          pctCell.classList.remove('school-pct-cell');
+          pctCell.dataset.pct = (schoolDaysInRange ? r.days / schoolDaysInRange : -1).toString();
+        } else {
+          pctCell.innerHTML = '&mdash;';
+        }
+      }
+    });
+
+    var rangeText = document.getElementById('commit-history-date-range');
+    if (rangeText && dateRange.length) {
+      rangeText.textContent = '(' + dateRange[0] + ' → ' + dateRange[dateRange.length - 1] + ')';
+    }
+
+    var sort = table.dataset.sort, dir = table.dataset.dir;
+    if (sort === 'days' || sort === 'rate' || sort === 'schoolPct' || sort === 'total') {
+      var rate = function (r) { return r.days ? r.total / r.days : 0; };
+      var schoolPct = function (r) { return schoolDaysInRange ? r.days / schoolDaysInRange : -1; };
+      var key = { days: function (r) { return r.days; }, total: function (r) { return r.total; }, rate: rate, schoolPct: schoolPct }[sort];
+      var sign = dir === 'desc' ? -1 : 1;
+      data.sort(function (a, b) { return sign * (key(a) - key(b)); });
+      var tbody = table.querySelector('tbody');
+      data.forEach(function (r) { tbody.appendChild(r.tr); });
+    }
+
+    var spinner = document.getElementById('commit-history-spinner');
+    if (spinner) spinner.remove();
+  }
+
+  document.body.addEventListener('htmx:afterSettle', tryFinalize);
+  document.body.addEventListener('htmx:responseError', function (evt) {
+    var t = evt.detail && evt.detail.target;
+    if (t && t.dataset && t.dataset.pending) {
+      delete t.dataset.pending;
+      t.dataset.failed = 'true';
+    }
+    tryFinalize();
+  });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryFinalize);
+  } else {
+    tryFinalize();
+  }
+})();
+</script>
 {% endblock %}

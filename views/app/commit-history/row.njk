@@ -1,0 +1,10 @@
+<tr data-counts='{{ counts | dump | safe }}' data-days="{{ days }}" data-total="{{ total }}"{% if missing %} data-missing="true"{% endif %}>
+  <td><a href="/students/{{ student.user_id }}">{{ student.sortable_name }}</a></td>
+  <td>{{ student.period }}</td>
+  <td>{% if student.github %}<a href="https://gigamonkeys.com/berkeley-high-cs/{{ student.github }}">{{ student.github }}</a>{% else %}&mdash;{% endif %}</td>
+  <td>{% if missing %}<span style="color:#999">no repo</span>{% else %}<span class="sparkline-cell"></span>{% endif %}</td>
+  <td>{{ days or 0 }}</td>
+  <td class="school-pct-cell">&mdash;</td>
+  <td>{% if days %}{{ (total / days) | round(1) }}{% else %}&mdash;{% endif %}</td>
+  <td>{{ total }}</td>
+</tr>
