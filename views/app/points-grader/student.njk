@@ -67,7 +67,7 @@
           hx-target="this" hx-swap="none"
           hx-on::after-request="document.getElementById('mark-feedback-{{ i.seq }}').textContent='saved'; setTimeout(() => document.getElementById('mark-feedback-{{ i.seq }}').textContent='', 1200)">
       <label>Score (fraction):
-        <input type="number" name="fraction" step="0.05" min="-1" max="2"
+        <input type="number" name="fraction" step="any"
                value="{{ i.mark if i.mark != null else '' }}">
       </label>
       <button type="button" class="btn-subtle"

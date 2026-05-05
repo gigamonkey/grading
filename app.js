@@ -2471,7 +2471,7 @@ app.get('/points-grader/:assignmentId/student/:userId', (req, res) => {
     }
     return {
       ...i,
-      params: i.kind === 'image_refactoring' ? imageItemParams(i) : null,
+      params: i.kind === 'image_refactoring' ? imageItemParams(i) : i.params,
       render: r,
       latestCode,
       codeDiff,
