@@ -57,4 +57,20 @@
       {% endif %}
     </figure>
   </div>
+
+  {% if i.latestCode %}
+  <div class="image-refactor-code">
+    <h4 class="image-refactor-code-header">
+      <span data-view-label="code">Latest commit code</span>
+      <span data-view-label="diff" hidden>Diff (first → latest)</span>
+      {% if i.codeDiff %}
+      <a href="#" class="image-refactor-code-toggle" data-show="diff">show diff</a>
+      {% endif %}
+    </h4>
+    <pre data-view="code"><code class="language-javascript">{{ i.latestCode }}</code></pre>
+    {% if i.codeDiff %}
+    <pre data-view="diff" hidden><code class="language-diff-javascript diff-highlight">{{ i.codeDiff }}</code></pre>
+    {% endif %}
+  </div>
+  {% endif %}
 </div>

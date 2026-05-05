@@ -987,3 +987,19 @@ td.image-refactor-cell { text-align: center; padding: 0.2rem; }
   border: 1px dashed #ccc;
   color: #aaa;
 }
+.image-refactor-code { margin-top: 1rem; }
+.image-refactor-code-header {
+  margin: 0 0 0.4rem 0;
+  font-size: 0.95rem;
+  color: #555;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+.image-refactor-code-toggle { font-size: 0.85rem; font-weight: normal; }
+.image-refactor-code pre {
+  max-height: 600px;
+  overflow: auto;
+  margin: 0;
+  font-size: 0.85rem;
+}

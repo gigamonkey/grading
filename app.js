@@ -2129,15 +2129,36 @@ app.post('/points-grader/:assignmentId/zero/:userId', (req, res) => {
 
 // Image-refactoring rubric items (rendered for the points-grader)
 
+function imagePathCandidates(branch, filePath) {
+  // Try filePath as repo-relative first; fall back to `<branch>/<filePath>`
+  // (handles the convention where the branch name is the directory
+  // containing the file).
+  return filePath.startsWith(`${branch}/`) ? [filePath] : [filePath, `${branch}/${filePath}`];
+}
+
 function resolveImageFilePath(repo, branch, filePath) {
-  // Try filePath as repo-relative first; if no commits touch it, fall back to
-  // `<branch>/<filePath>` (handles the convention where the branch name is
-  // the directory containing the file).
-  const candidates =
-    filePath.startsWith(`${branch}/`) ? [filePath] : [filePath, `${branch}/${filePath}`];
-  for (const p of candidates) {
+  for (const p of imagePathCandidates(branch, filePath)) {
     try {
       if (repo.sha(branch, p)) return p;
+    } catch {}
+  }
+  return null;
+}
+
+function readImageCodeAtSha(repo, branch, filePath, sha) {
+  for (const p of imagePathCandidates(branch, filePath)) {
+    try {
+      return repo.contents(sha, p);
+    } catch {}
+  }
+  return null;
+}
+
+function readImageDiff(repo, branch, filePath, shaA, shaB) {
+  for (const p of imagePathCandidates(branch, filePath)) {
+    try {
+      const out = repo.fileDiff(shaA, shaB, p);
+      if (out) return out;
     } catch {}
   }
   return null;
@@ -2329,12 +2350,25 @@ app.get('/points-grader/:assignmentId/student/:userId', (req, res) => {
   const student = data.students[idx];
   const prevUserId = data.students[(idx - 1 + data.students.length) % data.students.length].user_id;
   const nextUserId = data.students[(idx + 1) % data.students.length].user_id;
+  const repoDir = student.github ? `${process.env.BHS_CS_REPOS}/${student.github}.git/` : null;
+  const repo = repoDir && fs.existsSync(repoDir) ? new Repo(repoDir) : null;
   const itemDetails = data.items.map((i) => {
     const r = data.rendersByUserSeq[userId]?.[i.seq] ?? null;
+    let latestCode = null;
+    let codeDiff = null;
+    if (i.kind === 'image_refactoring' && r?.latest_sha && repo) {
+      const { branch, filePath } = imageItemParams(i);
+      latestCode = readImageCodeAtSha(repo, branch, filePath, r.latest_sha);
+      if (r.first_sha && r.first_sha !== r.latest_sha) {
+        codeDiff = readImageDiff(repo, branch, filePath, r.first_sha, r.latest_sha);
+      }
+    }
     return {
       ...i,
       params: i.kind === 'image_refactoring' ? imageItemParams(i) : null,
       render: r,
+      latestCode,
+      codeDiff,
       mark: data.markMap[userId]?.[i.seq] ?? null,
     };
   });

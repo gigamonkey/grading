@@ -1,6 +1,11 @@
 {% extends "app/layout.njk" %}
 {% block title %}{{ student.sortable_name }} - {{ assignment.title }} - Gradebook{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/diff-highlight/prism-diff-highlight.min.css">
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-diff.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/diff-highlight/prism-diff-highlight.min.js" defer></script>
 <div class="points-grader-student">
   <div class="points-grader-student-nav">
     <a href="/points-grader/{{ assignmentId }}/student/{{ prevUserId }}"
@@ -52,4 +57,22 @@
   </div>
   {% endfor %}
 </div>
+<script>
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('.image-refactor-code-toggle');
+  if (!a) return;
+  e.preventDefault();
+  const wrap = a.closest('.image-refactor-code');
+  const which = a.dataset.show;
+  for (const pre of wrap.querySelectorAll('pre[data-view]')) {
+    pre.hidden = pre.dataset.view !== which;
+  }
+  for (const label of wrap.querySelectorAll('[data-view-label]')) {
+    label.hidden = label.dataset.viewLabel !== which;
+  }
+  const next = which === 'diff' ? 'code' : 'diff';
+  a.dataset.show = next;
+  a.textContent = next === 'diff' ? 'show diff' : 'show code';
+});
+</script>
 {% endblock %}

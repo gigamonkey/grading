@@ -53,6 +53,10 @@ class Repo {
     return this.git(`show --format='' ${sha}`);
   }
 
+  fileDiff(shaA, shaB, filename) {
+    return this.git(`diff ${shaA} ${shaB} -- ${filename}`);
+  }
+
   changes(start, end, branch) {
     const range = `${start}^...${end}`;
     const cmd = `log --pretty=tformat:'%H %at' ${range} -- ${branch}`;
