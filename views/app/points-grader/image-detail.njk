@@ -1,0 +1,60 @@
+<div class="image-refactor-detail">
+  <div class="image-refactor-detail-meta">
+    <span>Branch <code>{{ i.params.branch }}</code></span> &middot;
+    <span>Path <code>{{ i.params.filePath }}</code></span> &middot;
+    <button class="btn-subtle"
+            hx-post="/points-grader/{{ assignmentId }}/items/{{ i.seq }}/refresh/{{ student.user_id }}"
+            hx-target="closest .points-grader-student"
+            hx-swap="none"
+            hx-on::after-request="location.reload()">
+      <i class="bi bi-arrow-clockwise"></i> Refresh
+    </button>
+  </div>
+
+  {% if i.render %}
+  <div class="image-refactor-verdict
+              {{ 'match' if i.render.identical == 1 }}
+              {{ 'mismatch' if i.render.identical == 0 }}">
+    {% if i.render.identical == 1 %}Identical
+    {% elif i.render.identical == 0 %}Different
+    {% else %}Not yet rendered{% endif %}
+  </div>
+  {% else %}
+  <p class="image-refactor-verdict unknown">No render yet — click Refresh to generate.</p>
+  {% endif %}
+
+  <div class="image-refactor-detail-pair">
+    <figure>
+      <figcaption>
+        First commit
+        {% if i.render and i.render.first_sha %}
+        <code>{{ i.render.first_sha.substring(0, 7) }}</code>
+        {% if i.render.first_timestamp %} &middot; {{ i.render.first_timestamp | epochDate }}{% endif %}
+        {% else %}<span class="muted">none</span>{% endif %}
+      </figcaption>
+      {% if i.render and i.render.first_png %}
+        <img src="/points-grader/{{ assignmentId }}/png/{{ student.user_id }}/{{ i.seq }}/first" alt="first commit render">
+      {% elif i.render and i.render.first_error %}
+        <pre class="image-refactor-error">{{ i.render.first_error }}</pre>
+      {% else %}
+        <div class="image-refactor-missing">no image</div>
+      {% endif %}
+    </figure>
+    <figure>
+      <figcaption>
+        Latest commit
+        {% if i.render and i.render.latest_sha %}
+        <code>{{ i.render.latest_sha.substring(0, 7) }}</code>
+        {% if i.render.latest_timestamp %} &middot; {{ i.render.latest_timestamp | epochDate }}{% endif %}
+        {% else %}<span class="muted">none</span>{% endif %}
+      </figcaption>
+      {% if i.render and i.render.latest_png %}
+        <img src="/points-grader/{{ assignmentId }}/png/{{ student.user_id }}/{{ i.seq }}/latest" alt="latest commit render">
+      {% elif i.render and i.render.latest_error %}
+        <pre class="image-refactor-error">{{ i.render.latest_error }}</pre>
+      {% else %}
+        <div class="image-refactor-missing">no image</div>
+      {% endif %}
+    </figure>
+  </div>
+</div>

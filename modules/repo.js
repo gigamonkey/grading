@@ -28,6 +28,15 @@ class Repo {
     }
   }
 
+  firstSha(branch, filename) {
+    try {
+      const out = this.git(`log --reverse --pretty=tformat:%H ${branch} -- ${filename}`);
+      return out.trim().split('\n')[0] || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   fullsha(sha) {
     return this.git(`log --pretty=tformat:%H -1 ${sha}`).trim();
   }

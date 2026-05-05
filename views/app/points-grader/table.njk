@@ -27,6 +27,34 @@
     </div>
   </form>
 </dialog>
+<dialog id="image-refactor-dialog">
+  <form method="dialog"
+        hx-post="/points-grader/{{ assignment.assignment_id }}/image-refactoring-item"
+        hx-target="#points-grader-table"
+        hx-swap="innerHTML"
+        hx-on:htmx:after-request="document.getElementById('image-refactor-dialog').close()"
+        style="display: flex; flex-direction: column; gap: 0.6em; min-width: 22rem;">
+    <h3 style="margin: 0">Add image-refactoring item</h3>
+    <label style="display: flex; align-items: center; gap: 0.4em">Branch
+      <input name="branch" type="text" value="main" required style="flex: 1; margin: 0">
+    </label>
+    <label style="display: flex; align-items: center; gap: 0.4em">File path
+      <input name="filePath" type="text" required placeholder="code.js" style="flex: 1; margin: 0">
+    </label>
+    <label style="display: flex; align-items: center; gap: 0.4em">Label
+      <input name="label" type="text" placeholder="(defaults to file path)" style="flex: 1; margin: 0">
+    </label>
+    <label style="display: flex; align-items: center; gap: 0.4em">Points
+      <input name="points" type="number" value="1" min="0" step="any" style="flex: 1; margin: 0">
+    </label>
+    <p style="margin: 0; color: #888; font-size: 0.85em">After adding, click "Render all" on the column header.</p>
+    <div style="display: flex; gap: 0.5em; justify-content: flex-end">
+      <button type="button" class="btn-subtle"
+              onclick="document.getElementById('image-refactor-dialog').close()">Cancel</button>
+      <button type="submit">Add</button>
+    </div>
+  </form>
+</dialog>
 <div id="points-grader-table">
 {% include "app/points-grader/_table.njk" %}
 </div>

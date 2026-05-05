@@ -14,6 +14,7 @@ import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
 import { API } from './api.js';
 import { numCorrect, scoreTest } from './modules/grading.js';
+import { render as renderImage } from './modules/image-refactoring.js';
 import mdfilter from './modules/mdfilter.js';
 import { Repo } from './modules/repo.js';
 import { bellSchedule } from './modules/bell-schedule.js';
@@ -1749,6 +1750,35 @@ function pointsGraderData(assignmentId) {
     if (!markMap[m.user_id]) markMap[m.user_id] = {};
     markMap[m.user_id][m.seq] = m.fraction;
   }
+
+  const renders = db.imageRefactoringRendersForAssignment({ assignmentId });
+  const rendersByUserSeq = {};
+  for (const r of renders) {
+    if (!rendersByUserSeq[r.user_id]) rendersByUserSeq[r.user_id] = {};
+    rendersByUserSeq[r.user_id][r.seq] = r;
+  }
+  const imageItemSeqs = new Set(
+    items.filter((i) => i.kind === 'image_refactoring').map((i) => i.seq),
+  );
+  if (imageItemSeqs.size > 0) {
+    db.transaction(() => {
+      for (const r of renders) {
+        if (!imageItemSeqs.has(r.seq)) continue;
+        if (r.identical == null) continue;
+        if (markMap[r.user_id]?.[r.seq] != null) continue;
+        const fraction = r.identical ? 1 : 0;
+        db.upsertPointsRubricMark({
+          userId: r.user_id,
+          assignmentId,
+          seq: r.seq,
+          fraction,
+        });
+        if (!markMap[r.user_id]) markMap[r.user_id] = {};
+        markMap[r.user_id][r.seq] = fraction;
+      }
+    });
+  }
+
   const totalPoints = items.reduce((sum, i) => sum + (i.points ?? 0), 0);
   const studentPoints = {};
   const studentComplete = {};
@@ -1771,6 +1801,7 @@ function pointsGraderData(assignmentId) {
     items,
     students,
     markMap,
+    rendersByUserSeq,
     totalPoints,
     studentPoints,
     studentComplete,
@@ -1824,6 +1855,7 @@ function renderPointsGraderRow(res, assignmentId, userId) {
     items: data.items,
     totalPoints: data.totalPoints,
     markMap: data.markMap,
+    rendersByUserSeq: data.rendersByUserSeq,
     s,
     earned: data.studentPoints[userId],
     complete: data.studentComplete[userId],
@@ -1966,14 +1998,21 @@ app.put('/points-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
   const seq = Number(req.params.seq);
-  const direction = req.body.direction === 'down' ? 'down' : 'up';
-  const existing = db.getPointsRubricMark({ userId, assignmentId, seq });
+  const explicit = req.body.fraction;
   let fraction;
-  if (!existing) {
-    fraction = 1;
+  if (explicit != null && explicit !== '') {
+    const n = Number(explicit);
+    if (!Number.isFinite(n)) return res.status(400).send('bad fraction');
+    fraction = n;
   } else {
-    const delta = direction === 'down' ? -POINTS_GRADER_STEP : POINTS_GRADER_STEP;
-    fraction = existing.fraction + delta;
+    const direction = req.body.direction === 'down' ? 'down' : 'up';
+    const existing = db.getPointsRubricMark({ userId, assignmentId, seq });
+    if (!existing) {
+      fraction = 1;
+    } else {
+      const delta = direction === 'down' ? -POINTS_GRADER_STEP : POINTS_GRADER_STEP;
+      fraction = existing.fraction + delta;
+    }
   }
   db.upsertPointsRubricMark({ userId, assignmentId, seq, fraction });
   renderPointsGraderRow(res, assignmentId, userId);
@@ -2086,6 +2125,233 @@ app.post('/points-grader/:assignmentId/zero/:userId', (req, res) => {
     }
   });
   renderPointsGraderTableFromReq(req, res, assignmentId);
+});
+
+// Image-refactoring rubric items (rendered for the points-grader)
+
+function resolveImageFilePath(repo, branch, filePath) {
+  // Try filePath as repo-relative first; if no commits touch it, fall back to
+  // `<branch>/<filePath>` (handles the convention where the branch name is
+  // the directory containing the file).
+  const candidates =
+    filePath.startsWith(`${branch}/`) ? [filePath] : [filePath, `${branch}/${filePath}`];
+  for (const p of candidates) {
+    try {
+      if (repo.sha(branch, p)) return p;
+    } catch {}
+  }
+  return null;
+}
+
+function renderImageRefactoringForStudent(repo, branch, filePath) {
+  const result = {
+    firstSha: null,
+    firstTimestamp: null,
+    firstPng: null,
+    firstError: null,
+    latestSha: null,
+    latestTimestamp: null,
+    latestPng: null,
+    latestError: null,
+    identical: null,
+  };
+  const resolvedPath = resolveImageFilePath(repo, branch, filePath);
+  if (!resolvedPath) {
+    const msg = `no commits found for ${branch}:${filePath}`;
+    result.firstError = msg;
+    result.latestError = msg;
+    return result;
+  }
+  try {
+    const sha = repo.firstSha(branch, resolvedPath);
+    if (sha) {
+      result.firstSha = sha;
+      try {
+        result.firstTimestamp = repo.timestamp(sha);
+      } catch {}
+      try {
+        const code = repo.contents(sha, resolvedPath);
+        const r = renderImage({ codeSource: code });
+        if (r.error) result.firstError = r.error;
+        else result.firstPng = r.png;
+      } catch (e) {
+        result.firstError = e.message;
+      }
+    }
+  } catch (e) {
+    result.firstError = e.message;
+  }
+  try {
+    const sha = repo.sha(branch, resolvedPath);
+    if (sha) {
+      result.latestSha = sha;
+      try {
+        result.latestTimestamp = repo.timestamp(sha);
+      } catch {}
+      try {
+        const code = repo.contents(sha, resolvedPath);
+        const r = renderImage({ codeSource: code });
+        if (r.error) result.latestError = r.error;
+        else result.latestPng = r.png;
+      } catch (e) {
+        result.latestError = e.message;
+      }
+    }
+  } catch (e) {
+    result.latestError = e.message;
+  }
+  if (result.firstPng && result.latestPng) {
+    result.identical = Buffer.compare(result.firstPng, result.latestPng) === 0 ? 1 : 0;
+  }
+  return result;
+}
+
+function imageItemParams(item) {
+  try {
+    const p = JSON.parse(item.parameters || '{}');
+    return { branch: p.branch || 'main', filePath: p.file_path || '' };
+  } catch {
+    return { branch: 'main', filePath: '' };
+  }
+}
+
+function renderImageRefactoringForOneStudent(assignmentId, item, student, { fetch = true } = {}) {
+  if (!student.github) return 'no-github';
+  const { branch, filePath } = imageItemParams(item);
+  if (!filePath) return 'no-config';
+  const repoDir = `${process.env.BHS_CS_REPOS}/${student.github}.git/`;
+  if (!fs.existsSync(repoDir)) return 'no-repo';
+  const repo = new Repo(repoDir);
+  if (fetch) {
+    try {
+      repo.fetch();
+    } catch (e) {
+      console.log(`fetch failed for ${student.github}: ${e.message}`);
+    }
+  }
+  const r = renderImageRefactoringForStudent(repo, branch, filePath);
+  db.upsertImageRefactoringRender({
+    userId: student.user_id,
+    assignmentId,
+    seq: item.seq,
+    ...r,
+  });
+  if (r.firstPng && r.latestPng) return 'rendered';
+  if (r.firstError || r.latestError) return 'error';
+  return 'no-commits';
+}
+
+app.post('/points-grader/:assignmentId/image-refactoring-item', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const branch = (req.body.branch || '').trim() || 'main';
+  const filePath = (req.body.filePath || '').trim();
+  const points = Number(req.body.points) || 1;
+  const label = (req.body.label || '').trim() || `Image: ${filePath}`;
+  if (!filePath) {
+    return res.status(400).send('file path required');
+  }
+  db.addRubricItem({
+    assignmentId,
+    label,
+    points,
+    kind: 'image_refactoring',
+    parameters: JSON.stringify({ branch, file_path: filePath }),
+  });
+  renderPointsGraderTableFromReq(req, res, assignmentId);
+});
+
+app.post('/points-grader/:assignmentId/items/:seq/render-all', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const item = db.rubricItemsForAssignment({ assignmentId }).find((i) => i.seq === seq);
+  if (!item || item.kind !== 'image_refactoring') {
+    return res.status(400).send('not an image_refactoring item');
+  }
+  const assignment = db.assignmentById({ assignmentId });
+  const students = db.studentsByCourse({ courseId: assignment.course_id });
+  const counts = {};
+  for (const s of students) {
+    const status = renderImageRefactoringForOneStudent(assignmentId, item, s);
+    counts[status] = (counts[status] || 0) + 1;
+  }
+  console.log(
+    `Image-refactoring render-all (assignment ${assignmentId}, seq ${seq}): ` +
+      Object.entries(counts)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(', '),
+  );
+  renderPointsGraderTableFromReq(req, res, assignmentId);
+});
+
+app.post('/points-grader/:assignmentId/items/:seq/refresh/:userId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const seq = Number(req.params.seq);
+  const userId = req.params.userId;
+  const item = db.rubricItemsForAssignment({ assignmentId }).find((i) => i.seq === seq);
+  if (!item || item.kind !== 'image_refactoring') {
+    return res.status(400).send('not an image_refactoring item');
+  }
+  const student = db.studentById({ userId });
+  if (!student) return res.status(404).send('');
+  renderImageRefactoringForOneStudent(assignmentId, item, student);
+  renderPointsGraderRow(res, assignmentId, userId);
+});
+
+app.delete('/points-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const seq = Number(req.params.seq);
+  db.deletePointsRubricMark({ userId, assignmentId, seq });
+  renderPointsGraderRow(res, assignmentId, userId);
+});
+
+app.get('/points-grader/:assignmentId/png/:userId/:seq/:which', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const seq = Number(req.params.seq);
+  const which = req.params.which;
+  const r = db.imageRefactoringRender({ userId, assignmentId, seq });
+  if (!r) return res.status(404).end();
+  const png = which === 'first' ? r.first_png : which === 'latest' ? r.latest_png : null;
+  if (!png) return res.status(404).end();
+  res.set('Content-Type', 'image/png');
+  res.set('Cache-Control', 'no-cache');
+  res.send(png);
+});
+
+app.get('/points-grader/:assignmentId/student/:userId', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const userId = req.params.userId;
+  const data = pointsGraderData(assignmentId);
+  data.students.sort((a, b) => (a.github || '').localeCompare(b.github || ''));
+  const idx = data.students.findIndex((s) => s.user_id === userId);
+  if (idx < 0) return res.status(404).send('student not found');
+  const student = data.students[idx];
+  const prevUserId = data.students[(idx - 1 + data.students.length) % data.students.length].user_id;
+  const nextUserId = data.students[(idx + 1) % data.students.length].user_id;
+  const itemDetails = data.items.map((i) => {
+    const r = data.rendersByUserSeq[userId]?.[i.seq] ?? null;
+    return {
+      ...i,
+      params: i.kind === 'image_refactoring' ? imageItemParams(i) : null,
+      render: r,
+      mark: data.markMap[userId]?.[i.seq] ?? null,
+    };
+  });
+  res.render('app/points-grader/student.njk', {
+    assignment: data.assignment,
+    assignmentId,
+    student,
+    studentIndex: idx,
+    totalStudents: data.students.length,
+    prevUserId,
+    nextUserId,
+    items: itemDetails,
+    totalPoints: data.totalPoints,
+    earned: data.studentPoints[userId],
+    complete: data.studentComplete[userId],
+    isExcused: data.excused.has(userId),
+  });
 });
 
 // MD Grader

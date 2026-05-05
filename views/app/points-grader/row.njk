@@ -1,7 +1,7 @@
 {% set assignmentId = assignment.assignment_id %}
 {% set userId = s.user_id %}
 <tr class="{{ 'excused' if isExcused else ('points-grader-incomplete' if not complete) }}">
-  <td>{{ s.sortable_name }} ({{ s.github }})
+  <td><a href="/points-grader/{{ assignmentId }}/student/{{ userId }}">{{ s.sortable_name }} ({{ s.github }})</a>
     <button class="excuse-button"
             hx-post="/points-grader/{{ assignmentId }}/excused/{{ userId }}"
             hx-target="#points-grader-table"
@@ -16,7 +16,12 @@
   {% for i in items %}
     {% set seq = i.seq %}
     {% set value = markMap[userId][i.seq] if markMap[userId] else null %}
-    {% include "app/points-grader/cell.njk" %}
+    {% if i.kind == 'image_refactoring' %}
+      {% set render = rendersByUserSeq[userId][i.seq] if rendersByUserSeq[userId] else null %}
+      {% include "app/points-grader/image-cell.njk" %}
+    {% else %}
+      {% include "app/points-grader/cell.njk" %}
+    {% endif %}
   {% endfor %}
   <td>
     {% if not complete and not isExcused and items.length %}

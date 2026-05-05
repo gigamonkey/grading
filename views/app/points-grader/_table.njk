@@ -33,6 +33,17 @@
           {% set points = i.points %}
           {% set editing = false %}
           {% include "app/points-grader/item-points-cell.njk" %}
+          {% if i.kind == 'image_refactoring' %}
+          <button type="button" class="btn-subtle"
+                  title="Render all students for this item (slow)"
+                  hx-post="/points-grader/{{ assignment.assignment_id }}/items/{{ i.seq }}/render-all"
+                  hx-target="#points-grader-table"
+                  hx-swap="innerHTML"
+                  hx-disabled-elt="this"
+                  hx-confirm="Render all students for this item? This can take a while.">
+            <i class="bi bi-image"></i> Render all
+          </button>
+          {% endif %}
         </th>
       {% endfor %}
       <th>
@@ -42,6 +53,8 @@
                 hx-swap="innerHTML"><i class="bi bi-plus-lg"></i></button>
         <button type="button" class="btn-subtle"
                 onclick="document.getElementById('commits-dialog').showModal()"><i class="bi bi-clock-history"></i> Commits</button>
+        <button type="button" class="btn-subtle"
+                onclick="document.getElementById('image-refactor-dialog').showModal()"><i class="bi bi-image"></i> Image</button>
       </th>
   </thead>
   <tbody>

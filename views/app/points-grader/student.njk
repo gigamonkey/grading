@@ -1,0 +1,55 @@
+{% extends "app/layout.njk" %}
+{% block title %}{{ student.sortable_name }} - {{ assignment.title }} - Gradebook{% endblock %}
+{% block content %}
+<div class="points-grader-student">
+  <div class="points-grader-student-nav">
+    <a href="/points-grader/{{ assignmentId }}/student/{{ prevUserId }}"
+       class="btn-subtle"><i class="bi bi-arrow-left"></i> Prev</a>
+    <span class="points-grader-student-position {{ 'excused' if isExcused }}">
+      <a href="/points-grader/{{ assignmentId }}">{{ assignment.title }}</a> &middot;
+      {{ student.sortable_name }} ({{ student.github }})
+      &mdash; {{ studentIndex + 1 }} of {{ totalStudents }}
+    </span>
+    <a href="/points-grader/{{ assignmentId }}/student/{{ nextUserId }}"
+       class="btn-subtle">Next <i class="bi bi-arrow-right"></i></a>
+  </div>
+
+  <div class="points-grader-student-summary">
+    Score:
+    <strong>{% if complete and totalPoints %}{{ (earned / totalPoints * 100) | round }}%{% else %}—{% endif %}</strong>
+    &middot;
+    Points: <strong>{% if complete %}{{ earned | round }}/{{ totalPoints }}{% else %}—{% endif %}</strong>
+  </div>
+
+  {% for i in items %}
+  <div class="points-grader-item">
+    <h3>
+      {{ i.label }}
+      <small>({{ i.points }} pt{{ '' if i.points == 1 else 's' }})</small>
+      {% if i.kind != 'manual' %}<small class="kind">[{{ i.kind }}]</small>{% endif %}
+    </h3>
+
+    {% if i.kind == 'image_refactoring' %}
+      {% include "app/points-grader/image-detail.njk" %}
+    {% endif %}
+
+    <form class="points-grader-mark-form"
+          hx-put="/points-grader/{{ assignmentId }}/mark/{{ student.user_id }}/{{ i.seq }}"
+          hx-trigger="submit, change from:input[type=number]"
+          hx-target="this" hx-swap="none"
+          hx-on::after-request="document.getElementById('mark-feedback-{{ i.seq }}').textContent='saved'; setTimeout(() => document.getElementById('mark-feedback-{{ i.seq }}').textContent='', 1200)">
+      <label>Score (fraction):
+        <input type="number" name="fraction" step="0.05" min="-1" max="2"
+               value="{{ i.mark if i.mark != null else '' }}">
+      </label>
+      <button type="button" class="btn-subtle"
+              hx-delete="/points-grader/{{ assignmentId }}/mark/{{ student.user_id }}/{{ i.seq }}"
+              hx-target="closest .points-grader-item form input[name=fraction]"
+              hx-swap="none"
+              hx-on::after-request="location.reload()">Reset</button>
+      <span class="points-grader-mark-feedback" id="mark-feedback-{{ i.seq }}"></span>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

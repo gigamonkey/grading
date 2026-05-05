@@ -527,7 +527,12 @@ SELECT assignment_id, user_id, timestamp, sha
 FROM rubric_submissions
 WHERE timestamp IS NOT NULL
 GROUP BY assignment_id, user_id
-HAVING timestamp = max(timestamp);
+HAVING timestamp = max(timestamp)
+UNION ALL
+SELECT assignment_id, user_id, max(latest_timestamp) timestamp, latest_sha sha
+FROM image_refactoring_renders
+WHERE latest_sha IS NOT NULL
+GROUP BY assignment_id, user_id;
 
 -- Union of all scores with their provenance
 DROP VIEW IF EXISTS recorded_scores;
@@ -897,3 +902,21 @@ JOIN rubric_items i USING (assignment_id, seq)
 JOIN item_counts ic USING (assignment_id)
 GROUP BY m.assignment_id, m.user_id
 HAVING count(*) = ic.item_count;
+
+-- Cached per-student renders for image_refactoring rubric items. PNGs are
+-- stored as BLOBs; identical = 1 if first_png == latest_png byte-for-byte.
+CREATE TABLE IF NOT EXISTS image_refactoring_renders (
+  user_id TEXT NOT NULL,
+  assignment_id INTEGER NOT NULL,
+  seq INTEGER NOT NULL,
+  first_sha TEXT,
+  first_timestamp INTEGER,
+  first_png BLOB,
+  first_error TEXT,
+  latest_sha TEXT,
+  latest_timestamp INTEGER,
+  latest_png BLOB,
+  latest_error TEXT,
+  identical INTEGER,
+  PRIMARY KEY (user_id, assignment_id, seq)
+);

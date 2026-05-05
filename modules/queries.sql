@@ -700,3 +700,33 @@ WHERE user_id = $userId AND assignment_id = $assignmentId AND seq = $seq;
 
 -- :name deletePointsRubricMarksForItem :run
 DELETE FROM points_rubric_marks WHERE assignment_id = $assignmentId AND seq = $seq;
+
+-- Image-refactoring grader
+
+-- :name imageRefactoringRendersForAssignment :all
+SELECT * FROM image_refactoring_renders WHERE assignment_id = $assignmentId;
+
+-- :name imageRefactoringRendersForUser :all
+SELECT * FROM image_refactoring_renders
+WHERE user_id = $userId AND assignment_id = $assignmentId;
+
+-- :name upsertImageRefactoringRender :run
+INSERT INTO image_refactoring_renders
+  (user_id, assignment_id, seq, first_sha, first_timestamp, first_png, first_error,
+   latest_sha, latest_timestamp, latest_png, latest_error, identical)
+VALUES
+  ($userId, $assignmentId, $seq, $firstSha, $firstTimestamp, $firstPng, $firstError,
+   $latestSha, $latestTimestamp, $latestPng, $latestError, $identical)
+ON CONFLICT (user_id, assignment_id, seq) DO UPDATE SET
+  first_sha = $firstSha,
+  first_timestamp = $firstTimestamp,
+  first_png = $firstPng,
+  first_error = $firstError,
+  latest_sha = $latestSha,
+  latest_timestamp = $latestTimestamp,
+  latest_png = $latestPng,
+  latest_error = $latestError,
+  identical = $identical;
+
+-- :name deleteImageRefactoringRendersForItem :run
+DELETE FROM image_refactoring_renders WHERE assignment_id = $assignmentId AND seq = $seq;

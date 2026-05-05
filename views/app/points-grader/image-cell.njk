@@ -1,0 +1,28 @@
+<td class="points-grader-cell image-refactor-cell {{ 'empty' if value == null }}">
+  <a href="/points-grader/{{ assignmentId }}/student/{{ userId }}" class="image-refactor-thumbs">
+    {% if render and render.first_png %}
+      <img src="/points-grader/{{ assignmentId }}/png/{{ userId }}/{{ seq }}/first" alt="first">
+    {% elif render and render.first_error %}
+      <span class="image-refactor-placeholder error" title="{{ render.first_error }}">err</span>
+    {% else %}
+      <span class="image-refactor-placeholder">first</span>
+    {% endif %}
+    {% if render and render.identical == 1 %}
+      <span class="image-refactor-badge match" title="Identical">=</span>
+    {% elif render and render.identical == 0 %}
+      <span class="image-refactor-badge mismatch" title="Different">&ne;</span>
+    {% elif render and (render.first_error or render.latest_error) %}
+      <span class="image-refactor-badge error" title="Render error — see detail page">!</span>
+    {% else %}
+      <span class="image-refactor-badge unknown" title="Not yet rendered">?</span>
+    {% endif %}
+    {% if render and render.latest_png %}
+      <img src="/points-grader/{{ assignmentId }}/png/{{ userId }}/{{ seq }}/latest" alt="latest">
+    {% elif render and render.latest_error %}
+      <span class="image-refactor-placeholder error" title="{{ render.latest_error }}">err</span>
+    {% else %}
+      <span class="image-refactor-placeholder">latest</span>
+    {% endif %}
+  </a>
+  <div class="image-refactor-cell-score">{% if value != null %}{{ (value * 100) | round }}%{% else %}—{% endif %}</div>
+</td>

@@ -868,3 +868,122 @@ table.checklist th.checklist-item .sort-carets {
 
 .grading-buttons { display: inline-flex; gap: 0.25em; flex-wrap: wrap; justify-content: center; }
 .grading-buttons a { text-decoration: none; }
+
+td.image-refactor-cell { text-align: center; padding: 0.2rem; }
+.image-refactor-thumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-decoration: none;
+}
+.image-refactor-thumbs img {
+  width: 80px;
+  height: 50px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid #ddd;
+}
+.image-refactor-placeholder {
+  display: inline-block;
+  width: 80px;
+  height: 50px;
+  line-height: 50px;
+  text-align: center;
+  color: #aaa;
+  background: #f4f4f4;
+  border: 1px dashed #ccc;
+  font-size: 0.75rem;
+}
+.image-refactor-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+}
+.image-refactor-badge.match { background: #1a8a3e; }
+.image-refactor-badge.mismatch { background: #c53030; }
+.image-refactor-badge.unknown { background: #888; }
+.image-refactor-badge.error { background: #c53030; }
+.image-refactor-placeholder.error {
+  background: #fff5f5;
+  border-color: #f4c0c0;
+  color: #8a1a1a;
+}
+.image-refactor-cell-score { font-size: 0.8rem; color: #555; margin-top: 0.2rem; }
+
+.points-grader-student { max-width: 1800px; }
+.points-grader-student-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 0.5rem;
+}
+.points-grader-student-position { flex: 1; text-align: center; }
+.points-grader-student-position.excused { color: #888; font-style: italic; }
+.points-grader-student-summary { margin-bottom: 1rem; color: #333; }
+
+.points-grader-item {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: #fafafa;
+}
+.points-grader-item h3 { margin: 0 0 0.5rem 0; font-size: 1.05rem; }
+.points-grader-item h3 small { color: #888; font-weight: normal; }
+.points-grader-item h3 small.kind { color: #1a4f8a; font-style: italic; }
+.points-grader-mark-form { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.6rem; }
+.points-grader-mark-form input[type=number] { width: 6rem; }
+.points-grader-mark-feedback { color: #1a8a3e; font-size: 0.85rem; }
+
+.image-refactor-detail-meta { color: #555; font-size: 0.9rem; margin-bottom: 0.5rem; }
+.image-refactor-verdict {
+  display: inline-block;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  margin-bottom: 0.6rem;
+}
+.image-refactor-verdict.match { background: #d6f3df; color: #1a5e2e; }
+.image-refactor-verdict.mismatch { background: #f8d7d7; color: #8a1a1a; }
+.image-refactor-verdict.unknown { background: #eee; color: #555; }
+
+.image-refactor-detail-pair {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.image-refactor-detail-pair figure { margin: 0; flex: 1; min-width: 400px; }
+.image-refactor-detail-pair figcaption { font-size: 0.85rem; color: #555; margin-bottom: 0.25rem; }
+.image-refactor-detail-pair figcaption code { background: #eee; padding: 0 0.25rem; border-radius: 2px; }
+.image-refactor-detail-pair figcaption .muted { color: #aaa; }
+.image-refactor-detail-pair img {
+  max-width: 100%;
+  height: auto;
+  background: #fff;
+  border: 1px solid #ddd;
+}
+.image-refactor-error {
+  background: #fff5f5;
+  color: #8a1a1a;
+  padding: 0.5rem;
+  border: 1px solid #f4c0c0;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+}
+.image-refactor-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: #f4f4f4;
+  border: 1px dashed #ccc;
+  color: #aaa;
+}

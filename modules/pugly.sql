@@ -412,6 +412,46 @@ insert into ic_point_values (points) values ($points);
 insert into ic_point_values (points) values ($points);
 
 
+-- image_refactoring_renders -------------------------------
+
+-- :name imageRefactoringRenders :all
+select * from image_refactoring_renders;
+
+-- :name insertImageRefactoringRender :insert
+insert into image_refactoring_renders
+  (user_id, assignment_id, seq, first_sha, first_timestamp, first_png, first_error, latest_sha, latest_timestamp, latest_png, latest_error, identical)
+values
+  ($userId, $assignmentId, $seq, $firstSha, $firstTimestamp, $firstPng, $firstError, $latestSha, $latestTimestamp, $latestPng, $latestError, $identical);
+
+-- :name imageRefactoringRender :get
+select * from image_refactoring_renders
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  seq = $seq;
+
+-- :name updateImageRefactoringRender :run
+update image_refactoring_renders set
+  (first_sha, first_timestamp, first_png, first_error, latest_sha, latest_timestamp, latest_png, latest_error, identical) =
+  ($firstSha, $firstTimestamp, $firstPng, $firstError, $latestSha, $latestTimestamp, $latestPng, $latestError, $identical)
+where
+  user_id = $userId and
+  assignment_id = $assignmentId and
+  seq = $seq
+
+-- :name makeImageRefactoringRender :insert
+insert into image_refactoring_renders
+  (first_sha, first_timestamp, first_png, first_error, latest_sha, latest_timestamp, latest_png, latest_error, identical)
+values
+  ($firstSha, $firstTimestamp, $firstPng, $firstError, $latestSha, $latestTimestamp, $latestPng, $latestError, $identical);
+
+-- :name makeImageRefactoringRenderWithDefaultValues :insert
+insert into image_refactoring_renders
+  (first_sha, first_timestamp, first_png, first_error, latest_sha, latest_timestamp, latest_png, latest_error, identical)
+values
+  ($firstSha, $firstTimestamp, $firstPng, $firstError, $latestSha, $latestTimestamp, $latestPng, $latestError, $identical);
+
+
 -- java_unit_tests -----------------------------------------
 
 -- :name javaUnitTests :all
