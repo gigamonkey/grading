@@ -1,0 +1,5 @@
+<div class="n-of-m-cell n-of-m-widget {{ 'empty' if value == null }}"
+     data-mark-url="/points-grader/{{ assignmentId }}/mark/{{ userId }}/{{ seq }}"
+     data-max="{{ max }}"
+     data-widget="1"
+     style="user-select: none">{% if value != null %}{{ (value * max) | round }}/{{ max }}{% endif %}</div>

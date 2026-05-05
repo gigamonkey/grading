@@ -1740,9 +1740,20 @@ app.delete('/checklist/:assignmentId/criteria/:seq', (req, res) => {
 
 // Points grader
 
+function parseRubricItemParams(item) {
+  if (!item.parameters) return {};
+  try {
+    return JSON.parse(item.parameters);
+  } catch {
+    return {};
+  }
+}
+
 function pointsGraderData(assignmentId) {
   const assignment = db.assignmentById({ assignmentId });
-  const items = db.rubricItemsForAssignment({ assignmentId });
+  const items = db
+    .rubricItemsForAssignment({ assignmentId })
+    .map((i) => ({ ...i, params: parseRubricItemParams(i) }));
   const students = db.studentsByCourse({ courseId: assignment.course_id });
   const marks = db.pointsRubricMarksForAssignment({ assignmentId });
   const markMap = {};
@@ -1779,21 +1790,26 @@ function pointsGraderData(assignmentId) {
     });
   }
 
-  const totalPoints = items.reduce((sum, i) => sum + (i.points ?? 0), 0);
+  const isExtraCredit = (i) => i.kind === 'extra_credit';
+  const totalPoints = items.reduce(
+    (sum, i) => sum + (isExtraCredit(i) ? 0 : (i.points ?? 0)),
+    0,
+  );
+  const requiredCount = items.filter((i) => !isExtraCredit(i)).length;
   const studentPoints = {};
   const studentComplete = {};
   for (const s of students) {
     let earned = 0;
-    let count = 0;
+    let markedRequired = 0;
     for (const i of items) {
       const f = markMap[s.user_id]?.[i.seq];
       if (f != null) {
         earned += f * (i.points ?? 0);
-        count += 1;
+        if (!isExtraCredit(i)) markedRequired += 1;
       }
     }
     studentPoints[s.user_id] = earned;
-    studentComplete[s.user_id] = items.length > 0 && count === items.length;
+    studentComplete[s.user_id] = requiredCount > 0 && markedRequired === requiredCount;
   }
   const excused = excusedSetFor(assignmentId);
   return {
@@ -1910,6 +1926,41 @@ app.post('/points-grader/:assignmentId/items', (req, res) => {
   renderPointsGraderTableFromReq(req, res, assignmentId);
 });
 
+app.post('/points-grader/:assignmentId/check-item', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const label = req.body.label?.trim() || '-';
+  db.addRubricItem({ assignmentId, label, points: 1, kind: 'check', parameters: null });
+  renderPointsGraderTableFromReq(req, res, assignmentId);
+});
+
+app.post('/points-grader/:assignmentId/extra-credit-item', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const label = req.body.label?.trim() || 'EC';
+  db.addRubricItem({
+    assignmentId,
+    label,
+    points: 1,
+    kind: 'extra_credit',
+    parameters: null,
+  });
+  renderPointsGraderTableFromReq(req, res, assignmentId);
+});
+
+app.post('/points-grader/:assignmentId/n-of-m-item', (req, res) => {
+  const assignmentId = Number(req.params.assignmentId);
+  const label = (req.body.label || '').trim() || 'N of M';
+  const points = Number(req.body.points) || 1;
+  const max = Math.max(1, Math.round(Number(req.body.max) || 1));
+  db.addRubricItem({
+    assignmentId,
+    label,
+    points,
+    kind: 'n_of_m',
+    parameters: JSON.stringify({ max }),
+  });
+  renderPointsGraderTableFromReq(req, res, assignmentId);
+});
+
 app.delete('/points-grader/:assignmentId/items/:seq', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const seq = Number(req.params.seq);
@@ -1994,28 +2045,83 @@ app.put('/points-grader/:assignmentId/items/:seq/points', (req, res) => {
 
 const POINTS_GRADER_STEP = 0.25;
 
+function renderItemWidget(res, assignmentId, userId, seq) {
+  const item = db.rubricItemsForAssignment({ assignmentId }).find((i) => i.seq === seq);
+  if (!item) return res.status(404).send('');
+  const mark = db.getPointsRubricMark({ userId, assignmentId, seq });
+  const value = mark ? mark.fraction : null;
+  if (item.kind === 'n_of_m') {
+    const params = parseRubricItemParams(item);
+    res.render('app/points-grader/n-of-m-widget.njk', {
+      assignmentId,
+      userId,
+      seq,
+      max: Math.max(1, Math.round(Number(params.max) || 1)),
+      value,
+    });
+  } else if (item.kind === 'check' || item.kind === 'extra_credit') {
+    const checkState = value === 1 ? 'check' : value === 0 ? 'x' : null;
+    res.render('app/points-grader/check-widget.njk', {
+      assignmentId,
+      userId,
+      seq,
+      checkState,
+      isExtraCredit: item.kind === 'extra_credit',
+    });
+  } else {
+    res.status(400).send('unsupported widget kind');
+  }
+}
+
 app.put('/points-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
   const seq = Number(req.params.seq);
+  const isWidget = req.body.widget === '1';
   const explicit = req.body.fraction;
   let fraction;
+  let deleted = false;
   if (explicit != null && explicit !== '') {
     const n = Number(explicit);
     if (!Number.isFinite(n)) return res.status(400).send('bad fraction');
     fraction = n;
   } else {
-    const direction = req.body.direction === 'down' ? 'down' : 'up';
+    const direction = req.body.direction === 'down' ? -1 : 1;
     const existing = db.getPointsRubricMark({ userId, assignmentId, seq });
-    if (!existing) {
+    const item = db.rubricItemsForAssignment({ assignmentId }).find((i) => i.seq === seq);
+    if (item?.kind === 'check' || item?.kind === 'extra_credit') {
+      // Cycle empty → check (1) → x (0) → empty (delete).
+      if (!existing) {
+        fraction = 1;
+      } else if (existing.fraction === 1) {
+        fraction = 0;
+      } else {
+        db.deletePointsRubricMark({ userId, assignmentId, seq });
+        deleted = true;
+      }
+    } else if (item?.kind === 'n_of_m') {
+      const max = Math.max(1, Math.round(Number(parseRubricItemParams(item).max) || 1));
+      if (!existing) {
+        fraction = 1;
+      } else {
+        const currentN = Math.round(existing.fraction * max);
+        const nextN = Math.min(max, Math.max(0, currentN + direction));
+        fraction = nextN / max;
+      }
+    } else if (!existing) {
       fraction = 1;
     } else {
-      const delta = direction === 'down' ? -POINTS_GRADER_STEP : POINTS_GRADER_STEP;
-      fraction = existing.fraction + delta;
+      fraction = existing.fraction + direction * POINTS_GRADER_STEP;
     }
   }
-  db.upsertPointsRubricMark({ userId, assignmentId, seq, fraction });
-  renderPointsGraderRow(res, assignmentId, userId);
+  if (!deleted) {
+    db.upsertPointsRubricMark({ userId, assignmentId, seq, fraction });
+  }
+  if (isWidget) {
+    renderItemWidget(res, assignmentId, userId, seq);
+  } else {
+    renderPointsGraderRow(res, assignmentId, userId);
+  }
 });
 
 app.post('/points-grader/:assignmentId/excused/:userId', (req, res) => {

@@ -886,10 +886,16 @@ CREATE TABLE IF NOT EXISTS points_rubric_marks (
   PRIMARY KEY (user_id, assignment_id, seq)
 );
 
+-- Extra-credit items (kind = 'extra_credit') are excluded from the
+-- denominator and from the completeness check, but a fraction of 1 still
+-- contributes their points to the numerator.
 DROP VIEW IF EXISTS points_rubric_scores;
 CREATE VIEW points_rubric_scores AS
 WITH item_counts AS (
-  SELECT assignment_id, count(*) item_count, sum(points) total_points
+  SELECT
+    assignment_id,
+    sum(CASE WHEN kind = 'extra_credit' THEN 0 ELSE 1 END) item_count,
+    sum(CASE WHEN kind = 'extra_credit' THEN 0 ELSE points END) total_points
   FROM rubric_items
   GROUP BY assignment_id
 )
@@ -901,7 +907,7 @@ FROM points_rubric_marks m
 JOIN rubric_items i USING (assignment_id, seq)
 JOIN item_counts ic USING (assignment_id)
 GROUP BY m.assignment_id, m.user_id
-HAVING count(*) = ic.item_count;
+HAVING sum(CASE WHEN i.kind = 'extra_credit' THEN 0 ELSE 1 END) = ic.item_count;
 
 -- Cached per-student renders for image_refactoring rubric items. PNGs are
 -- stored as BLOBs; identical = 1 if first_png == latest_png byte-for-byte.

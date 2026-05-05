@@ -1,0 +1,4 @@
+<td class="points-grader-cell checklist-score n-of-m-cell {{ 'empty' if value == null }}"
+    data-mark-url="/points-grader/{{ assignmentId }}/mark/{{ userId }}/{{ seq }}"
+    data-max="{{ max }}"
+    style="user-select: none">{% if value != null %}{{ (value * max) | round }}/{{ max }}{% endif %}</td>

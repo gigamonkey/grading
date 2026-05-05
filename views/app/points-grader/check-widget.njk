@@ -1,0 +1,6 @@
+<div class="points-grader-check-widget {{ checkState or 'empty' }} {{ 'extra-credit' if isExtraCredit }}"
+     hx-put="/points-grader/{{ assignmentId }}/mark/{{ userId }}/{{ seq }}"
+     hx-trigger="click"
+     hx-target="this"
+     hx-swap="outerHTML"
+     hx-vals='{"widget": "1"}'>{% if checkState == 'check' %}<i class="bi bi-check-lg"></i>{% elif checkState == 'x' %}<i class="bi bi-x-lg"></i>{% endif %}</div>

@@ -47,14 +47,35 @@
         </th>
       {% endfor %}
       <th>
-        <button hx-post="/points-grader/{{ assignment.assignment_id }}/items"
-                hx-vals='{"label": "-"}'
-                hx-target="#points-grader-table"
-                hx-swap="innerHTML"><i class="bi bi-plus-lg"></i></button>
-        <button type="button" class="btn-subtle"
-                onclick="document.getElementById('commits-dialog').showModal()"><i class="bi bi-clock-history"></i> Commits</button>
-        <button type="button" class="btn-subtle"
-                onclick="document.getElementById('image-refactor-dialog').showModal()"><i class="bi bi-image"></i> Image</button>
+        <details class="add-item-menu">
+          <summary><i class="bi bi-plus-lg"></i> Add</summary>
+          <div class="add-item-menu-items">
+            <button type="button"
+                    hx-post="/points-grader/{{ assignment.assignment_id }}/items"
+                    hx-vals='{"label": "-"}'
+                    hx-target="#points-grader-table"
+                    hx-swap="innerHTML"
+                    onclick="this.closest('details').open=false"><i class="bi bi-percent"></i> Percent</button>
+            <button type="button"
+                    hx-post="/points-grader/{{ assignment.assignment_id }}/check-item"
+                    hx-vals='{"label": "-"}'
+                    hx-target="#points-grader-table"
+                    hx-swap="innerHTML"
+                    onclick="this.closest('details').open=false"><i class="bi bi-check-lg"></i> Check</button>
+            <button type="button"
+                    hx-post="/points-grader/{{ assignment.assignment_id }}/extra-credit-item"
+                    hx-vals='{"label": "EC"}'
+                    hx-target="#points-grader-table"
+                    hx-swap="innerHTML"
+                    onclick="this.closest('details').open=false"><i class="bi bi-plus-circle"></i> Extra credit</button>
+            <button type="button"
+                    onclick="document.getElementById('n-of-m-dialog').showModal();this.closest('details').open=false"><i class="bi bi-list-ol"></i> N of M&hellip;</button>
+            <button type="button"
+                    onclick="document.getElementById('commits-dialog').showModal();this.closest('details').open=false"><i class="bi bi-clock-history"></i> Commits&hellip;</button>
+            <button type="button"
+                    onclick="document.getElementById('image-refactor-dialog').showModal();this.closest('details').open=false"><i class="bi bi-image"></i> Image&hellip;</button>
+          </div>
+        </details>
       </th>
   </thead>
   <tbody>

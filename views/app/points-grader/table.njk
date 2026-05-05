@@ -27,6 +27,31 @@
     </div>
   </form>
 </dialog>
+<dialog id="n-of-m-dialog">
+  <form method="dialog"
+        hx-post="/points-grader/{{ assignment.assignment_id }}/n-of-m-item"
+        hx-target="#points-grader-table"
+        hx-swap="innerHTML"
+        hx-on:htmx:after-request="document.getElementById('n-of-m-dialog').close()"
+        style="display: flex; flex-direction: column; gap: 0.6em; min-width: 22rem;">
+    <h3 style="margin: 0">Add N-of-M item</h3>
+    <label style="display: flex; align-items: center; gap: 0.4em">Label
+      <input name="label" type="text" required style="flex: 1; margin: 0">
+    </label>
+    <label style="display: flex; align-items: center; gap: 0.4em">Points
+      <input name="points" type="number" value="1" min="0" step="any" style="flex: 1; margin: 0">
+    </label>
+    <label style="display: flex; align-items: center; gap: 0.4em">Max marks (M)
+      <input name="max" type="number" value="5" min="1" step="1" required style="flex: 1; margin: 0">
+    </label>
+    <p style="margin: 0; color: #888; font-size: 0.85em">Click cell to increment N (max M); shift/right-click to decrement.</p>
+    <div style="display: flex; gap: 0.5em; justify-content: flex-end">
+      <button type="button" class="btn-subtle"
+              onclick="document.getElementById('n-of-m-dialog').close()">Cancel</button>
+      <button type="submit">Add</button>
+    </div>
+  </form>
+</dialog>
 <dialog id="image-refactor-dialog">
   <form method="dialog"
         hx-post="/points-grader/{{ assignment.assignment_id }}/image-refactoring-item"

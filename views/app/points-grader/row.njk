@@ -19,6 +19,13 @@
     {% if i.kind == 'image_refactoring' %}
       {% set render = rendersByUserSeq[userId][i.seq] if rendersByUserSeq[userId] else null %}
       {% include "app/points-grader/image-cell.njk" %}
+    {% elif i.kind == 'check' or i.kind == 'extra_credit' %}
+      {% set checkState = 'check' if value == 1 else ('x' if value == 0 else null) %}
+      {% set isExtraCredit = i.kind == 'extra_credit' %}
+      {% include "app/points-grader/check-cell.njk" %}
+    {% elif i.kind == 'n_of_m' %}
+      {% set max = i.params.max %}
+      {% include "app/points-grader/n-of-m-cell.njk" %}
     {% else %}
       {% include "app/points-grader/cell.njk" %}
     {% endif %}

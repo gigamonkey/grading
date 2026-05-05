@@ -38,6 +38,29 @@
       {% include "app/points-grader/image-detail.njk" %}
     {% endif %}
 
+    {% if i.kind == 'n_of_m' %}
+    <div class="points-grader-mark-form">
+      <label>Marks earned:</label>
+      {% set userId = student.user_id %}
+      {% set seq = i.seq %}
+      {% set value = i.mark %}
+      {% set max = i.params.max %}
+      {% include "app/points-grader/n-of-m-widget.njk" %}
+      <button type="button" class="btn-subtle"
+              hx-delete="/points-grader/{{ assignmentId }}/mark/{{ student.user_id }}/{{ i.seq }}"
+              hx-target="this" hx-swap="none"
+              hx-on::after-request="location.reload()">Reset</button>
+    </div>
+    {% elif i.kind == 'check' or i.kind == 'extra_credit' %}
+    <div class="points-grader-mark-form">
+      <label>{{ 'Extra credit:' if i.kind == 'extra_credit' else 'Mark:' }}</label>
+      {% set userId = student.user_id %}
+      {% set seq = i.seq %}
+      {% set checkState = 'check' if i.mark == 1 else ('x' if i.mark == 0 else null) %}
+      {% set isExtraCredit = i.kind == 'extra_credit' %}
+      {% include "app/points-grader/check-widget.njk" %}
+    </div>
+    {% else %}
     <form class="points-grader-mark-form"
           hx-put="/points-grader/{{ assignmentId }}/mark/{{ student.user_id }}/{{ i.seq }}"
           hx-trigger="submit, change from:input[type=number]"
@@ -54,6 +77,7 @@
               hx-on::after-request="location.reload()">Reset</button>
       <span class="points-grader-mark-feedback" id="mark-feedback-{{ i.seq }}"></span>
     </form>
+    {% endif %}
   </div>
   {% endfor %}
 </div>
