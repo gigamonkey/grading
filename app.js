@@ -13,11 +13,11 @@ import express from 'express';
 import nunjucks from 'nunjucks';
 import { DB } from 'pugsql';
 import { API } from './api.js';
+import { bellSchedule } from './modules/bell-schedule.js';
 import { numCorrect, scoreTest } from './modules/grading.js';
 import { render as renderImage } from './modules/image-refactoring.js';
 import mdfilter from './modules/mdfilter.js';
 import { Repo } from './modules/repo.js';
-import { bellSchedule } from './modules/bell-schedule.js';
 import { durationString, getCommitData } from './modules/speedruns.js';
 import { loadTestcases, runTestsWithError } from './modules/test-javascript.js';
 import { camelify } from './modules/util.js';
@@ -818,9 +818,7 @@ app.get('/commit-history', (req, res) => {
   }
 
   if (courseId && userParam) {
-    const students = userId
-      ? courseStudents.filter((s) => s.user_id === userId)
-      : courseStudents;
+    const students = userId ? courseStudents.filter((s) => s.user_id === userId) : courseStudents;
     placeholderRows = students.map((s) => ({ student: s }));
     schoolDays = knownSchoolDays();
   }
@@ -861,7 +859,12 @@ app.get('/commit-history/row', (req, res) => {
     return res.status(404).send('<tr><td colspan="8">student not found</td></tr>');
   }
 
-  const { counts, total, days, missing } = computeStudentCounts(student, repoPath, startDate, endDate);
+  const { counts, total, days, missing } = computeStudentCounts(
+    student,
+    repoPath,
+    startDate,
+    endDate,
+  );
   res.render('app/commit-history/row.njk', { student, counts, total, days, missing });
 });
 
@@ -1791,10 +1794,7 @@ function pointsGraderData(assignmentId) {
   }
 
   const isExtraCredit = (i) => i.kind === 'extra_credit';
-  const totalPoints = items.reduce(
-    (sum, i) => sum + (isExtraCredit(i) ? 0 : (i.points ?? 0)),
-    0,
-  );
+  const totalPoints = items.reduce((sum, i) => sum + (isExtraCredit(i) ? 0 : (i.points ?? 0)), 0);
   const requiredCount = items.filter((i) => !isExtraCredit(i)).length;
   const studentPoints = {};
   const studentComplete = {};
@@ -2836,8 +2836,31 @@ app.delete('/md-grader/:assignmentId/rubric/:seq', (req, res) => {
 
 // Quiz Scoring
 
+function normalizeAnswer(kind, answer) {
+  if (kind === 'freeanswer') {
+    return answer.replace(/\s+/g, ' ').trim();
+  }
+  if (kind === 'codeanswer') {
+    return answer
+      .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map((line) => {
+        if (!line.trim()) return '';
+        const m = line.match(/^(\s*)(.*)$/);
+        return m[1] + m[2].replace(/\s+/g, ' ').trimEnd();
+      })
+      .join('\n')
+      .replace(/^\n+|\n+$/g, '');
+  }
+  return answer.trim();
+}
+
 function saveAnswers(github, assignmentId, answers, timestamp, sha) {
+  const kindByQuestion = new Map(
+    db.questionsForFormAssessment({ assignmentId }).map((q) => [q.question_number, q.kind]),
+  );
   answers.forEach((answer, num) => {
+    const kind = kindByQuestion.get(num);
     if (Array.isArray(answer)) {
       answer.forEach((a, i) => {
         db.ensureStudentAnswer({
@@ -2854,7 +2877,7 @@ function saveAnswers(github, assignmentId, answers, timestamp, sha) {
             assignmentId,
             questionNumber: num,
             rawAnswer: a,
-            answer: a.trim(),
+            answer: normalizeAnswer(kind, a),
           });
       });
     } else {
@@ -2872,7 +2895,7 @@ function saveAnswers(github, assignmentId, answers, timestamp, sha) {
           assignmentId,
           questionNumber: num,
           rawAnswer: answer,
-          answer: answer.trim(),
+          answer: normalizeAnswer(kind, answer),
         });
     }
   });
@@ -2921,6 +2944,8 @@ function quizScoringData(assignmentId, questionNumber) {
   const prevQuestion = idx > 0 ? questions[idx - 1].question_number : null;
   const nextQuestion = idx < questions.length - 1 ? questions[idx + 1].question_number : null;
 
+  const codeLanguage = assignment?.course_id === 'csa' ? 'java' : 'javascript';
+
   return {
     assignment,
     questions,
@@ -2933,6 +2958,7 @@ function quizScoringData(assignmentId, questionNumber) {
     prevQuestion,
     nextQuestion,
     currentQuestion: questionNumber,
+    codeLanguage,
   };
 }
 

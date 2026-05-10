@@ -229,7 +229,7 @@ GROUP BY assignment_id, question_number, answer;
 
 -- Compute per question scores for each student. Question score is computed
 -- differently depending on the kind of question. Currently handled are choices,
--- freeanswer, and mchoices.
+-- freeanswer, codeanswer, and mchoices.
 DROP VIEW IF EXISTS question_scores;
 CREATE VIEW question_scores AS
 WITH mchoices AS (
@@ -251,6 +251,7 @@ SELECT
   group_concat(raw_answer) answers,
   CASE
     WHEN kind = 'freeanswer' THEN score
+    WHEN kind = 'codeanswer' THEN score
     WHEN kind = 'choices' THEN score
     WHEN KIND = 'mchoices' THEN (sum(score) - low) / (high - low)
   END score

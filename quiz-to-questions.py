@@ -34,7 +34,13 @@ def load_quiz(filename):
         )
 
         answers_elem = q.find("answers")
-        kind = "mchoices" if answers_elem.get("kind") == "multiple" else "choices"
+        answer_type = answers_elem.get("type")
+        if answer_type in ("codeanswer", "freeanswer"):
+            kind = answer_type
+        elif answers_elem.get("kind") == "multiple":
+            kind = "mchoices"
+        else:
+            kind = "choices"
 
         choices = []
         correct = []

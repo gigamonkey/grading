@@ -1,6 +1,13 @@
 {% extends "app/layout.njk" %}
 {% block title %}Score: {{ assignment.title }} - Gradebook{% endblock %}
 {% block content %}
+<link href="/css/prism.css" rel="stylesheet">
+<script src="/js/prism.js" defer></script>
+<script defer>
+  document.body.addEventListener('htmx:afterSwap', (e) => {
+    if (window.Prism) Prism.highlightAllUnder(e.target);
+  });
+</script>
 <h1>{{ assignment.title }} <small>{{ assignment.course_id }}</small></h1>
 
 <div style="margin-bottom: 1rem;">

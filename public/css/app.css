@@ -582,6 +582,41 @@ button.col-filter-clear-all:hover { background: #eee; color: #444; border-color:
   cursor: pointer;
 }
 
+.answer-code {
+  margin: 0;
+  background: #f8f8f8;
+  border: 1px solid #ddd;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}
+
+.code-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+.code-row .answer-code { flex: 1 0 100%; }
+.code-row .answer-button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  text-align: center;
+  line-height: 2rem;
+  font-size: 0.75rem;
+  box-sizing: border-box;
+}
+
+.scored-answer.code { flex-wrap: wrap; align-items: flex-start; }
+.scored-answer.code .answer-code { flex: 1 0 100%; background: transparent; border: none; padding: 0; }
+
+.answer-students.code .answer-students-header { flex-wrap: wrap; }
+.answer-students.code .answer-code { flex: 1 0 100%; background: transparent; border: none; padding: 0; }
+
 .rescore-button:hover { color: #333; }
 
 .question-panel-nav {
