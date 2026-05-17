@@ -322,6 +322,25 @@ CREATE TABLE IF NOT EXISTS rubric_marks (
     REFERENCES rubric_submissions(user_id, assignment_id, sha)
 );
 
+-- A submission is considered "fully graded" when there is a mark for every
+-- rubric item on the assignment. When a student pushes new commits after being
+-- graded, the md-grader records a new rubric_submissions row for the new SHA
+-- but no marks; the assignment's score should keep using the prior fully-graded
+-- submission until the new one is fully marked.
+DROP VIEW IF EXISTS fully_graded_rubric_submissions;
+CREATE VIEW fully_graded_rubric_submissions AS
+WITH item_counts AS (
+  SELECT assignment_id, count(*) item_count
+  FROM rubric_items
+  GROUP BY assignment_id
+)
+SELECT s.user_id, s.assignment_id, s.sha, s.timestamp
+FROM rubric_submissions s
+JOIN rubric_marks m USING (user_id, assignment_id, sha)
+JOIN item_counts ic USING (assignment_id)
+GROUP BY s.user_id, s.assignment_id, s.sha
+HAVING count(DISTINCT m.seq) = ic.item_count;
+
 --------------------------------------------------------------------------------
 -- Per-user, per-assignment score overrides. Can be used to zero out scores in
 -- cases of cheating.
@@ -525,7 +544,7 @@ FROM student_answers JOIN roster USING (github)
 GROUP BY assignment_id, github
 UNION ALL
 SELECT assignment_id, user_id, timestamp, sha
-FROM rubric_submissions
+FROM fully_graded_rubric_submissions
 WHERE timestamp IS NOT NULL
 GROUP BY assignment_id, user_id
 HAVING timestamp = max(timestamp)
@@ -852,6 +871,8 @@ JOIN checklist_criteria c USING (assignment_id, seq)
 JOIN total t USING (assignment_id)
 GROUP BY m.assignment_id, m.user_id;
 
+-- Scores are based on the latest fully-graded submission per student so that a
+-- new (ungraded) submission doesn't blank out an existing grade.
 DROP VIEW IF EXISTS rubric_scores;
 CREATE VIEW rubric_scores AS
 WITH total AS (
@@ -861,7 +882,7 @@ WITH total AS (
 ),
 latest AS (
   SELECT user_id, assignment_id, sha
-  FROM rubric_submissions
+  FROM fully_graded_rubric_submissions
   GROUP BY user_id, assignment_id
   HAVING timestamp IS max(timestamp)
 )
