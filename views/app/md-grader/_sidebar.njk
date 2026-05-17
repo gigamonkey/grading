@@ -47,4 +47,21 @@
       <button type="submit">Add</button>
     </form>
   </div>
+  {% if submissions and submissions.length %}
+    <div class="md-grader-submissions">
+      <h3>Submissions</h3>
+      <ul>
+        {% for sub in submissions %}
+          <li class="{% if sub.sha == sha %}current{% endif %}{% if sub.mark_count < sub.item_count %} partial{% endif %}">
+            <span class="md-grader-submissions-date">
+              {% if sub.timestamp %}{{ sub.timestamp | epochDate }}{% else %}not submitted{% endif %}
+            </span>
+            <span class="md-grader-submissions-score">
+              {% if sub.mark_count < sub.item_count %}<span class="md-grader-submissions-progress">{{ sub.mark_count }} of {{ sub.item_count }}</span>{% elif sub.total_points %}{{ (sub.earned / sub.total_points * 100) | round }}%{% else %}-{% endif %}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 </div>

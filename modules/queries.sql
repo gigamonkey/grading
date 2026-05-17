@@ -622,6 +622,28 @@ INSERT INTO rubric_submissions (user_id, assignment_id, sha, timestamp)
 VALUES ($userId, $assignmentId, $sha, $timestamp)
 ON CONFLICT (user_id, assignment_id, sha) DO UPDATE SET timestamp = $timestamp;
 
+-- All submissions for one student/assignment, newest first. Used by the
+-- md-grader to show the student's grading history.
+-- :name rubricSubmissionsForStudent :all
+WITH item_total AS (
+  SELECT sum(points) total_points, count(*) item_count
+  FROM rubric_items WHERE assignment_id = $assignmentId
+)
+SELECT
+  s.sha,
+  s.timestamp,
+  count(m.seq) mark_count,
+  it.item_count,
+  coalesce(sum(m.fraction * i.points), 0) earned,
+  it.total_points
+FROM rubric_submissions s
+LEFT JOIN rubric_marks m USING (user_id, assignment_id, sha)
+LEFT JOIN rubric_items i ON i.assignment_id = s.assignment_id AND i.seq = m.seq
+CROSS JOIN item_total it
+WHERE s.user_id = $userId AND s.assignment_id = $assignmentId
+GROUP BY s.sha
+ORDER BY s.timestamp IS NULL, s.timestamp DESC;
+
 -- :name rubricMarksForAssignment :all
 SELECT m.* FROM rubric_marks m
 JOIN (

@@ -2556,6 +2556,11 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
 
   const excused = db.excusedAssignment({ assignmentId, userId: student.user_id }) != null;
 
+  const submissions = db.rubricSubmissionsForStudent({
+    userId: student.user_id,
+    assignmentId,
+  });
+
   return {
     assignment,
     assignmentId,
@@ -2577,6 +2582,7 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
     wordCount,
     fileError,
     excused,
+    submissions,
   };
 }
 

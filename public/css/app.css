@@ -866,6 +866,36 @@ pre.md-grader-raw {
   gap: 0.4rem;
 }
 
+.md-grader-submissions {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eee;
+}
+
+.md-grader-submissions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.md-grader-submissions li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.2rem 0.3rem;
+  border-radius: 3px;
+}
+
+.md-grader-submissions li.current {
+  background: #eef4ff;
+  font-weight: 600;
+}
+
+.md-grader-submissions-date { color: #555; }
+.md-grader-submissions li.partial .md-grader-submissions-score { color: #888; }
+.md-grader-submissions-progress { font-size: 0.85rem; }
+
 .md-grader-wc-form {
   display: flex;
   flex-wrap: wrap;
