@@ -32,12 +32,6 @@ Grading app. Talks to BHS CS server and manages grades database.
   checklist page and potentially can reorder them by changing their `seq`
   values.
 
-- Add an option to the checklist grader to add a column with the nummer of days
-  with a commit between two dates and a coefficient of how it should be factored
-  into the score. It should use the @peterseibel/bells library to count the
-  number of school days between the start and and to use as the exected number
-  of commits.
-
 - Implement auto scoring of expressions assignments.
 
 - Write a plan for making `standards` a first class thing in the database with a
@@ -122,4 +116,10 @@ chronological order from oldest to newest.
   the grading server. (2026-03-31T17:41:08)
 
 - Add an assignment grader that takes an assignment number, a branch and a path and displays the markdown file at that path in that branch with a UI like the checklist grader but with the checklist in a column down the right side of the page. It should display one file at a time but when new checklist items are added they need to be graded for all the files. (2026-04-12T17:58:13)
+
+- Add an option to the checklist grader to add a column with the nummer of days
+  with a commit between two dates and a coefficient of how it should be factored
+  into the score. It should use the @peterseibel/bells library to count the
+  number of school days between the start and and to use as the exected number
+  of commits. (2026-05-10T08:38:44)
 

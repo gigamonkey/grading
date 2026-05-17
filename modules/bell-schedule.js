@@ -1,5 +1,7 @@
 import { Temporal } from '@js-temporal/polyfill';
+
 if (!globalThis.Temporal) globalThis.Temporal = Temporal;
+
 import { BellSchedule } from '@peterseibel/bells';
 import cal2223 from '@peterseibel/bhs-calendars/2022-2023' with { type: 'json' };
 import cal2324 from '@peterseibel/bhs-calendars/2023-2024' with { type: 'json' };

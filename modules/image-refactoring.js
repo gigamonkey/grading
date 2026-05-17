@@ -1,7 +1,7 @@
-import { createCanvas } from 'canvas';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { createCanvas } from 'canvas';
 
 const WIDTH = 800;
 const HEIGHT = 500;

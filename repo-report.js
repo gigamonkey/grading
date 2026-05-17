@@ -13,10 +13,10 @@ import { Command } from 'commander';
 import { bellSchedule } from './modules/bell-schedule.js';
 
 function gitLog(repoDir, extraArgs = '') {
-  return execSync(
-    `git -C ${repoDir} log --all ${extraArgs} --format='C %H %aE %aI' --shortstat`,
-    { encoding: 'utf-8', maxBuffer: 256 * 1024 * 1024 },
-  );
+  return execSync(`git -C ${repoDir} log --all ${extraArgs} --format='C %H %aE %aI' --shortstat`, {
+    encoding: 'utf-8',
+    maxBuffer: 256 * 1024 * 1024,
+  });
 }
 
 function parseCommits(out) {
@@ -26,9 +26,7 @@ function parseCommits(out) {
     if (line.startsWith('C ')) {
       if (cur) commits.push(cur);
       const m = line.match(/^C (\S+) (\S+) (\S+)$/);
-      cur = m
-        ? { sha: m[1], email: m[2], date: m[3], added: 0, deleted: 0 }
-        : null;
+      cur = m ? { sha: m[1], email: m[2], date: m[3], added: 0, deleted: 0 } : null;
     } else if (cur) {
       const a = line.match(/(\d+) insertions?\(\+\)/);
       if (a) cur.added = Number(a[1]);
@@ -75,7 +73,11 @@ function loadOrCreateUsers(repoDir, emails) {
   }
   const map = {};
   for (const e of emails) map[e] = e;
-  const sorted = Object.fromEntries(Object.keys(map).sort().map((k) => [k, map[k]]));
+  const sorted = Object.fromEntries(
+    Object.keys(map)
+      .sort()
+      .map((k) => [k, map[k]]),
+  );
   fs.writeFileSync(inRepo, JSON.stringify(sorted, null, 2) + '\n');
   console.error(`Created ${inRepo} with ${Object.keys(sorted).length} entries.`);
   return sorted;
@@ -137,9 +139,7 @@ function columns(multiRepo, rows, tsv = false) {
   };
   const hasNonSchool = rows.some((r) => (r.nonSchoolDays ?? 0) > 0);
   return [
-    ...(multiRepo
-      ? [{ key: 'repo', label: 'Repo', align: 'left', fmt: (v) => String(v) }]
-      : []),
+    ...(multiRepo ? [{ key: 'repo', label: 'Repo', align: 'left', fmt: (v) => String(v) }] : []),
     { key: 'author', label: 'Author', align: 'left', fmt: (v) => String(v) },
     { key: 'commits', label: 'Commits', align: 'right', fmt: (v) => String(v) },
     { key: 'added', label: 'Added', align: 'right', fmt: (v) => String(v) },
@@ -168,11 +168,8 @@ function printTable(rows, sortKeys, multiRepo) {
   sortRows(rows, sortKeys, multiRepo);
   const cols = columns(multiRepo, rows);
   const cells = rows.map((r) => cols.map((c) => c.fmt(r[c.key], r)));
-  const widths = cols.map((c, i) =>
-    Math.max(c.label.length, ...cells.map((row) => row[i].length)),
-  );
-  const pad = (v, i) =>
-    cols[i].align === 'right' ? v.padStart(widths[i]) : v.padEnd(widths[i]);
+  const widths = cols.map((c, i) => Math.max(c.label.length, ...cells.map((row) => row[i].length)));
+  const pad = (v, i) => (cols[i].align === 'right' ? v.padStart(widths[i]) : v.padEnd(widths[i]));
   console.log(cols.map((c, i) => pad(c.label, i)).join('  '));
   console.log(widths.map((w) => '-'.repeat(w)).join('  '));
   for (const row of cells) {
@@ -207,8 +204,14 @@ new Command()
   .option('-t, --tsv', 'Emit tab-separated values instead of an aligned table')
   .action((repos, opts) => {
     const validSort = [
-      'commits', 'merges', 'added', 'deleted', 'net',
-      'schoolDays', 'nonSchoolDays', 'days',
+      'commits',
+      'merges',
+      'added',
+      'deleted',
+      'net',
+      'schoolDays',
+      'nonSchoolDays',
+      'days',
     ];
     const sortKeys = String(opts.sort)
       .split(',')
