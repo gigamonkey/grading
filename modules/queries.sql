@@ -644,6 +644,15 @@ WHERE s.user_id = $userId AND s.assignment_id = $assignmentId
 GROUP BY s.sha
 ORDER BY s.timestamp IS NULL, s.timestamp DESC;
 
+-- Marks recorded against one specific (user, assignment, sha).
+-- :name rubricMarksForStudentAndSha :all
+SELECT * FROM rubric_marks
+WHERE user_id = $userId AND assignment_id = $assignmentId AND sha = $sha;
+
+-- :name rubricSubmissionExists :get
+SELECT 1 FROM rubric_submissions
+WHERE user_id = $userId AND assignment_id = $assignmentId AND sha = $sha;
+
 -- :name rubricMarksForAssignment :all
 SELECT m.* FROM rubric_marks m
 JOIN (
@@ -678,18 +687,6 @@ SELECT * FROM rubric_configs WHERE assignment_id = $assignmentId;
 INSERT INTO rubric_configs (assignment_id, branch, file_path)
 VALUES ($assignmentId, $branch, $filePath)
 ON CONFLICT (assignment_id) DO UPDATE SET branch = $branch, file_path = $filePath;
-
--- :name rubricStudentsNeedingFetch :all
-SELECT r.user_id, r.github
-FROM roster r
-JOIN assignments a ON a.course_id = r.course_id
-LEFT JOIN rubric_submissions rs
-  ON rs.user_id = r.user_id AND rs.assignment_id = a.assignment_id
-WHERE a.assignment_id = $assignmentId
-  AND r.github IS NOT NULL
-GROUP BY r.user_id
-HAVING COUNT(rs.sha) = 0
-   OR MAX(rs.timestamp) IS NULL;
 
 -- Excused assignments
 -- :name ensureExcusedAssignment :run

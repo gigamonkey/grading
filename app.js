@@ -2496,17 +2496,16 @@ app.get('/points-grader/:assignmentId/student/:userId', (req, res) => {
 
 // MD Grader
 
+function wordCountFraction(item, wordCount) {
+  const params = JSON.parse(item.parameters);
+  return params.minWords > 0 ? Math.min(wordCount / params.minWords, 1.0) : 0;
+}
+
 function mdGraderData(assignmentId, userId, branch, filePath) {
   const assignment = db.assignmentById({ assignmentId });
   const items = db.rubricItemsForAssignment({ assignmentId });
   const students = db.studentsByCourse({ courseId: assignment.course_id });
   students.sort((a, b) => (a.github || '').localeCompare(b.github || ''));
-  const allMarks = db.rubricMarksForAssignment({ assignmentId });
-  const markMap = {};
-  for (const m of allMarks) {
-    if (!markMap[m.user_id]) markMap[m.user_id] = {};
-    markMap[m.user_id][m.seq] = m.fraction;
-  }
   const totalPoints = items.reduce((sum, item) => sum + item.points, 0);
 
   const studentIndex = userId ? students.findIndex((s) => s.user_id === userId) : 0;
@@ -2526,31 +2525,25 @@ function mdGraderData(assignmentId, userId, branch, filePath) {
     mdRaw = repo.contents(branch, filePath);
     mdHtml = env.getFilter('md')(mdRaw, false);
     wordCount = mdRaw.split(/\s+/).filter(Boolean).length;
-    if (sha) {
-      const timestamp = repo.timestamp(sha);
-      db.upsertRubricSubmission({ userId: student.user_id, assignmentId, sha, timestamp });
-    }
   } catch {
     fileError = `Could not load ${filePath} from branch ${branch} for ${student.github}`;
   }
-  if (!sha) {
-    sha = 'not-submitted';
-    db.upsertRubricSubmission({ userId: student.user_id, assignmentId, sha, timestamp: null });
-  }
+  if (!sha) sha = 'not-submitted';
 
-  // Auto-compute word_count marks
+  // Marks for the SHA being viewed. Word_count items are displayed live without
+  // persisting; they get written when the submission is first explicitly graded.
+  const markMap = { [student.user_id]: {} };
+  for (const m of db.rubricMarksForStudentAndSha({ userId: student.user_id, assignmentId, sha })) {
+    markMap[student.user_id][m.seq] = m.fraction;
+  }
   for (const item of items) {
-    if (item.kind === 'word_count') {
-      const params = JSON.parse(item.parameters);
-      const fraction = Math.min(wordCount / params.minWords, 1.0);
-      db.upsertRubricMark({ userId: student.user_id, assignmentId, sha, seq: item.seq, fraction });
-      if (!markMap[student.user_id]) markMap[student.user_id] = {};
-      markMap[student.user_id][item.seq] = fraction;
+    if (item.kind === 'word_count' && markMap[student.user_id][item.seq] === undefined) {
+      markMap[student.user_id][item.seq] = wordCountFraction(item, wordCount);
     }
   }
 
   const earned = items.reduce((sum, item) => {
-    const fraction = markMap[student.user_id]?.[item.seq];
+    const fraction = markMap[student.user_id][item.seq];
     return sum + (fraction != null ? fraction * item.points : 0);
   }, 0);
 
@@ -2622,20 +2615,16 @@ app.post('/md-grader/:assignmentId/fetch-submissions', (req, res) => {
       filePath = config.file_path;
     }
   }
-  const students = db.rubricStudentsNeedingFetch({ assignmentId });
+  const assignment = db.assignmentById({ assignmentId });
+  const students = db
+    .studentsByCourse({ courseId: assignment.course_id })
+    .filter((s) => s.github);
   let found = 0;
   for (const student of students) {
     try {
       const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
       repo.fetch();
-      if (branch && filePath) {
-        const sha = repo.sha(branch, filePath);
-        if (sha) {
-          const timestamp = repo.timestamp(sha);
-          db.upsertRubricSubmission({ userId: student.user_id, assignmentId, sha, timestamp });
-          found++;
-        }
-      }
+      if (branch && filePath && repo.sha(branch, filePath)) found++;
     } catch (e) {
       console.log(`Error fetching ${student.github}: ${e.message}`);
     }
@@ -2720,6 +2709,40 @@ app.post('/md-grader/:assignmentId/word-count-item', (req, res) => {
   renderMdGraderSidebar(res, assignmentId, userId, branch, filePath);
 });
 
+// Lazy-create the rubric_submissions row the first time a (user, assignment,
+// sha) gets a mark. Word_count items are persisted at the same time so the
+// submission can become fully graded once the manual items are marked.
+function ensureRubricSubmission(student, assignmentId, sha, branch, filePath) {
+  if (db.rubricSubmissionExists({ userId: student.user_id, assignmentId, sha })) return;
+
+  let timestamp = null;
+  let wordCount = 0;
+  if (sha !== 'not-submitted' && student.github) {
+    try {
+      const repo = new Repo(`${process.env.BHS_CS_REPOS}/${student.github}.git/`);
+      timestamp = repo.timestamp(sha);
+      if (branch && filePath) {
+        wordCount = repo.contents(branch, filePath).split(/\s+/).filter(Boolean).length;
+      }
+    } catch {
+      // Fall through: submission row gets a null timestamp.
+    }
+  }
+  db.upsertRubricSubmission({ userId: student.user_id, assignmentId, sha, timestamp });
+
+  for (const item of db.rubricItemsForAssignment({ assignmentId })) {
+    if (item.kind === 'word_count') {
+      db.upsertRubricMark({
+        userId: student.user_id,
+        assignmentId,
+        sha,
+        seq: item.seq,
+        fraction: wordCountFraction(item, wordCount),
+      });
+    }
+  }
+}
+
 app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   const assignmentId = Number(req.params.assignmentId);
   const userId = req.params.userId;
@@ -2727,6 +2750,9 @@ app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   const branch = req.query.branch;
   const filePath = req.query.filePath;
   const sha = req.query.sha;
+
+  const student = db.studentById({ userId });
+  ensureRubricSubmission(student, assignmentId, sha, branch, filePath);
 
   // Three-state cycle: ungraded → 1.0 → 0.0 → delete (ungraded)
   const current = db.getRubricMark({ userId, assignmentId, sha, seq });
@@ -2739,10 +2765,9 @@ app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   }
 
   const items = db.rubricItemsForAssignment({ assignmentId });
-  const marks = db.rubricMarksForAssignment({ assignmentId });
   const userMarks = {};
-  for (const m of marks) {
-    if (m.user_id === userId) userMarks[m.seq] = m.fraction;
+  for (const m of db.rubricMarksForStudentAndSha({ userId, assignmentId, sha })) {
+    userMarks[m.seq] = m.fraction;
   }
   const totalPoints = items.reduce((sum, item) => sum + item.points, 0);
   const earned = items.reduce((sum, item) => {
@@ -2753,7 +2778,6 @@ app.put('/md-grader/:assignmentId/mark/:userId/:seq', (req, res) => {
   const updatedMark = db.getRubricMark({ userId, assignmentId, sha, seq });
   const fraction = updatedMark ? updatedMark.fraction : undefined;
 
-  const student = { user_id: userId };
   res.render('app/md-grader/mark-response.njk', {
     assignmentId,
     student,
